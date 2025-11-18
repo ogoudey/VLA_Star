@@ -102,8 +102,8 @@ class SimpleDrive(VLA):
         #print(f"Setting target message to {direction}")
         self.shared["target_message"] = direction
 
-def main():
-
+### Demos ###
+def street_and_crosswalks():
     driving_monitor = VLM("driving_monitor", "You are the perception system for a car, noting the status of a mission. Given the query, return either OK or a descriptive response.")
 
     agent = GDA("decision-maker", None, \
@@ -123,6 +123,31 @@ def main():
     drive = VLA_Star("drive_down_the_street", driving_monitor, agent)
 
     asyncio.run(drive.run("Drive safely, obeying the rules of the road (MA law)."))
+
+def navigate_river():
+    driving_monitor = VLM("driving_monitor", "You are the perception system for a boat, and take note of the status of the mission. Given the query, return either OK or a descriptive response.")
+
+    agent = GDA("decision-maker", None, \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the river safely without hitting the land drive down the street. To do so you must call your function. However, you can only reach your goal one step at a time. Return one and ONLY one \"step\" of your journey. Your final output doesn't matter, only the one function call. Simple!" \
+    "")
+
+                    
+    vla = SimpleDrive()
+
+    driver = VLA_Complex(agent, driving_monitor, vla, \
+    "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go forward, turn slightly (will keep moving), or halt:" \
+    "" \
+    "instruction: \"forward\" | \"turn +n\" | \"turn -n\" | \"stop\" (where n is an angle in degrees)")
+
+    agent.set_drivers([driver])
+
+    drive = VLA_Star("navigate_through_the_river", driving_monitor, agent)
+
+    asyncio.run(drive.run("Navigate safely through the river, without crashing into the land."))
+
+def main():
+    navigate_river()
+    
 
 if __name__ == "__main__":
     main()
