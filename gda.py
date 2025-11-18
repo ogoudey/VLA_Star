@@ -41,7 +41,7 @@ class GDA:
                 method = driver.execute
                 tools.append(function_tool(
                     method,
-                    name_override=method.__self__.__class__.__name__
+                    name_override=method.__self__.__class__.tool_name
                 ))
         self.tools.extend(tools)
 
@@ -87,18 +87,22 @@ class GDA:
     async def check(self, status, recommendation=None, recent_memory: List | None = None):
         self.last_status = status
         
-        input = f"{self.overhead_prompt}\nStatus: {self.system['Status']}\nRecommendation (from a vision system): {recommendation}"
+        input = f"{self.overhead_prompt}\nStatus: {self.system['Status']}"
+        if recommendation:
+            input += f"\nRecommendation (from a vision system): {recommendation}"
         # All checks should take into account recent memory / execution cache
         #print(f"Memory: {recent_memory}")
         if recent_memory:
-            if len(recent_memory) > self.memory_lim_before_recompute:
-                print(f"Recomputing due to memory.   ↵")
-                
-                self.adjust(status)
-                if recommendation:
-                    print(f"Recommendation from VLA complex {recommendation}")
-                await self.run(input + f"\n\nRecently you've performed {merge_past(recent_memory)}")
-                return RERUN
+            if len(recent_memory) > 0
+                input += f"\n\nRecently you've performed {merge_past(recent_memory)}"
+                if len(recent_memory) > self.memory_lim_before_recompute:
+                    print(f"Recomputing due to memory.   ↵")
+                    
+                    self.adjust(status)
+                    if recommendation:
+                        print(f"Recommendation from VLA complex {recommendation}")
+                    await self.run(input)
+                    return RERUN
         
         if status == OK:
             return CONTINUE

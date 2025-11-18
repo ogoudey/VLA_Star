@@ -20,7 +20,7 @@ class VLA:
 
 
 class VLA_Complex:
-    def __init__(self, parent: GDA, monitor: VLM, vla: VLA, capability_desc: str):
+    def __init__(self, tool_name: str, parent: GDA, monitor: VLM, vla: VLA, capability_desc: str):
         self.parent = parent
         self.monitor = monitor
         self.vla = vla
@@ -30,6 +30,8 @@ class VLA_Complex:
         self.execution_cache_max = 12
         self.execution_cache = []
         self.last_instruction = None
+        
+        self.tool_name = tool_name
 
     async def execute(self, instruction: str):
         """____"""
@@ -135,6 +137,7 @@ class SimpleDrive(VLA):
         through_thread = ThroughMessage(self.shared)
         through_thread.start()
         
+        
     def __call__(self, direction: str):
         self.shared["target_message"] = direction
 
@@ -149,7 +152,7 @@ def street_and_crosswalks():
                     
     vla = SimpleDrive()
 
-    driver = VLA_Complex(agent, driving_monitor, vla, \
+    driver = VLA_Complex("drive", agent, driving_monitor, vla, \
     "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go forward, turn an angle, or halt:" \
     "" \
     "instruction: \"forward\" | \"turn +n\" (degrees to the right)| \"turn -n\" (degrees to the left)| \"stop\"" \
@@ -166,7 +169,7 @@ def navigate_river():
                           recommendation_system_prompt="You are a navigation system for a boat, suggesting \"forward\", \"turn left n\", \"turn right n\", or \"stop\".")
 
     agent = GDA("decision-maker", None, \
-    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the narrow brook safely without hitting the land drive down the street." \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the narrow brook safely (without hitting any land).\n" \
     "You may choose ANY of the available tools.\n"\
     "You must call exactly ONE tool.\n"\
     "After calling one tool, stop all further reasoning.\n"\
@@ -176,7 +179,7 @@ def navigate_river():
                     
     vla = SimpleDrive()
 
-    driver = VLA_Complex(agent, driving_monitor, vla, \
+    driver = VLA_Complex("drive", agent, driving_monitor, vla, \
     "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go forward, turn slightly (will keep moving), or halt:" \
     "" \
     "instruction: \"forward\" | \"turn left n\"| \"turn right n\"| \"stop\"")
