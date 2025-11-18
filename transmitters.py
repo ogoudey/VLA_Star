@@ -6,7 +6,7 @@ import math
 import kinematics
 
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-PORT = 5005
+PORT = 5007
 
 class ThroughMessage(threading.Thread):
     def __init__(self, shared):

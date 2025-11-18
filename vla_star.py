@@ -33,31 +33,66 @@ class VLA_Complex:
 
     async def execute(self, instruction: str):
         """____"""
-        vlm_prompt = f"Are we good to {instruction} given that we just did {self.last_instruction}? (OK | ...)" if self.last_instruction else f"Are we good to {instruction}? (OK | ...)"
-        #print(f"Executing {instruction}")
-        status = self.monitor.status(vlm_prompt) # Starter
+        if not self.parent.applicable:
+            return f"Inapplicable call. Please finish execution (no final response needed)."
+        print(f"\t\"{instruction}\" presented to VLA Complex")
+
+        self.parent.applicable = False
+        monitor_prompt = f"Are we good to {instruction} given that we just did {self.last_instruction}? (OK | ...)" if self.last_instruction else f"Are we good to {instruction}? (OK | ...)"
+
+        recommendor_prompt = f"What action shall we take in order to {self.parent.overhead_prompt}"
+
+
+        status = self.monitor.status_sync(monitor_prompt) # Continuer
+
+        
+
+
+        # Just a monitor's status
+        #status = self.monitor.status(vlm_prompt) # Starter
+        
+        
+        
+        
         check = await self.parent.check(status)
         if check == RERUN:
-            return "Done."
-        
+            return f"Done. Call no more tools and return."
+        self.execution_cache = []
         while check == CONTINUE:
             self.vla(instruction)
+            print(f"\t\tContinuing to do \"{instruction}\"")
             t = time.time()
-            time.sleep(self.monitor_sleep_period)
+            await asyncio.sleep(self.monitor_sleep_period)
             self.last_instruction = instruction
             self.execution_cache.extend([instruction, time.time() - t])
-            status = self.monitor.status(f"Can we continue to {instruction}? (OK | ... | DONE)") # Continuer
+
+            monitor_prompt = f"Can we continue to \"{instruction}\"? (OK | ... | DONE)"
+
+            taskA = asyncio.create_task(self.monitor.status(monitor_prompt))
+            taskB = asyncio.create_task(self.monitor.recommendation(recommendor_prompt))
+
+            # Wait for both to finish and get results
+            status, recommendation = await asyncio.gather(taskA, taskB)
+
+
             if status == DONE:
+                print(f"\t\tDone with \"{instruction}\"")
                 return "Done"
-            check = await self.parent.check(status, self.execution_cache)
+            
+            if status == RERUN:
+                print(f"\t\tWon't continue \"{instruction}\" because \"{status}\"")
+
+            check = await self.parent.check(status, recommendation, self.execution_cache) # Don't print after this
+            if len(self.execution_cache) > self.execution_cache_max:
+                self.execution_cache = []
             if check == RERUN:
                 return "Done."
             
             #print(self.execution_cache)
             
-            if len(self.execution_cache) > self.execution_cache_max:
-                self.execution_cache.pop(0)
-                self.execution_cache.pop(0)
+            
+                #self.execution_cache.pop(0)
+                #self.execution_cache.pop(0)
                 #print(f"Forgetting... -> ", self.execution_cache)
 
 class VLA_Star:
@@ -84,6 +119,8 @@ class VLA_Star:
             raise Exception("VLA* not fully initialized.")
         
         await self.agent.run(prompt)
+        while True:
+            await asyncio.sleep(1)
 
 
 
@@ -99,7 +136,6 @@ class SimpleDrive(VLA):
         through_thread.start()
         
     def __call__(self, direction: str):
-        #print(f"Setting target message to {direction}")
         self.shared["target_message"] = direction
 
 ### Demos ###
@@ -116,7 +152,8 @@ def street_and_crosswalks():
     driver = VLA_Complex(agent, driving_monitor, vla, \
     "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go forward, turn an angle, or halt:" \
     "" \
-    "instruction: \"forward\" | \"turn mn\" | \"turn -n\" | \"stop\" (where n is an angle in degrees)")
+    "instruction: \"forward\" | \"turn +n\" (degrees to the right)| \"turn -n\" (degrees to the left)| \"stop\"" \
+    "A turn will only apply once. It will not repeat unless you provide a new angle.")
 
     agent.set_drivers([driver])
 
@@ -125,11 +162,16 @@ def street_and_crosswalks():
     asyncio.run(drive.run("Drive safely, obeying the rules of the road (MA law)."))
 
 def navigate_river():
-    driving_monitor = VLM("driving_monitor", "You are the perception system for a boat, and take note of the status of the mission. Given the query, return either OK or a descriptive response.")
+    driving_monitor = VLM("driving_monitor", system_prompt="You are the perception system for a boat, and take note of the status of the mission. Given the query, return either OK or a descriptive response. (The boat can only go forward, turn in units degrees, or stop, and is very unmaneuverable.)",
+                          recommendation_system_prompt="You are a navigation system for a boat, suggesting \"forward\", \"turn left n\", \"turn right n\", or \"stop\".")
 
     agent = GDA("decision-maker", None, \
-    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the river safely without hitting the land drive down the street. To do so you must call your function. However, you can only reach your goal one step at a time. Return one and ONLY one \"step\" of your journey. Your final output doesn't matter, only the one function call. Simple!" \
-    "")
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the narrow brook safely without hitting the land drive down the street." \
+    "You may choose ANY of the available tools.\n"\
+    "You must call exactly ONE tool.\n"\
+    "After calling one tool, stop all further reasoning.\n"\
+    "Do not produce natural-language output. "\
+    "Return immediately after the tool call.\n")
 
                     
     vla = SimpleDrive()
@@ -137,13 +179,13 @@ def navigate_river():
     driver = VLA_Complex(agent, driving_monitor, vla, \
     "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go forward, turn slightly (will keep moving), or halt:" \
     "" \
-    "instruction: \"forward\" | \"turn +n\" | \"turn -n\" | \"stop\" (where n is an angle in degrees)")
+    "instruction: \"forward\" | \"turn left n\"| \"turn right n\"| \"stop\"")
 
     agent.set_drivers([driver])
 
     drive = VLA_Star("navigate_through_the_river", driving_monitor, agent)
 
-    asyncio.run(drive.run("Navigate safely through the river, without crashing into the land."))
+    asyncio.run(drive.run("Navigate safely through the narrow brook."))
 
 def main():
     navigate_river()
