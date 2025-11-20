@@ -2,12 +2,13 @@
 from gda import GDA
 from vlm import VLM
 import time
-
+from typing import List
 from signals import DONE
 from signals import CONTINUE, RERUN
 
 import asyncio
 
+RAW_EXECUTE = True
 
 class VLA:
     """Takes a function that takes a string. Can be called like VLA()(...)"""
@@ -20,6 +21,7 @@ class VLA:
 
 
 class VLA_Complex:
+    tool_name: str
     def __init__(self, tool_name: str, parent: GDA, monitor: VLM, vla: VLA, capability_desc: str):
         self.parent = parent
         self.monitor = monitor
@@ -38,6 +40,11 @@ class VLA_Complex:
         if not self.parent.applicable:
             return f"Inapplicable call. Please finish execution (no final response needed)."
         print(f"\t\"{instruction}\" presented to VLA Complex")
+
+        if RAW_EXECUTE:
+            self.vla(instruction)
+            return f"Done. Call no more tools and return."
+
 
         self.parent.applicable = False
         monitor_prompt = f"Are we good to {instruction} given that we just did {self.last_instruction}? (OK | ...)" if self.last_instruction else f"Are we good to {instruction}? (OK | ...)"
@@ -141,6 +148,39 @@ class SimpleDrive(VLA):
     def __call__(self, direction: str):
         self.shared["target_message"] = direction
 
+from pathlib import Path
+import sys
+sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
+import space
+
+class PathFollow(VLA):
+    def __init__(self):
+        super().__init__()
+        self.plans = dict[str, List]
+        print(space.__file__)
+
+    def __call__(self, goal: str):
+        print(f"Pathing to {goal}")
+        try:
+            self.plan(goal)
+        except Exception as e:
+            raise Exception(e)
+
+    def plan(self, goal):
+        import terrain_fetcher
+        print("imported")
+        heightmap = terrain_fetcher.get_terrain()
+        print(heightmap)
+
+        # Turn it into space
+        # A*
+        # Set path and follow
+
+    def follow(self):
+        self.shared = {"target_message": "stop"}
+        through_thread = ThroughMessage(self.shared)
+        through_thread.start()
+
 ### Demos ###
 def street_and_crosswalks():
     driving_monitor = VLM("driving_monitor", "You are the perception system for a car, noting the status of a mission. Given the query, return either OK or a descriptive response.")
@@ -190,8 +230,33 @@ def navigate_river():
 
     asyncio.run(drive.run("Navigate safely through the narrow brook."))
 
+def follow_path_river():
+    driving_monitor = VLM("driving_monitor", system_prompt="You are the perception system for a boat. Take note of the status of the mission. Given the query, return either OK or a descriptive response.")
+
+    agent = GDA("decision-maker", None, \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Your ultimate goal is to navigate through the narrow brook safely (without hitting any land).\n" \
+    "You may choose ANY of the available tools.\n"\
+    "You must call exactly ONE tool.\n"\
+    "After calling one tool, stop all further reasoning.\n"\
+    "Do not produce natural-language output. "\
+    "Return immediately after the tool call.\n")
+
+                    
+    vla = PathFollow()
+
+    driver = VLA_Complex("drive", agent, driving_monitor, vla, \
+    "Use a model to perform the instruction. Only make one tool call. This model's capabilities are to go to a locations from the following list:" \
+    "dockA, dockB, center_of_pond")
+    
+    agent.set_drivers([driver])
+
+    drive = VLA_Star("navigate_in_water", driving_monitor, agent)
+
+    asyncio.run(drive.run("Get to dock B."))
+
 def main():
-    navigate_river()
+    #navigate_river()
+    follow_path_river()
     
 
 if __name__ == "__main__":

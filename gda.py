@@ -39,9 +39,12 @@ class GDA:
         tools = []
         for driver in drivers:
                 method = driver.execute
+                print(type(driver))
+                print(method.__self__.__class__)
                 tools.append(function_tool(
                     method,
-                    name_override=method.__self__.__class__.tool_name
+                    #name_override=method.__self__.__class__.tool_name
+                    name_override=driver.tool_name
                 ))
         self.tools.extend(tools)
 
@@ -93,7 +96,7 @@ class GDA:
         # All checks should take into account recent memory / execution cache
         #print(f"Memory: {recent_memory}")
         if recent_memory:
-            if len(recent_memory) > 0
+            if len(recent_memory) > 0:
                 input += f"\n\nRecently you've performed {merge_past(recent_memory)}"
                 if len(recent_memory) > self.memory_lim_before_recompute:
                     print(f"Recomputing due to memory.   ↵")

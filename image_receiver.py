@@ -5,9 +5,9 @@ import cv2
 import threading
 import base64
 
+
 data_url = None
 _lock = threading.Lock()
-
 
 HOST = "127.0.0.1"
 PORT = 5000
@@ -74,6 +74,9 @@ def set_latest(frame):
 def get_latest():
     with _lock:
         return data_url
+
+    
+
 
 threading.Thread(target=receive_frames, daemon=True).start()
 

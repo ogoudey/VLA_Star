@@ -1,7 +1,12 @@
 from openai import OpenAI
 client = OpenAI()
 import asyncio
-import image_receiver
+
+HOLD_UNITY = True
+if HOLD_UNITY:
+    image_receiver = None
+else:
+    import image_receiver
 
 MODEL = "o4-mini"
 
