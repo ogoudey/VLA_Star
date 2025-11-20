@@ -6,10 +6,12 @@ from typing import List
 from signals import DONE
 from signals import CONTINUE, RERUN
 
+import threading
 import asyncio
 
-RAW_EXECUTE = True
-
+RAW_EXECUTE = False
+USE_RECOMMENDER = False
+EXECUTE = True
 class VLA:
     """Takes a function that takes a string. Can be called like VLA()(...)"""
     def __init__(self):
@@ -53,7 +55,6 @@ class VLA_Complex:
 
 
         status = self.monitor.status_sync(monitor_prompt) # Continuer
-
         
 
 
@@ -68,8 +69,10 @@ class VLA_Complex:
             return f"Done. Call no more tools and return."
         self.execution_cache = []
         while check == CONTINUE:
-            self.vla(instruction)
             print(f"\t\tContinuing to do \"{instruction}\"")
+            if EXECUTE:
+                self.vla({"instruction": instruction, "flag": "GO"})
+            print(f"\t\tAfter executing \"{instruction}\"")
             t = time.time()
             await asyncio.sleep(self.monitor_sleep_period)
             self.last_instruction = instruction
@@ -77,15 +80,19 @@ class VLA_Complex:
 
             monitor_prompt = f"Can we continue to \"{instruction}\"? (OK | ... | DONE)"
 
-            taskA = asyncio.create_task(self.monitor.status(monitor_prompt))
-            taskB = asyncio.create_task(self.monitor.recommendation(recommendor_prompt))
+            if USE_RECOMMENDER:
+                taskA = asyncio.create_task(self.monitor.status(monitor_prompt))
+                taskB = asyncio.create_task(self.monitor.recommendation(recommendor_prompt))
 
             # Wait for both to finish and get results
-            status, recommendation = await asyncio.gather(taskA, taskB)
-
+                status, recommendation = await asyncio.gather(taskA, taskB)
+            else:
+                status = self.monitor.status_sync(monitor_prompt) # Continuer
+                recommendation = None
 
             if status == DONE:
                 print(f"\t\tDone with \"{instruction}\"")
+                self.vla({"instruction": instruction, "flag": "STOP"})
                 return "Done"
             
             if status == RERUN:
@@ -104,15 +111,19 @@ class VLA_Complex:
                 #self.execution_cache.pop(0)
                 #print(f"Forgetting... -> ", self.execution_cache)
 
+class VLA_StarInitializedException(Exception):
+    pass
+
 class VLA_Star:
     name: str
     vlm: VLM
     agent: GDA
     vla: VLA_Complex
 
-    def __init__(self, name: str, vlm: VLM | None = None, agent: GDA | None = None):
+    def __init__(self, name: str, vlm: VLM | None = None, agent: GDA | None = None, exceptions: List[Exception]=[]):
         self.vlm = vlm
         self.agent = agent
+        self.exceptions = exceptions
 
     @property
     def initialized(self):
@@ -125,7 +136,11 @@ class VLA_Star:
     
     async def run(self, prompt):
         if not self.initialized:
-            raise Exception("VLA* not fully initialized.")
+            try:
+                raise VLA_StarInitializedException("VLA* not fully initialized.")
+            except VLA_StarInitializedException:
+                if VLA_StarInitializedException in self.exceptions:
+                    pass
         
         await self.agent.run(prompt)
         while True:
@@ -151,7 +166,10 @@ class SimpleDrive(VLA):
 from pathlib import Path
 import sys
 sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
-import space
+if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
+    print("No Path Planning")
+else:
+    import space
 
 class PathFollow(VLA):
     def __init__(self):
@@ -178,6 +196,45 @@ class PathFollow(VLA):
         self.shared = {"target_message": "stop"}
         through_thread = ThroughMessage(self.shared)
         through_thread.start()
+
+sys.path.append("/home/mulip-guest/LeRobot/lerobot/custom_brains")
+if not Path("/home/mulip-guest/LeRobot/lerobot/custom_brains").exists():
+    print("No SmolVLA")
+    #raise FileNotFoundError("Could not add /home/mulip-guest/LeRobot/lerobot/custom_brains to sys.path")
+else:
+    import vla_test
+
+class FineTunedSmolVLA(VLA):
+    def __init__(self):
+        super().__init__()
+        self.running_signal = {"instruction": "", "flag": "GO"}
+        self.thread = None
+            #raise FileNotFoundError("Could not add /home/mulip-guest/LeRobot/lerobot/custom_brains to sys.path")
+
+    def __call__(self, signal:dict):
+        print("Calling SmolVLAFineTuned")
+        self.running_signal["flag"] = signal["flag"]
+        if not signal["instruction"] == self.running_signal["instruction"]:
+            self.running_signal["instruction"] = signal["instruction"]
+            if self.thread:
+                print("Trying to join...")
+                if self.running_signal["flag"] == "STOP":
+                    
+                    self.thread.join()
+                    return
+            else:
+                self.thread = threading.Thread(target=vla_test.main_with_signal, daemon=True, args=[self.running_signal])
+                print("Thread created")
+                self.thread.start()
+            
+            print("Back!")
+        else:
+            print(f"Instruction is the same ({self.running_signal['instruction']}")
+
+
+        
+
+
 
 ### Demos ###
 def street_and_crosswalks():
@@ -250,11 +307,33 @@ def follow_path_river():
 
     drive = VLA_Star("navigate_in_water", driving_monitor, agent)
 
-    asyncio.run(drive.run("Get to dock B."))
+    asyncio.run(drive.run("Get to dock B."), exceptions=[VLA_StarInitializedException])
+
+def smolvla():
+    monitor = VLM("watcher", system_prompt="You are the perception system for a robotic arm. Take note of the status of the mission. Given the query, return either OK or a descriptive response. There is a cardboard box in the scene.")
+    agent = GDA("decision-maker", None, \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Reach the prompted goal by supplying adequate arguments to your functions.\n" \
+    "You may choose ANY of the available tools.\n"\
+    "You must call exactly ONE tool.\n"\
+    "After calling one tool, stop all further reasoning.\n"\
+    "Do not produce natural-language output. "\
+    "Return immediately after the tool call.\n")
+
+    vla = FineTunedSmolVLA()
+    driver = VLA_Complex("use_robotic_arm", agent, monitor, vla, \
+    "Use a model to perform the instruction. Only make one tool call. This model is a fine-tuned VLA post-trained on only one task. Your instruction is a language prompt. This model's capabilities are the following:\n" \
+    "'Put the colored blocks in the cardboard box' | STOP (which stops the model)")
+
+    agent.set_drivers([driver])
+
+    drive = VLA_Star("lerobot_travaille", monitor, agent)
+    print("System initialized")
+    asyncio.run(drive.run("Please put the blocks in the box."))
 
 def main():
     #navigate_river()
-    follow_path_river()
+    #follow_path_river()
+    smolvla()
     
 
 if __name__ == "__main__":

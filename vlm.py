@@ -2,11 +2,19 @@ from openai import OpenAI
 client = OpenAI()
 import asyncio
 
-HOLD_UNITY = True
-if HOLD_UNITY:
-    image_receiver = None
-else:
+USE_UNITY = False
+if USE_UNITY:
     import image_receiver
+else:
+    image_receiver = None
+
+    
+
+USE_WEBCAM = True
+if USE_WEBCAM:
+    import webcam as image_receiver
+
+    
 
 MODEL = "o4-mini"
 
@@ -18,12 +26,13 @@ class VLM:
         pass
 
     def status_sync(self, prompt):
+        print(f"Getting status... for {prompt}")
         # Wait until image available
         try:
             data_url = image_receiver.get_latest()
         except Exception:
             raise Exception("No latest image found")
-        
+        print("Sending completion...")
         response = client.chat.completions.create(
             model=MODEL,
             messages=[{
@@ -46,7 +55,7 @@ class VLM:
             }],
         )
         status = response.choices[0].message.content
-        #print(f"{prompt}: {status}")
+        print(f"{prompt}: {status}")
         return status
     
     async def status(self, prompt):

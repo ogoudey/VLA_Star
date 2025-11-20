@@ -3,7 +3,7 @@ import threading
 import time
 import math
 
-import kinematics
+#import kinematics
 
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
 PORT = 5007
