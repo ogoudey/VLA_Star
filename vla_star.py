@@ -156,7 +156,7 @@ import space
 class PathFollow(VLA):
     def __init__(self):
         super().__init__()
-        self.plans = dict[str, List]
+        self.path = []
         print(space.__file__)
 
     def __call__(self, goal: str):
@@ -172,9 +172,7 @@ class PathFollow(VLA):
         heightmap = terrain_fetcher.get_terrain()
         print(heightmap)
 
-        # Turn it into space
-        # A*
-        # Set path and follow
+        self.path = space.unity()
 
     def follow(self):
         self.shared = {"target_message": "stop"}

@@ -1,4 +1,7 @@
 import socket
+import json
+import numpy as np
+import struct
 
 HOST = "127.0.0.1"
 PORT = 5000
@@ -7,22 +10,33 @@ PORT = 5000
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((HOST, PORT))
 
+
+
+def recv_exact(sock, n):
+    data = b""
+    while len(data) < n:
+        chunk = sock.recv(n - len(data))
+        if not chunk:
+            raise RuntimeError("Socket closed before receiving expected bytes")
+        data += chunk
+    return data
+
 # Send the request
 def get_terrain():
     msg = "getheightmap"
     sock.sendall(msg.encode('utf-8'))
 
-    # Receive response (unknown size → read until closed)
-    data = b""
-    while True:
-        chunk = sock.recv(4096)
-        if not chunk:
-            break
-        data += chunk
+    raw_len = recv_exact(sock, 4)
+    (length,) = struct.unpack("<I", raw_len)
 
-    #sock.close()
+    json_bytes = recv_exact(sock, length)
 
-    print("Received JSON length:", len(data))
-    json_text = data.decode('utf-8')
-    print("JSON sample:", json_text[:200])
-    return json_text
+    json_text = json_bytes.decode("utf-8")
+
+    obj = json.loads(json_text)
+    w, h = obj["width"], obj["height"]
+    flat = obj["data"]
+
+    arr = np.array(flat).reshape((w, h))
+
+    return arr
