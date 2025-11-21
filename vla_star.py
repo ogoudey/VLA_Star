@@ -331,6 +331,7 @@ def smolvla():
     asyncio.run(drive.run("Please put the blocks in the box."))
 
 def main():
+    #street_and_crosswalks()
     #navigate_river()
     #follow_path_river()
     smolvla()
