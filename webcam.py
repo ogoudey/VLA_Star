@@ -4,12 +4,12 @@ import sys
 import base64
 
 sys.path.append("/home/mulip-guest/LeRobot/lerobot/custom_brains")
-from camera_readers import CameraReader
+from camera_readers import IPWebcamReader
 
 print("Starting webcam...")
 webcam_url = "rtsp://10.243.126.188:8080/h264_ulaw.sdp"
 webcam_cap = cv2.VideoCapture(webcam_url)
-webcam_reader = CameraReader(webcam_cap)
+webcam_reader = IPWebcamReader(webcam_cap)
 webcam_reader.start()
 
 while webcam_reader.frame is None:

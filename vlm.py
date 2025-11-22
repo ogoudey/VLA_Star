@@ -1,26 +1,28 @@
 from openai import OpenAI
 client = OpenAI()
 import asyncio
-
+from pathlib import Path
 USE_UNITY = False
 if USE_UNITY:
-    import image_receiver
+    import image_processors
 else:
-    image_receiver = None
+    image_processors = None
 
     
 
 USE_WEBCAM = True
 if USE_WEBCAM:
-    import webcam as image_receiver
+    import webcam as image_processors
 
     
 
 MODEL = "o4-mini"
 
 class VLM:
-    def __init__(self, name: str, system_prompt: str, recommendation_system_prompt: str | None = None):
+    def __init__(self, name: str, model: str | Path, =system_prompt: str, recommendation_system_prompt: str | None = None):
         self.name = name
+        if type(model) == str:
+            self.model = "o4-mini"
         self.system_prompt = system_prompt
         self.recommendation_system_prompt = recommendation_system_prompt
         pass
@@ -29,7 +31,7 @@ class VLM:
         print(f"Getting status... for {prompt}")
         # Wait until image available
         try:
-            data_url = image_receiver.get_latest()
+            data_url = image_processors.get_latest_data_url()
         except Exception:
             raise Exception("No latest image found")
         print("Sending completion...")
@@ -60,7 +62,7 @@ class VLM:
     
     async def status(self, prompt):
         try:
-            data_url = image_receiver.get_latest()
+            data_url = image_processors.get_latest()
         except Exception:
             raise Exception("No latest image found")
 
@@ -94,7 +96,7 @@ class VLM:
     
     async def recommendation(self, prompt):
         try:
-            data_url = image_receiver.get_latest()
+            data_url = image_processors.get_latest()
         except Exception:
             raise Exception("No latest image found")
 

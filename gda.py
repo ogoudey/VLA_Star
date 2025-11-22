@@ -16,14 +16,14 @@ from multiprocessing import Process
 
 class GDA:
 
-    def __init__(self, name: str, drivers, instructions: str):
+    def __init__(self, name: str, drivers, instructions: str, goal:str | None = None):
         self.tools = []
         if drivers:
-            self.set_drivers(drivers)
+            self.set_vla_complexes(drivers)
         self.system = {"Instructions": instructions, "Status":OK}
         self.name = name
-
-        self.overhead_prompt = None
+        self.goal = goal
+        self.overhead_prompt = self.goal
         self.memory_lim_before_recompute = 4
         self.last_status = None
         self._applicable = True
@@ -38,19 +38,21 @@ class GDA:
     def applicable(self, value):
         self._applicable = value
 
-    def set_drivers(self, drivers):
-        tools = []
-        for driver in drivers:
-                method = driver.execute
-                print(type(driver))
-                print(method.__self__.__class__)
-                tools.append(function_tool(
-                    method,
-                    #name_override=method.__self__.__class__.tool_name
-                    name_override=driver.tool_name
-                ))
-        self.tools.extend(tools)
+    def set_tools(self, vlacs):
+        self.set_vla_complexes(vlacs)
 
+    def set_vla_complexes(self, vlacs):
+        for vlac in vlacs:
+            self.set_vla_complex(vlac)
+
+    def set_vla_complex(self, vlac):
+        method = vlac.execute
+        self.tools.append(function_tool(
+            method,
+            #name_override=method.__self__.__class__.tool_name
+            name_override=vlac.tool_name
+        ))
+        vlac.parent = self
     
 
     def spin_off(self, agent, prompt):
@@ -62,9 +64,11 @@ class GDA:
         print(f"Running new decision-maker...")
         result = await Runner.run(agent, prompt)
 
-    async def run(self, prompt):
+    async def run(self, prompt=None):
         self.applicable = True
         if not self.overhead_prompt:
+            if not prompt:
+                raise Exception("No goal for GDA given.")
             self.overhead_prompt = prompt
         self.running_agents += 1
         
@@ -74,17 +78,11 @@ class GDA:
             tools=self.tools,
             model="o3-mini"
         )
-        
-        
-
 
         asyncio.create_task(self.spin_off_async(agent, prompt))
         await asyncio.sleep(10)
         #thread = Thread(target=self.spin_off, args=[agent, prompt], daemon=True)
         #thread.start()
-
-        
-
             
     def adjust(self, status: str):
         self.system["Status"] = status
