@@ -40,3 +40,6 @@ def get_terrain():
     arr = np.array(flat).reshape((w, h))
 
     return arr
+
+if __name__ == "__main__":
+    print(get_terrain())
