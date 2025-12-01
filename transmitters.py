@@ -77,6 +77,22 @@ def main():
         shared["target_joints"] = list(q[-7:])
         pass
 
+def one_off(msg):
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(("127.0.0.1", 5000))
+
+    s.sendall(msg.encode("utf-8"))
+
+    buffer = b""
+    while not buffer.endswith(b"\n"):
+        chunk = s.recv(1)
+        if not chunk:
+            break
+        buffer += chunk
+    response = buffer.decode().strip()
+    coords = response.split(" ")
+    s.close() 
+    return [float(coord) for coord in coords]
 
 if __name__ == "__main__":
     main()

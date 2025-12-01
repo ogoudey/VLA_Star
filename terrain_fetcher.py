@@ -4,7 +4,7 @@ import numpy as np
 import struct
 
 HOST = "127.0.0.1"
-PORT = 5000
+PORT = 5003
 
 # Connect to Unity's server
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

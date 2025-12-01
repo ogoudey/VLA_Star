@@ -10,7 +10,7 @@ else:
 
     
 
-USE_WEBCAM = True
+USE_WEBCAM = False
 if USE_WEBCAM:
     import webcam as image_processors
 
@@ -19,7 +19,7 @@ if USE_WEBCAM:
 MODEL = "o4-mini"
 
 class VLM:
-    def __init__(self, name: str, model: str | Path, =system_prompt: str, recommendation_system_prompt: str | None = None):
+    def __init__(self, name: str, model: str | Path, system_prompt: str, recommendation_system_prompt: str | None = None):
         self.name = name
         if type(model) == str:
             self.model = "o4-mini"

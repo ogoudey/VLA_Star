@@ -41,7 +41,7 @@ class SmolVLACaller(VLA):
 
 ### Below are currently invalid VLA subclasses
 
-from transmitters import ThroughMessage
+from transmitters import ThroughMessage, one_off
 
 class SimpleDrive(VLA):
     def __init__(self):
@@ -60,33 +60,69 @@ sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
 if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
     print("No Path Planning")
 else:
+    print("Importing Path Planning")
     import space
+    import math
 
 class PathFollow(VLA):
     def __init__(self):
         super().__init__()
-        self.path = []
+        self.path: space.Path = None
+        self.waypoint: space.SearchNode = None
+        self.last_goal: str = ""
+        self.current_position = None
         print(space.__file__)
 
     def __call__(self, goal: str):
         print(f"Pathing to {goal}")
-        try:
-            self.plan(goal)
-        except Exception as e:
-            raise Exception(e)
+        if not goal == self.last_goal:
+            try:
+                self.plan(goal)
+                self.last_goal = goal
+            except Exception as e:
+                raise Exception(f"Could not make new path: {e}")
+        else:
+            if self.current_position:
+                d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
+                print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
+                if d < 1:
+                    is_next = self.next_waypoint()
+                    if not is_next:
+                        return "DONE"
 
+            self.follow()
+        return "CONTINUE"
+            
     def plan(self, goal):
         import terrain_fetcher
         print("imported")
-        heightmap = terrain_fetcher.get_terrain()
-        print(heightmap)
+        try:
+            heightmap = terrain_fetcher.get_terrain()
+        except ConnectionRefusedError as e:
+            print(f"Unity not running...{e}")
+            raise Exception(f"Unity not running...")
+        except RuntimeError as e:
+            print(f"Check sockets... {e}")
+            raise Exception(e)
+        self.path = space.unity(heightmap, goal)
+        print(self.path)
 
-        self.path = space.unity()
+    def next_waypoint(self):
+        print("NEW WAYPOINT")
+        if not len(self.path.nodes) > 0:
+            print(f"No path to follow...")
+            return False
+        self.waypoint = self.path.nodes.pop(0)
+        return True
 
     def follow(self):
-        self.shared = {"target_message": "stop"}
-        through_thread = ThroughMessage(self.shared)
-        through_thread.start()
+        if len(self.path.nodes) == 0:
+            return f"No path to follow..."
+        if not self.waypoint:
+            self.next_waypoint()
+        
+        self.current_position = one_off(self.waypoint.as_message())
+        return self.current_position
 
 
 

@@ -27,15 +27,17 @@ class VLA_Complex:
 
     async def execute(self, instruction: str):
         """___________________________"""
-        if not self.parent.applicable:
-            return f"Inapplicable call. Please finish execution (no final response needed)."
+        if self.parent:
+            if not self.parent.applicable:
+                return f"Inapplicable call. Please finish execution (no final response needed)."
         print(f"\t\"{instruction}\" presented to VLA Complex")
 
         if RAW_EXECUTE:
             self.vla_dispatcher(instruction)
             return f"Done. Call no more tools and return."
         
-        self.parent.applicable = False
+        if self.parent:
+            self.parent.applicable = False
 
 class Single_VLA_w_Watcher(VLA_Complex):
     def __init__(self, vla: Any, vlm: Any, capability_desc: str, tool_name: str):
@@ -94,8 +96,40 @@ class Single_VLA_w_Watcher(VLA_Complex):
                 return "Done."
             # Status = OK, Check = CONTINUE
 
+class Navigator(VLA_Complex):
+    def __init__(self, vla: Any, capability_desc: str, tool_name: str):
+        self.vla = vla
+        super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
+
+    async def execute(self, instruction: str):
+        await super().execute(instruction)
+
+        self.vla_dispatcher(instruction)
+
+        check = CONTINUE
+        while check == CONTINUE:
+
+            print(f"\t\tContinuing to plan to \"{instruction}\"")
+
+            if EXECUTE:
+                if not instruction == self.last_instruction:
+                    check = self.vla_dispatcher(instruction)
+                    if check == DONE:
+                        return f"Successfully arrived at {instruction}"
+            print(f"\t\tAfter executing \"{instruction}\"")
+        
+            await asyncio.sleep(0.2)
+            # Status = OK, Check = CONTINUE
 
 
+# Factory
+def create_navigator():
+    import vla
+
+    VLA = vla.PathFollow()
+
+    return Navigator(VLA, "Plans and executes a path to one of the following landmarks:\n[\"my favorite tree\"]", "navigate")
+"""
 class Another_TODO:
     # Everything that's treated the same by a GDA
     # [TODO] Need to provide dictionary for multiple different VLAs.
@@ -115,7 +149,6 @@ class Another_TODO:
         self.tool_name = tool_name
 
     async def execute(self, instruction: str):
-        """____"""
         if not self.parent.applicable:
             return f"Inapplicable call. Please finish execution (no final response needed)."
         print(f"\t\"{instruction}\" presented to VLA Complex")
@@ -187,3 +220,4 @@ class Another_TODO:
                 #self.execution_cache.pop(0)
                 #self.execution_cache.pop(0)
                 #print(f"Forgetting... -> ", self.execution_cache)
+"""
