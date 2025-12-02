@@ -2,19 +2,18 @@ from openai import OpenAI
 client = OpenAI()
 import asyncio
 from pathlib import Path
+
 USE_UNITY = False
 if USE_UNITY:
     import image_processors
 else:
     image_processors = None
-
     
 
 USE_WEBCAM = False
 if USE_WEBCAM:
     import webcam as image_processors
 
-    
 
 MODEL = "o4-mini"
 

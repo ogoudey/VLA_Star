@@ -1,5 +1,6 @@
 
 from gda import GDA
+from vla import VLA
 from vlm import VLM
 import time
 from typing import List, Any
@@ -38,6 +39,13 @@ class VLA_Complex:
         
         if self.parent:
             self.parent.applicable = False
+
+class AnnounceIntent(VLA_Complex):
+    def __init__(self, vlms):
+        super().__init__(lambda intention: self.update_intention(intention), "", "")
+        self.vlms = vlms
+    def update_intention(self, intention):
+
 
 class Single_VLA_w_Watcher(VLA_Complex):
     def __init__(self, vla: Any, vlm: Any, capability_desc: str, tool_name: str):

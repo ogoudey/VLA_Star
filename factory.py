@@ -7,15 +7,20 @@ import vla_star
 from vlm import VLM
 from vla_star import VLA_Star
 from vla_complex import VLA_Complex
+from gda import GDA
 
 class Factory:
     @classmethod
     def test(cls, verbose=False):
-        for m in cls.requirements["modules"]:
-            if not Factory.module_exists(m)
-                if verbose:
-                    print(f"{m} is required to create this")
-                return False
+        if not hasattr(cls, "create"):
+            return False
+        if hasattr(cls, "requirements"):
+            if "modules" in cls.requirements:
+                for m in cls.requirements["modules"]:
+                    if not Factory.module_exists(m):
+                        if verbose:
+                            print(f"{m} is required to create this")
+                        return False
         return True
         
     @staticmethod  
@@ -44,9 +49,55 @@ class FactoryException(Exception):
 
 class Morphology:
     pass
-    
-class SmolVLA_S0101_VLA_Star_Factory(Factory):
 
+class BlindLeader(Factory):
+    pass
+    @staticmethod
+    def create()
+        Factory.common()
+        blind_person = Morphology()
+        image_processors = get_real_eyes()
+
+        blind_person.eyes = image_processors
+
+        policy = "act_blind_with_info_from_vlms"
+
+        ### CLOUD LOCATION for llm and vlm ###
+        if "OPENAI_API_KEY" in os.environ:
+            pass
+        else:
+            # look for local models?
+            raise FactoryException("Could not find OPENAI_API_KEY environment variable.")
+        # no backup
+        
+        ### Initialize watcher
+        vlm_guide = VLM("guide", "o4-mini", system_prompt="You are a visual system for a blind person. Help them to function by responding to their queries and providing necessary status updates.",\
+                          recommendation_system_prompt="You are a visual system for a blind person. Help them to function by guiding their movement in a world they cannot see directly.")
+        
+        gda = None # the person makes the decisions 
+
+        ### Initialize VLA Complexes ###
+        from vla_complex import AnnounceIntent
+
+        vla_complexes = [
+            AnnounceIntent(
+
+            )
+        ]
+
+def get_real_eyes():
+    try:
+        import image_processors as v
+        image_processors = v.create(values=[2,4])
+    except Exception:
+        try:
+            image_processors = v.create(values=["url1", "url2"])
+        except Exception:
+            raise FactoryException("Could not create any eyes.")
+    return image_processors
+
+class SmolVLA_S0101_VLA_Star_Factory(Factory):
+    requirements={"modules":"vla_interface"}
     @staticmethod
     def create():
         Factory.common()
@@ -55,17 +106,11 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         m = Morphology()
         
         ### REAL LOCATION ###
-        try:
-            import image_processors as v
-            image_processors = v.create(values=[2,4])
-        except Exception:
-            try:
-                image_processors = v.create(values=["url1", "url2"])
-            except Exception:
-                raise FactoryException("Could not create any eyes.")
-        m.vision = image_processors
-        m.reflex_vision = m.vision[:2]
-        m.command_vision = m.vision[0]
+        image_processors = get_real_vision()
+
+        m.eyes = image_processors
+        m.reflex_eye = m.eyes[:2]
+        m.command_eye = m.eyes[0]
         
         ### Initializing morphology (awaiting better arrangement of LeRobot to distinguish physical/brains) ### 
         custom_brains = Path("/home/mulip-guest/LeRobot/lerobot/custom_brains")#import editable lerobot for VLA
@@ -98,12 +143,12 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         ### Initialize vla
         smolvla_blocks_box_rdy = vla_interface.create_brains(
             reader_assignments={
-                "side": m.reflex_vision[0],
-                "up": m.reflex_vision[1]
+                "side": m.reflex_eyes[0],
+                "up": m.reflex_eyes[1]
             },
             policy_path=Path("/home/mulip-guest/LeRobot/lerobot/outputs/blocks_box/checkpoints/021000/pretrained_model")
         )
-        smolvla_blocks_box = vla_star.SmolVLACaller(smolvla_blocks_box_rdy) # will initialize vla, and take a second
+        smolvla_blocks_box = vla.SmolVLACaller(smolvla_blocks_box_rdy) # will initialize vla, and take a second
         
         ### CLOUD LOCATION for llm and vlm ###
         if "OPENAI_API_KEY" in os.environ:
@@ -136,6 +181,20 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
     
         return VLA_Star(gda, vla_complexes)
 
+def test():
+    compatible_classes = []
+    for cls in Factory.__subclasses__():
+        if cls.test():
+            compatible_classes.append(cls)
+    if len(compatible_classes) > 0:
+        print("Compatible classes:")
+        for cls in compatible_classes:
+            print(f"\t{cls.__name__}")
+    else:
+        print("No compatible classes...")
+
 if __name__ == "__main__":
-    vla_star_1 = SmolVLA_S0101_VLA_Star_Factory.create()
-    vla_star_1.run()
+    test()
+    b = BlindLeader.create()
+    #vla_star_1 = SmolVLA_S0101_VLA_Star_Factory.create()
+    #vla_star_1.run()

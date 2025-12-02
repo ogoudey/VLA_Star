@@ -1,6 +1,4 @@
 import sys
-print(sys.path)
-
 from agents import Agent, Runner, function_tool
 import asyncio
 from signals import OK, CONTINUE, RERUN
