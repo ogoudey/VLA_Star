@@ -63,6 +63,7 @@ if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
 else:
     import space
     import math
+    import terrain_fetcher
 
 import time
 class PathFollow(VLA):
@@ -71,9 +72,14 @@ class PathFollow(VLA):
         self.path: space.Path = None
         self.waypoint: space.SearchNode = None
         self.current_position = None
-        import terrain_fetcher
+        self.init_env()
+        
+        self.running_signal = {"goal":"", "flag":"GO"}
+        self.unity_environment = self.init_env()
+
+    def init_env(self):
         terrain = terrain_fetcher.get_terrain()
-        time.sleep(1)
+        time.sleep(0.1) #needed?
         destinations_json_easy_format = terrain_fetcher.get_destinations()
         self.destinations = []
         destinations_by_name = {}
@@ -81,16 +87,15 @@ class PathFollow(VLA):
             self.destinations.append(dest["name"])
             destinations_by_name[dest["name"]] = {"position": dest["position"]}
         try:
-            self.unity_environment = space.UnityEnvironment(terrain_fetcher.get_boat(), destinations_by_name, terrain)
+            unity_environment = space.UnityEnvironment(terrain_fetcher.get_boat(), destinations_by_name, terrain)
         except ConnectionRefusedError as e:
             print(f"Unity not running...{e}")
             raise Exception(f"Unity not running...")
         except RuntimeError as e:
             print(f"Check sockets... {e}")
             raise Exception(e)
-        
-        self.running_signal = {"goal":"", "flag":"GO"}
-
+        return unity_environment
+    
     def __call__(self, instruction: str):
         if instruction == "STOP":
             self.running_signal["flag"] = instruction
@@ -103,8 +108,11 @@ class PathFollow(VLA):
             except Exception as e:
                 raise Exception(f"Could not make new path: {e}")
             
+            if self.thread.is_alive():
+                self.thread.join()
             self.thread = threading.Thread(target=self.follower, daemon=True, args=[self.running_signal])
             print("Thread created")
+            
             self.thread.start()
         else:
             print(f"No new goal... continuing...")
@@ -115,30 +123,34 @@ class PathFollow(VLA):
         self.path = space.rrt_astar(self.unity_environment, goal)
 
     def next_waypoint(self):
-        print("NEW WAYPOINT")
+        print(f"New from {self.path.nodes}")
         if not len(self.path.nodes) > 0:
-            print(f"No path to follow...")
-            return False
+            print("Thread dieing because no path to follow")
+            raise Exception(f"No path to follow...")
         self.waypoint = self.path.nodes.pop(0)
-        return True
     
     def follower(self, running_signal):
         while not running_signal["flag"] == "STOP":
+            if not self.waypoint:
+                self.next_waypoint()
+            
             if self.current_position:
                 d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
                 #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
                 if d < 1:
-                    is_next = self.next_waypoint()
-                    if not is_next:
-                        return "DONE"
-            self.follow()
+                    print(f"Arrived at waypoint {self.waypoint.state.coordinates}")
+                    if len(self.path.nodes) > 0:
+                        print(f"Path is not empty, updating waypoint.")
+                        self.next_waypoint()
+                    else:
+                        print(f"Path is empty, sending STOP")
+                        self.running_signal = {"goal":"", "flag":"STOP"}
+                        one_off("STOP")
+                        
+            if not running_signal["flag"] == "STOP":
+                self.follow()
 
     def follow(self):
-        if len(self.path.nodes) == 0:
-            return f"No path to follow..."
-        if not self.waypoint:
-            self.next_waypoint()
-        
         self.current_position = one_off(self.waypoint.as_message())
         return self.current_position
 

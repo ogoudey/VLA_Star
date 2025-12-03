@@ -92,6 +92,7 @@ def one_off(msg):
     response = buffer.decode().strip()
     coords = response.split(" ")
     s.close() 
+    #print(f"Got position: {[float(coord) for coord in coords]}")
     return [float(coord) for coord in coords]
 
 if __name__ == "__main__":
