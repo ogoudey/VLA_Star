@@ -60,9 +60,9 @@ sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
 if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
     print("No Path Planning")
 else:
-    print("Importing Path Planning")
     import space
     import math
+    import terrain_fetcher
 
 class PathFollow(VLA):
     def __init__(self):
@@ -71,7 +71,16 @@ class PathFollow(VLA):
         self.waypoint: space.SearchNode = None
         self.last_goal: str = ""
         self.current_position = None
-        print(space.__file__)
+
+        
+        try:
+            self.unity_environment = space.UnityEnvironment(terrain_fetcher.get_boat(), terrain_fetcher.get_destinations(), terrain_fetcher.get_terrain())
+        except ConnectionRefusedError as e:
+            print(f"Unity not running...{e}")
+            raise Exception(f"Unity not running...")
+        except RuntimeError as e:
+            print(f"Check sockets... {e}")
+            raise Exception(e)
 
     def __call__(self, goal: str):
         print(f"Pathing to {goal}")
@@ -94,18 +103,7 @@ class PathFollow(VLA):
         return "CONTINUE"
             
     def plan(self, goal):
-        import terrain_fetcher
-        print("imported")
-        try:
-            heightmap = terrain_fetcher.get_terrain()
-        except ConnectionRefusedError as e:
-            print(f"Unity not running...{e}")
-            raise Exception(f"Unity not running...")
-        except RuntimeError as e:
-            print(f"Check sockets... {e}")
-            raise Exception(e)
-        self.path = space.unity(heightmap, goal)
-        print(self.path)
+        self.path = space.rrt_astar(self.unity_environment, goal)
 
     def next_waypoint(self):
         print("NEW WAYPOINT")

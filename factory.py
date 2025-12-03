@@ -7,6 +7,7 @@ import vla_star
 from vlm import VLM
 from vla_star import VLA_Star
 from vla_complex import VLA_Complex
+from vla import VLA
 
 class Factory:
     @classmethod
@@ -26,8 +27,10 @@ class Factory:
     def common():
         try:
             import vla_star
-            import vla_complex
             import gda
+            import vla_complex
+            import vla
+            
         except Exception as e:
             print(f"Could not import vla_star: {e}")
             raise FactoryException(f"Could not import vla_star: {e}")
@@ -103,7 +106,7 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
             },
             policy_path=Path("/home/mulip-guest/LeRobot/lerobot/outputs/blocks_box/checkpoints/021000/pretrained_model")
         )
-        smolvla_blocks_box = vla_star.SmolVLACaller(smolvla_blocks_box_rdy) # will initialize vla, and take a second
+        smolvla_blocks_box = vla.SmolVLACaller(smolvla_blocks_box_rdy) # will initialize vla, and take a second
         
         ### CLOUD LOCATION for llm and vlm ###
         if "OPENAI_API_KEY" in os.environ:
@@ -135,6 +138,38 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         ]
     
         return VLA_Star(gda, vla_complexes)
+
+class PathPlanner_VLAStar_Factory(Factory):
+
+    @staticmethod
+    def create():
+        Factory.common()
+        ### ====== Morphology ===== ###
+
+        # It's just an assumed object at the end of a socket.
+        os.environ["WAYPOINTS"] = "5000"
+        os.environ["TERRAIN"] = "5003"
+
+        # === Brains === #
+        from pathlib import Path
+        import sys
+        sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
+        if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
+            raise FactoryException("Failed to import Path Planning.")
+        else:
+            print("Importing Path Planning")
+            import space
+            import math
+
+        planner = vla.PathFollower()
+
+        from vla_complex import FireAndForget
+        vla_complexes = [
+            FireAndForget("plan_to_destination", planner, \
+    f"Use to move robot (sailboat) to desired location. Only make one tool call. The destinations are the following (choose one BY EXACT NAME to pass as an argument):\n" \
+    "{} | STOP (which stops the model)")
+        ]
+
 
 if __name__ == "__main__":
     vla_star_1 = SmolVLA_S0101_VLA_Star_Factory.create()

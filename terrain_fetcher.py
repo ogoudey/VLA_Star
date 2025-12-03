@@ -2,9 +2,10 @@ import socket
 import json
 import numpy as np
 import struct
+import os
 
 HOST = "127.0.0.1"
-PORT = 5003
+PORT = os.environ.get("TERRAIN")
 
 # Connect to Unity's server
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -40,6 +41,40 @@ def get_terrain():
     arr = np.array(flat).reshape((w, h))
 
     return arr
+
+# Send the request
+def get_destinations():
+    msg = "getdestinations"
+    sock.sendall(msg.encode('utf-8'))
+
+    raw_len = recv_exact(sock, 4)
+    (length,) = struct.unpack("<I", raw_len)
+
+    json_bytes = recv_exact(sock, length)
+
+    json_text = json_bytes.decode("utf-8")
+
+    obj = json.loads(json_text)
+    
+    print(obj)
+    return obj
+
+def get_boat():
+    msg = "getboat"
+    sock.sendall(msg.encode('utf-8'))
+
+    raw_len = recv_exact(sock, 4)
+    (length,) = struct.unpack("<I", raw_len)
+
+    json_bytes = recv_exact(sock, length)
+
+    json_text = json_bytes.decode("utf-8")
+
+    obj = json.loads(json_text)
+    
+    print(obj)
+    return obj
+
 
 if __name__ == "__main__":
     print(get_terrain())
