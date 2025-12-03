@@ -6,7 +6,7 @@ import os
 #import kinematics
 
 HOST = '127.0.0.1'  # Standard loopback interface address (localhost)
-PORT = 5000
+PORT = 5000 # probs overriden
 
 class ThroughMessage(threading.Thread):
     def __init__(self, shared):
@@ -79,7 +79,7 @@ def main():
 
 def one_off(msg):
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(("127.0.0.1", os.environ.get("WAYPOINTS")))
+    s.connect(("127.0.0.1", int(os.environ.get("WAYPOINTS"))))
 
     s.sendall(msg.encode("utf-8"))
 

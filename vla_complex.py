@@ -44,8 +44,9 @@ class AnnounceIntent(VLA_Complex):
     def __init__(self, vlms):
         super().__init__(lambda intention: self.update_intention(intention), "", "")
         self.vlms = vlms
+    
     def update_intention(self, intention):
-
+        pass
 
 class Single_VLA_w_Watcher(VLA_Complex):
     def __init__(self, vla: Any, vlm: Any, capability_desc: str, tool_name: str):
@@ -124,9 +125,9 @@ class Navigator(VLA_Complex):
                     check = self.vla_dispatcher(instruction)
                     if check == DONE:
                         return f"Successfully arrived at {instruction}"
-            print(f"\t\tAfter executing \"{instruction}\"")
-        
+            print(f"\t\tAfter executing \"{instruction}\" ({check})")
             await asyncio.sleep(0.2)
+            print(f"{check == CONTINUE}")
             # Status = OK, Check = CONTINUE
 
 

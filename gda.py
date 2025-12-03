@@ -14,10 +14,8 @@ from multiprocessing import Process
 
 class GDA:
 
-    def __init__(self, name: str, drivers, instructions: str, goal:str | None = None):
+    def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []
-        if drivers:
-            self.set_vla_complexes(drivers)
         self.system = {"Instructions": instructions, "Status":OK}
         self.name = name
         self.goal = goal

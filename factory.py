@@ -1,15 +1,19 @@
+# Standard imports #
+
 import os
 import importlib.util
 import sys
 from pathlib import Path
 
 import vla_star
+import gda
+import vla_complex
+import vla
 from vlm import VLM
 from vla_star import VLA_Star
 from vla_complex import VLA_Complex
 
 from vla import VLA
-
 from gda import GDA
 
 class Factory:
@@ -33,10 +37,8 @@ class Factory:
     @staticmethod
     def common():
         try:
-            import vla_star
-            import gda
-            import vla_complex
-            import vla
+            # shouldnt do imports here... scope problem...
+            pass
             
         except Exception as e:
             print(f"Could not import vla_star: {e}")
@@ -58,7 +60,7 @@ class Morphology:
 class BlindLeader(Factory):
     pass
     @staticmethod
-    def create()
+    def create():
         Factory.common()
         blind_person = Morphology()
         image_processors = get_real_eyes()
@@ -160,7 +162,7 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         # no backup
         
         ### Initialize watcher
-        vlm_watcher = VLM("watcher", system_prompt="You are the perception system for a robotic arm. Take note of the status of the mission. Given the query, return either OK or a descriptive response. There is a cardboard box in the scene.") # defaults to OPENAI
+        vlm_watcher = VLM("watcher", "o4-mini", system_prompt="You are the perception system for a robotic arm. Take note of the status of the mission. Given the query, return either OK or a descriptive response. There is a cardboard box in the scene.") # defaults to OPENAI
         
         ### Initialize GDA (LLM) ###
         gda = GDA("name_for_traces", \
@@ -175,9 +177,9 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         from vla_complex import Single_VLA_w_Watcher
         ### GDA >> VLM Perception >> VLA ###
         vla_complexes = [
-            Single_VLA_w_Watcher("use_robotic_arm", smolvla_blocks_box, vlm_watcher, \
+            Single_VLA_w_Watcher(smolvla_blocks_box, vlm_watcher,   \
     "Use a model to perform the instruction. Only make one tool call. This model is a fine-tuned VLA post-trained on only one task. Your instruction is a language prompt. This model's capabilities are the following:\n" \
-    "'Put the colored blocks in the cardboard box' | STOP (which stops the model)")
+    "'Put the colored blocks in the cardboard box' | STOP (which stops the model)", "use_robotic_arm", )
         ]
     
         return VLA_Star(gda, vla_complexes)
@@ -204,14 +206,23 @@ class PathPlanner_VLAStar_Factory(Factory):
             import space
             import math
 
-        planner = vla.PathFollower()
+        planner = vla.PathFollow()
 
-        from vla_complex import FireAndForget
+        from vla_complex import Navigator
         vla_complexes = [
-            FireAndForget("plan_to_destination", planner, \
+            Navigator(planner, \
     f"Use to move robot (sailboat) to desired location. Only make one tool call. The destinations are the following (choose one BY EXACT NAME to pass as an argument):\n" \
-    "{} | STOP (which stops the model)")
+    f"{planner.destinations} | STOP (which stops the model)", "go_to_destination")
         ]
+        gda = GDA("name_for_traces", \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Reach the prompted goal by supplying adequate arguments to your functions.\n" \
+    "You may choose ANY of the available tools.\n"\
+    "You must call exactly ONE tool.\n"\
+    "After calling one tool, stop all further reasoning.\n"\
+    "Do not produce natural-language output. "\
+    "Return immediately after the tool call.\n")
+        return VLA_Star(gda, vla_complexes)
+
 
 def test():
     compatible_classes = []
