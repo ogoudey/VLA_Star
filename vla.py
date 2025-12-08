@@ -6,7 +6,8 @@ class VLA:
     def __init__(self):
         pass
 
-    def __call__(self, direction: Any):
+    # abstract abc method
+    def __call__(self, direction: Any) -> None:
         raise NotImplementedError
     
 
@@ -132,11 +133,13 @@ class PathFollow(VLA):
             raise Exception(e)
         return unity_environment
     
-    def __call__(self, instruction: str):
-        if instruction == "STOP":
-            self.running_state["flag"] = instruction
-        elif not instruction == self.running_state["goal"]:
-            goal = instruction
+    def __call__(self, signal: dict) -> None:
+        print(f"PathFollow called on {signal}")
+        if signal["flag"] == "STOP":
+            self.running_state["flag"] = signal[""]
+            signal["flag"] = "DONE"
+        elif not signal["goal"] == self.running_state["goal"]:
+            goal = signal["goal"]
             print(f"Pathing to {goal}")
             try:
                 self.unity_environment = self.init_env()
@@ -155,15 +158,18 @@ class PathFollow(VLA):
             
             self.thread.start()
         else:
-            print(f"No new goal... continuing...")
-            pass
-        return "CONTINUE"
+            print(f"No new goal... continuing... {self.running_state}")
+            if self.running_state["flag"] == "STOP":
+                signal["flag"] = "DONE"
+                return
+
+        signal["flag"] = "CONTINUE"
             
     def plan(self, goal):
-        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.015)
+        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01)
 
     def next_waypoint(self):
-        print(f"New from {self.path.nodes}")
+        #print(f"New from {self.path.nodes}")
         if not len(self.path.nodes) > 0:
             print("Thread dieing because no path to follow")
             raise Exception(f"No path to follow...")

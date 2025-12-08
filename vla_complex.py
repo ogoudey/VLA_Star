@@ -46,7 +46,6 @@ class VLA_Complex:
 class EpisodicRecorder(VLA_Complex):
     def __init__(self, dataset_recorder_caller, tool_name):
         self.record = dataset_recorder_caller
-        self.condition = threading.Event()
         super().__init__(lambda signal: self.record(signal), "Task", tool_name)
 
     async def execute(self, instruction):
@@ -146,26 +145,29 @@ class Navigator(VLA_Complex):
     def __init__(self, vla: Any, capability_desc: str, tool_name: str):
         self.vla = vla
         super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
+        self.signal = {"flag": ""}
 
     async def execute(self, instruction: str):
         await super().execute(instruction)
+        self.signal["flag"] = CONTINUE
+        self.signal["goal"] = instruction
+        
+        try:
+            while self.signal["flag"] == CONTINUE:
+                print(f"\t\tContinuing to plan to \"{self.signal}\"")
+                self.vla_dispatcher(self.signal)
+                if EXECUTE:
+                    if not instruction == self.last_instruction:
+                        
+                        if self.signal["flag"] == DONE:
+                            return f"Successfully arrived at {instruction}"
+                print(f"\t\tAfter executing \"{instruction}\" (check: {self.signal["flag"]})")
+                #await asyncio.sleep(0.5)
+                #print(f"After awaiting")
+        except Exception as e:
+            print(f"!!{e}!!")
+        print("Loop done")
 
-        self.vla_dispatcher(instruction)
-
-        check = CONTINUE
-        while check == CONTINUE:
-
-            print(f"\t\tContinuing to plan to \"{instruction}\"")
-
-            if EXECUTE:
-                if not instruction == self.last_instruction:
-                    check = self.vla_dispatcher(instruction)
-                    if check == DONE:
-                        return f"Successfully arrived at {instruction}"
-            print(f"\t\tAfter executing \"{instruction}\" ({check})")
-            await asyncio.sleep(0.2)
-            print(f"Status of check!: {check == CONTINUE}")
-            await asyncio.sleep(0.2)
             # Status = OK, Check = CONTINUE
 
 
