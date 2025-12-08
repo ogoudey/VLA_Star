@@ -71,9 +71,8 @@ class EpisodicRecorder(VLA_Complex):
                     self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "task": ""})
                     check, dataset_name = self.parent.check("EXIT_LOOP")
                     self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
-            
-            if check == "DONE":
-                break
+            break
+                
 
 
 

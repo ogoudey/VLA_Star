@@ -29,71 +29,71 @@ class SimpleDrive(VLA):
     def __call__(self, direction: str):
         self.shared["target_message"] = direction
 
+from signals import RecordDatasetSignal
+
 class DatasetRecorderCaller(VLA):
     def __init__(self, dataset_recorder):
         super().__init__()
-        self.running_signal = {"RUNNING_LOOP": True, "RUNNING_E": True, "task": ""}
+        self.running_state = {"RUNNING_LOOP": True, "RUNNING_E": True, "task": ""}
         self.dataset_recorder = dataset_recorder
         self.thread = None
 
-    def __call__(self, signal: dict[str, Any]):
-        
-        
+    def __call__(self, signal: RecordDatasetSignal):
         print(f"Interpreting signal {signal}")
-        if "task" in signal:
-            self.running_signal["task"] = signal["task"]
+        if not signal.TASK == "":
+            self.running_state["task"] = signal.TASK
         else:
             print(f"No task in signal. Must be the end.")
 
-        self.running_signal["RUNNING_E"] = signal["RUNNING_E"]
+        self.running_state["RUNNING_E"] = signal.RUNNING_E
 
-        self.running_signal["RUNNING_LOOP"] = signal["RUNNING_LOOP"]
-        if self.running_signal["RUNNING_LOOP"] == False:
+        self.running_state["RUNNING_LOOP"] = signal.RUNNING_LOOP
+        if self.running_state["RUNNING_LOOP"] == False:
             # do nothing
-            if "dataset_name" in signal:
-                self.running_signal["dataset_name"] = signal["dataset_name"]
+            if not signal.DATASET_NAME == "":
+                self.running_state["dataset_name"] = signal.DATASET_NAME
                 print(f"Joining caller's runner thread.")
                 self.thread.join()
-        elif self.running_signal["RUNNING_LOOP"] and not self.thread:
+        elif self.running_state["RUNNING_LOOP"] and not self.thread:
             print(f"Creating new thread for dataset recording...")
-            self.thread = threading.Thread(target=self.dataset_recorder.run, args=[self.running_signal])
+            self.thread = threading.Thread(target=self.dataset_recorder.run, args=[self.running_state])
             print("Thread created")
             self.thread.start()
 
-        
-        
-
+from signals import VLASignal
 
 class SmolVLACaller(VLA):
     def __init__(self, smolvla_runner):
         super().__init__()
-        self.running_signal = {"instruction": "", "flag": "GO"}
+        self.running_state = {"instruction": "", "flag": "GO"}
         self.smolvla_runner = smolvla_runner
         self.thread = None   
 
-    def __call__(self, signal: dict[str, str]):
+    def __call__(self, signal: VLASignal):
         print("Using tool SmolVLACaller")
-        self.running_signal["flag"] = signal["flag"]
-        if not signal["instruction"] == self.running_signal["instruction"]:
-            self.running_signal["instruction"] = signal["instruction"]
+        self.running_state["flag"] = signal.FLAG
+        if not signal.INSTRUCTION == self.running_state["instruction"]:
+            self.running_state["instruction"] = signal.INSTRUCTION
             if self.thread:
                 print("Trying to join...")
-                if self.running_signal["flag"] == "STOP":
+                if self.running_state["flag"] == "STOP":
                     self.thread.join()
                     return
             else:
-                self.thread = threading.Thread(target=self.smolvla_runner, daemon=True, args=[self.running_signal])
+                self.thread = threading.Thread(target=self.smolvla_runner, daemon=True, args=[self.running_state])
                 print("Thread created")
                 self.thread.start()
             
             print("Back!")
         else:
-            print(f"Instruction is the same ({self.running_signal['instruction']}")
+            print(f"Instruction is the same ({self.running_state['instruction']}")
 
 from pathlib import Path
 import sys
-sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
-if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
+import os
+path_planning_path = os.environ.get("PATH_PLANNING", "/home/olin/Robotics/AI Planning/Path-Planning")
+sys.path.append(path_planning_path)
+if not Path(path_planning_path).exists():
     print("No Path Planning")
 else:
     import space
@@ -109,8 +109,9 @@ class PathFollow(VLA):
         self.current_position = None
         self.init_env()
         
-        self.running_signal = {"goal":"", "flag":"GO"}
+        self.running_state = {"goal":"", "flag":"GO"}
         self.unity_environment = self.init_env()
+        self.thread = None
 
     def init_env(self):
         terrain = terrain_fetcher.get_terrain()
@@ -133,19 +134,21 @@ class PathFollow(VLA):
     
     def __call__(self, instruction: str):
         if instruction == "STOP":
-            self.running_signal["flag"] = instruction
-        elif not instruction == self.running_signal["goal"]:
+            self.running_state["flag"] = instruction
+        elif not instruction == self.running_state["goal"]:
             goal = instruction
             print(f"Pathing to {goal}")
             try:
                 self.plan(goal)
-                self.running_signal["goal"] = goal
+                self.running_state["goal"] = goal
             except Exception as e:
+                print(f"Planning failed.")
                 raise Exception(f"Could not make new path: {e}")
             
-            if self.thread.is_alive():
-                self.thread.join()
-            self.thread = threading.Thread(target=self.follower, daemon=True, args=[self.running_signal])
+            if self.thread:
+                if self.thread.is_alive():
+                    self.thread.join()
+            self.thread = threading.Thread(target=self.follower, daemon=True, args=[self.running_state])
             print("Thread created")
             
             self.thread.start()
@@ -155,7 +158,7 @@ class PathFollow(VLA):
         return "CONTINUE"
             
     def plan(self, goal):
-        self.path = space.rrt_astar(self.unity_environment, goal)
+        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.02)
 
     def next_waypoint(self):
         print(f"New from {self.path.nodes}")
@@ -164,8 +167,9 @@ class PathFollow(VLA):
             raise Exception(f"No path to follow...")
         self.waypoint = self.path.nodes.pop(0)
     
-    def follower(self, running_signal):
-        while not running_signal["flag"] == "STOP":
+    def follower(self, running_state):
+        print(f"Follower thread started")
+        while not running_state["flag"] == "STOP":
             if not self.waypoint:
                 self.next_waypoint()
             
@@ -179,10 +183,10 @@ class PathFollow(VLA):
                         self.next_waypoint()
                     else:
                         print(f"Path is empty, sending STOP")
-                        self.running_signal = {"goal":"", "flag":"STOP"}
+                        self.running_state = {"goal":"", "flag":"STOP"}
                         one_off("STOP")
                         
-            if not running_signal["flag"] == "STOP":
+            if not running_state["flag"] == "STOP":
                 self.follow()
 
     def follow(self):

@@ -11,18 +11,17 @@ import random
 
 from multiprocessing import Process
 
-from distutils.util import strtobool
 
 class DemoedLanguageModel:
-    def __init__(self):
+    def __init__(self, goal: str = "Pass the proper args to your functions."):
         self.applicable = True # actions always have effects
-        pass
+        self.goal = goal
 
     async def run(self, prompt="You got this..."):
         # assume one tool (the recorder)
         task_name = ""
         while task_name == "":
-            task_name = input("Task label: ")
+            task_name = input(f"(Goal: {self.goal}) Task label: ")
         
         await self.tools[0].execute(task_name)
         return task_name
@@ -46,10 +45,6 @@ class DemoedLanguageModel:
         if mode == "EXIT_LOOP":
             dataset_name = input("Dataset name ([enter] to delete dataset): ")
             return "DONE", dataset_name
-        
-
-
-
 
     def set_tools(self, vlacs):
         for vlac in vlacs:

@@ -199,8 +199,9 @@ class PathPlanner_VLAStar_Factory(Factory):
         # === Brains === #
         from pathlib import Path
         import sys
-        sys.path.append("/home/olin/Robotics/AI Planning/Path-Planning")
-        if not Path("/home/olin/Robotics/AI Planning/Path-Planning").exists():
+        path_planning_path = os.environ.get("PATH_PLANNING", "/home/olin/Robotics/AI Planning/Path-Planning")
+        sys.path.append(path_planning_path)
+        if not Path(path_planning_path).exists():
             raise FactoryException("Failed to import Path Planning.")
         else:
             print("Importing Path Planning")
@@ -279,11 +280,11 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
             },
             dataset_name=f"LLM_VLA_demo_{datetime.datetime.now()}"
         )
-
+        recorder_caller = vla.DatasetRecorderCaller(dr)
         
         ### Initialize GDA (LLM) ###
-        if input("Ready to demo the instructions?"):
-            llm = DemoedLanguageModel()
+        input("Ready to demo the instructions?")
+        inputter = DemoedLanguageModel()
         
         vlm_like = None # pass - is demoed
 
@@ -291,11 +292,27 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
         from vla_complex import EpisodicRecorder
         ### GDA >> VLM Perception >> VLA ###
         vla_complexes = [
-            EpisodicRecorder(dr, "record_wrapper")
+            EpisodicRecorder(recorder_caller, "record_wrapper")
         ]
     
-        return VLA_Star(None, vla_complexes)
+        return VLA_Star(inputter, vla_complexes)
     
+class Mock_VLA_Star_Text(Factory):
+    @staticmethod
+    def create():
+        Factory.common()
+        ### ====== Morphology ===== ###
+
+        m = Morphology()
+
+        inputter = DemoedLanguageModel()
+
+        vla_complexes = [
+            Logger(logger_caller, "logger")
+        ]
+    
+        return VLA_Star(inputter, vla_complexes)
+
 class Mock_Recorder_VLA_Star_Factory(Factory):
     @staticmethod
     def create():
@@ -334,7 +351,6 @@ class Mock_Recorder_VLA_Star_Factory(Factory):
         recorder_caller = vla.DatasetRecorderCaller(dr)
 
         ### Initialize GDA (LLM) ###
-        input("Ready to demo the instructions?")
         lm = DemoedLanguageModel()
         
         vlm_like = None # pass - is demoed

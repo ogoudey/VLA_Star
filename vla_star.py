@@ -1,15 +1,15 @@
 from typing import List
 import asyncio
 
-from gda import GDA
+from gda import GDA, DemoedLanguageModel
 from vla_complex import VLA_Complex
 
 
 class VLA_Star:
-    agent: GDA
+    agent: GDA | DemoedLanguageModel
     vla_complexes: List[VLA_Complex]
 
-    def __init__(self, agent: GDA, vla_complexes: List[VLA_Complex]):
+    def __init__(self, agent: GDA | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
         self.agent = agent
         self.agent.set_tools(vla_complexes)
 
