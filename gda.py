@@ -11,8 +11,55 @@ import random
 
 from multiprocessing import Process
 
+from distutils.util import strtobool
+
+class DemoedLanguageModel:
+    def __init__(self):
+        self.applicable = True # actions always have effects
+        pass
+
+    async def run(self, prompt="You got this..."):
+        # assume one tool (the recorder)
+        task_name = ""
+        while task_name == "":
+            task_name = input("Task label: ")
+        
+        await self.tools[0].execute(task_name)
+        return task_name
+
+        """
+        for vlac in self.tools:
+            inp = input(f"({vlac.tool_name}) {vlac.capability_desc}: ")
+            if not inp == "":
+                tool_instructions[vlac]
+        for tool, instruction in tool_instructions.items():
+            tool(instruction)
+        """
+
+    def check(self, mode):
+        
+        
+        if mode == "EXIT_E":
+            task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
+            return "CONTINUE", task_name
+        
+        if mode == "EXIT_LOOP":
+            dataset_name = input("Dataset name ([enter] to delete dataset): ")
+            return "DONE", dataset_name
+        
+
+
+
+
+    def set_tools(self, vlacs):
+        for vlac in vlacs:
+            vlac.parent = self
+        self.tools = vlacs
+
+
 
 class GDA:
+    
 
     def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []

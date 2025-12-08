@@ -14,7 +14,7 @@ from vla_star import VLA_Star
 from vla_complex import VLA_Complex
 
 from vla import VLA
-from gda import GDA
+from gda import GDA, DemoedLanguageModel
 
 class Factory:
     @classmethod
@@ -63,7 +63,7 @@ class BlindLeader(Factory):
     def create():
         Factory.common()
         blind_person = Morphology()
-        image_processors = get_real_eyes()
+        image_processors = get_real_vision()
 
         blind_person.eyes = image_processors
 
@@ -88,7 +88,8 @@ class BlindLeader(Factory):
 
         pass
 
-def get_real_eyes():
+def get_real_vision(override_values=[]):
+    """Tries a series of initializations for webcams. Pass values that are webcam URLS or cv2.VideoCapture indices. """
     try:
         import image_processors as v
         image_processors = v.create(values=[2,4])
@@ -111,9 +112,9 @@ class SmolVLA_S0101_VLA_Star_Factory(Factory):
         ### REAL LOCATION ###
         image_processors = get_real_vision()
 
-        m.eyes = image_processors
-        m.reflex_eye = m.eyes[:2]
-        m.command_eye = m.eyes[0]
+        m.vision = image_processors
+        m.reflex_vision = m.vision[:2]
+        m.command_vision = m.vision[0]
         
         ### Initializing morphology (awaiting better arrangement of LeRobot to distinguish physical/brains) ### 
         custom_brains = Path("/home/mulip-guest/LeRobot/lerobot/custom_brains")#import editable lerobot for VLA
@@ -224,6 +225,130 @@ class PathPlanner_VLAStar_Factory(Factory):
         return VLA_Star(gda, vla_complexes)
 
 
+class SO101_Recorder_VLA_Star_Factory(Factory):
+    requirements={"modules":"vla_interface"}
+    @staticmethod
+    def create():
+        Factory.common()
+        ### ====== Morphology ===== ###
+
+        m = Morphology()
+        
+        ### REAL LOCATION ###
+        
+        
+        custom_brains = Path(os.environ.get("LEROBOT", "/home/mulip-guest/LeRobot/lerobot/custom_brains")) #import editable lerobot for VLA
+        sys.path.append(custom_brains.as_posix())
+        print(sys.path)
+        if not custom_brains.exists():
+            print("No SmolVLA")
+            raise FactoryException(f"Could not add {custom_brains} to sys.path")
+        try:
+            import vla_interface # should be robot-isolated
+        except Exception as e:
+            print(e)
+            raise FactoryException("Failed to import LeRobot etc.")
+        m.body = vla_interface.create_body() # should be something like my_robot.create()
+        
+        image_processors = get_real_vision()
+
+        m.vision = image_processors
+        m.reflex_vision = m.eyes[:2]
+
+        ### ===== Brains ====== ###
+        
+        ### VIRTUAL LOCATION for action recorder ###
+        
+        custom_brains = Path(os.environ.get("LEROBOT", "/home/mulip-guest/LeRobot/lerobot/custom_brains"))#import editable lerobot for VLA
+        sys.path.append(custom_brains.as_posix())
+        if not custom_brains.exists():
+            print("No SmolVLA")
+            raise FactoryException(f"Could not add {custom_brains} to sys.path")
+        try:
+            import vla_interface
+        except Exception as e:
+            print(e)
+            raise FactoryException("Failed to import LeRobot etc.")
+         
+        ### Initialize action recorder (vla)
+        import datetime
+        dr = vla_interface.create_teleop_recording_interaction(
+            reader_assignments={
+                "side": m.vision[0],
+                "up": m.vision[1],
+            },
+            dataset_name=f"LLM_VLA_demo_{datetime.datetime.now()}"
+        )
+
+        
+        ### Initialize GDA (LLM) ###
+        if input("Ready to demo the instructions?"):
+            llm = DemoedLanguageModel()
+        
+        vlm_like = None # pass - is demoed
+
+        ### Initialize VLA Complexes ###
+        from vla_complex import EpisodicRecorder
+        ### GDA >> VLM Perception >> VLA ###
+        vla_complexes = [
+            EpisodicRecorder(dr, "record_wrapper")
+        ]
+    
+        return VLA_Star(None, vla_complexes)
+    
+class Mock_Recorder_VLA_Star_Factory(Factory):
+    @staticmethod
+    def create():
+        Factory.common()
+        ### ====== Morphology ===== ###
+
+        m = Morphology()
+        
+        ### REAL LOCATION ###
+        
+        
+        custom_brains = Path(os.environ.get("LEROBOT", "/home/mulip-guest/LeRobot/lerobot/custom_brains")) #import editable lerobot for VLA
+        sys.path.append(custom_brains.as_posix())
+        if not custom_brains.exists():
+            print("No SmolVLA")
+            raise FactoryException(f"Could not add {custom_brains} to sys.path")
+        try:
+            import vla_interface # should be robot-isolated
+        except Exception as e:
+            print(e)
+            raise FactoryException("Failed to import LeRobot etc.")
+        
+        # No body
+
+        # No vision
+
+        ### ===== Brains ====== ###
+        
+        ### VIRTUAL LOCATION for action recorder ###
+
+        ### Initialize action recorder (vla)
+        import datetime
+        dr = vla_interface.create_unrecorded_mock_interaction(
+            dataset_name=f"MOCK_LLM_VLA_demo_{datetime.datetime.now()}"
+        )
+        recorder_caller = vla.DatasetRecorderCaller(dr)
+
+        ### Initialize GDA (LLM) ###
+        input("Ready to demo the instructions?")
+        lm = DemoedLanguageModel()
+        
+        vlm_like = None # pass - is demoed
+
+        ### Initialize VLA Complexes ###
+        from vla_complex import EpisodicRecorder
+
+        vla_complexes = [
+            EpisodicRecorder(recorder_caller, "record_wrapper")
+        ]
+    
+        return VLA_Star(lm, vla_complexes)
+
+
 def test():
     compatible_classes = []
     for cls in Factory.__subclasses__():
@@ -238,6 +363,5 @@ def test():
 
 if __name__ == "__main__":
     test()
-    b = BlindLeader.create()
     #vla_star_1 = SmolVLA_S0101_VLA_Star_Factory.create()
     #vla_star_1.run()

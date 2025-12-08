@@ -40,6 +40,44 @@ class VLA_Complex:
         if self.parent:
             self.parent.applicable = False
 
+
+
+
+class EpisodicRecorder(VLA_Complex):
+    def __init__(self, dataset_recorder_caller, tool_name):
+        self.record = dataset_recorder_caller
+        self.condition = threading.Event()
+        super().__init__(lambda signal: self.record(signal), "Task", tool_name)
+
+    async def execute(self, instruction):
+        await super().execute(instruction)
+        check, task_name = "CONTINUE", instruction
+        
+        while check == "CONTINUE":
+            try:
+                self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
+                while True:
+                    pass
+            except KeyboardInterrupt:
+                self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": False, "task": ""})
+                try:
+                    check, new_task_name = self.parent.check("EXIT_E")
+                    if new_task_name == "":
+                        continue
+                    else:
+                        task_name = new_task_name
+                        self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
+                except KeyboardInterrupt:
+                    self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "task": ""})
+                    check, dataset_name = self.parent.check("EXIT_LOOP")
+                    self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
+            
+            if check == "DONE":
+                break
+
+
+
+
 class AnnounceIntent(VLA_Complex):
     def __init__(self, vlms):
         super().__init__(lambda intention: self.update_intention(intention), "", "")

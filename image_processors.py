@@ -14,6 +14,7 @@ class ImageProcessorInitializingError(Exception):
 
 # Factory function
 def create(values):
+    """Interfaces with custom_brains' camera_readers, in ways based on the type of each value."""
     image_receivers = []
     for value in values:
         if type(value) == int:

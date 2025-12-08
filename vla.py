@@ -29,6 +29,41 @@ class SimpleDrive(VLA):
     def __call__(self, direction: str):
         self.shared["target_message"] = direction
 
+class DatasetRecorderCaller(VLA):
+    def __init__(self, dataset_recorder):
+        super().__init__()
+        self.running_signal = {"RUNNING_LOOP": True, "RUNNING_E": True, "task": ""}
+        self.dataset_recorder = dataset_recorder
+        self.thread = None
+
+    def __call__(self, signal: dict[str, Any]):
+        
+        
+        print(f"Interpreting signal {signal}")
+        if "task" in signal:
+            self.running_signal["task"] = signal["task"]
+        else:
+            print(f"No task in signal. Must be the end.")
+
+        self.running_signal["RUNNING_E"] = signal["RUNNING_E"]
+
+        self.running_signal["RUNNING_LOOP"] = signal["RUNNING_LOOP"]
+        if self.running_signal["RUNNING_LOOP"] == False:
+            # do nothing
+            if "dataset_name" in signal:
+                self.running_signal["dataset_name"] = signal["dataset_name"]
+                print(f"Joining caller's runner thread.")
+                self.thread.join()
+        elif self.running_signal["RUNNING_LOOP"] and not self.thread:
+            print(f"Creating new thread for dataset recording...")
+            self.thread = threading.Thread(target=self.dataset_recorder.run, args=[self.running_signal])
+            print("Thread created")
+            self.thread.start()
+
+        
+        
+
+
 class SmolVLACaller(VLA):
     def __init__(self, smolvla_runner):
         super().__init__()

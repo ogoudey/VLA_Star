@@ -5,6 +5,18 @@
 ### SmolVLA on real robot
 Successfully stops SmolVLA when "put the colored blocks in the cardboard box" is seen to be done.
 
+All cognitive systems have this structure:
+        
+       Govern  
+       /    \ 
+   Action  Perception
+   
+A VLA* architecture implements this:
+
+          action-type
+         /          \
+reactive output  action-relevant monitoring
+
 ### Path Planning through River (Unity simulation)
 Doesn't currenttly work - need a path follower.
 
