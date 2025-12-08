@@ -378,6 +378,7 @@ def test():
         print("No compatible classes...")
 
 if __name__ == "__main__":
-    test()
     #vla_star_1 = SmolVLA_S0101_VLA_Star_Factory.create()
     #vla_star_1.run()
+    vla_star1 = PathPlanner_VLAStar_Factory.create()
+    vla_star1.run("go to the well")

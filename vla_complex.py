@@ -164,7 +164,8 @@ class Navigator(VLA_Complex):
                         return f"Successfully arrived at {instruction}"
             print(f"\t\tAfter executing \"{instruction}\" ({check})")
             await asyncio.sleep(0.2)
-            print(f"{check == CONTINUE}")
+            print(f"Status of check!: {check == CONTINUE}")
+            await asyncio.sleep(0.2)
             # Status = OK, Check = CONTINUE
 
 

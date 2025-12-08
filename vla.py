@@ -139,8 +139,10 @@ class PathFollow(VLA):
             goal = instruction
             print(f"Pathing to {goal}")
             try:
+                self.unity_environment = self.init_env()
                 self.plan(goal)
                 self.running_state["goal"] = goal
+                self.running_state["flag"] = "GO"
             except Exception as e:
                 print(f"Planning failed.")
                 raise Exception(f"Could not make new path: {e}")
@@ -148,7 +150,7 @@ class PathFollow(VLA):
             if self.thread:
                 if self.thread.is_alive():
                     self.thread.join()
-            self.thread = threading.Thread(target=self.follower, daemon=True, args=[self.running_state])
+            self.thread = threading.Thread(target=self.follower, daemon=True)
             print("Thread created")
             
             self.thread.start()
@@ -158,7 +160,7 @@ class PathFollow(VLA):
         return "CONTINUE"
             
     def plan(self, goal):
-        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.02)
+        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.015)
 
     def next_waypoint(self):
         print(f"New from {self.path.nodes}")
@@ -167,27 +169,32 @@ class PathFollow(VLA):
             raise Exception(f"No path to follow...")
         self.waypoint = self.path.nodes.pop(0)
     
-    def follower(self, running_state):
+    def follower(self):
         print(f"Follower thread started")
-        while not running_state["flag"] == "STOP":
-            if not self.waypoint:
-                self.next_waypoint()
-            
-            if self.current_position:
-                d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
-                #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
-                if d < 1:
-                    print(f"Arrived at waypoint {self.waypoint.state.coordinates}")
-                    if len(self.path.nodes) > 0:
-                        print(f"Path is not empty, updating waypoint.")
-                        self.next_waypoint()
-                    else:
-                        print(f"Path is empty, sending STOP")
-                        self.running_state = {"goal":"", "flag":"STOP"}
-                        one_off("STOP")
-                        
-            if not running_state["flag"] == "STOP":
-                self.follow()
+        try:
+            while not self.running_state["flag"] == "STOP":
+                if not self.waypoint:
+                    self.next_waypoint()
+                
+                if self.current_position:
+                    d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
+                    #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
+                    if d < 1:
+                        print(f"Arrived at waypoint {self.waypoint.state.coordinates}")
+                        if len(self.path.nodes) > 0:
+                            print(f"Path is not empty, updating waypoint.")
+                            self.next_waypoint()
+                        else:
+                            print(f"Path is empty, sending STOP")
+                            self.running_state["flag"] = "STOP"
+                            one_off("STOP")
+                            
+                if not self.running_state["flag"] == "STOP":
+                    self.follow()
+            print(f"Stopping because {self.running_state}")
+            one_off("STOP")
+        except Exception as e:
+            print(f"!!{e}!!")
 
     def follow(self):
         self.current_position = one_off(self.waypoint.as_message())
