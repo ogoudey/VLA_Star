@@ -108,9 +108,10 @@ class PathFollow(VLA):
         self.path: space.Path = None
         self.waypoint: space.SearchNode = None
         self.current_position = None
+        self.running_state = {"goal":"", "flag":"GO"}
         self.init_env()
         
-        self.running_state = {"goal":"", "flag":"GO"}
+        
         self.unity_environment = self.init_env()
         self.thread = None
 
@@ -131,14 +132,19 @@ class PathFollow(VLA):
         except RuntimeError as e:
             print(f"Check sockets... {e}")
             raise Exception(e)
+        self.running_state["flag"] = "GO"
         return unity_environment
     
     def __call__(self, signal: dict) -> None:
         print(f"PathFollow called on {signal}")
         if signal["flag"] == "STOP":
+            print(f"Stoppping immediately.")
             self.running_state["flag"] = signal[""]
             signal["flag"] = "DONE"
         elif not signal["goal"] == self.running_state["goal"]:
+            if self.thread:
+                if self.thread.is_alive():
+                    self.thread.join()
             goal = signal["goal"]
             print(f"Pathing to {goal}")
             try:
@@ -149,10 +155,7 @@ class PathFollow(VLA):
             except Exception as e:
                 print(f"Planning failed.")
                 raise Exception(f"Could not make new path: {e}")
-            
-            if self.thread:
-                if self.thread.is_alive():
-                    self.thread.join()
+            self.running_state
             self.thread = threading.Thread(target=self.follower, daemon=True)
             print("Thread created")
             
@@ -166,7 +169,7 @@ class PathFollow(VLA):
         signal["flag"] = "CONTINUE"
             
     def plan(self, goal):
-        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01)
+        self.path = space.rrt_astar(self.unity_environment, goal, num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.005)
 
     def next_waypoint(self):
         #print(f"New from {self.path.nodes}")
@@ -176,7 +179,7 @@ class PathFollow(VLA):
         self.waypoint = self.path.nodes.pop(0)
     
     def follower(self):
-        print(f"Follower thread started")
+        print(f"Follower thread started with {self.running_state}")
         try:
             while not self.running_state["flag"] == "STOP":
                 if not self.waypoint:

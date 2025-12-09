@@ -31,7 +31,7 @@ class VLA_Complex:
         if self.parent:
             if not self.parent.applicable:
                 return f"Inapplicable call. Please finish execution (no final response needed)."
-        print(f"\t\"{instruction}\" presented to VLA Complex")
+        print(f"\t\"{instruction}\" presented to VLA Complex {self.tool_name}")
 
         if RAW_EXECUTE:
             self.vla_dispatcher(instruction)
@@ -39,8 +39,33 @@ class VLA_Complex:
         
         if self.parent:
             self.parent.applicable = False
+import os
+from datetime import datetime
+class Logger(VLA_Complex):
+    def __init__(self):
+        super().__init__(lambda text: self.log(text), "Print/log a message, which the programmer may or may not choose to view.", "text")
 
+    async def execute(self, text: str):
+        await super().execute(text)
 
+        self.vla_dispatcher(text=text)
+        await self.parent.check(f"Just logged '{text}'")
+
+    def log(self, text: str):
+        log_name = str(self)
+        # Ensure logs directory exists
+        os.makedirs("logs", exist_ok=True)
+        
+        # Define log file path
+        log_path = os.path.join("logs", f"{log_name}.log")
+        
+        # Timestamp the message
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        formatted_message = f"[{timestamp}] {text}\n"
+        
+        # Append the message to the log file
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(formatted_message)
 
 
 class EpisodicRecorder(VLA_Complex):
@@ -160,7 +185,9 @@ class Navigator(VLA_Complex):
                     if not instruction == self.last_instruction:
                         
                         if self.signal["flag"] == DONE:
-                            return f"Successfully arrived at {instruction}"
+                            check = await self.parent.check("Probably arrived.")
+                            if check == "RERUN":
+                                return f"Successfully arrived at {instruction}. Return immediately with no output."
                 print(f"\t\tAfter executing \"{instruction}\" (check: {self.signal["flag"]})")
                 #await asyncio.sleep(0.5)
                 #print(f"After awaiting")

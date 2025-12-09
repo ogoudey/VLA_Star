@@ -17,14 +17,25 @@ class DemoedLanguageModel:
         self.applicable = True # actions always have effects
         self.goal = goal
 
+        self.status_history = []
+
     async def run(self, prompt="You got this..."):
         # assume one tool (the recorder)
-        task_name = ""
-        while task_name == "":
-            task_name = input(f"(Goal: {self.goal}) Task label: ")
-        
-        await self.tools[0].execute(task_name)
-        return task_name
+        print(f"Status history:\n{self.status_history}")
+        if len(self.tools) == 0:
+            task_name = ""
+            while task_name == "":
+                task_name = input(f"Goal: {self.goal}\nPrompt: {prompt}\nTask label: ")
+            await self.tools[0].execute(task_name)
+            return task_name
+        else:
+            while True:
+                for tool in self.tools:
+                    task_name = input(f"Goal: {self.goal}\nModality name: {tool.tool_name}\nDocstring: {tool.execute.__func__.__doc__}\nPrompt: {prompt}\nInput ([enter] to bypass): ")
+                    if not task_name == "":
+                        await tool.execute(task_name)
+                        return task_name
+                print(f"Back to the top...")
 
         """
         for vlac in self.tools:
@@ -35,8 +46,9 @@ class DemoedLanguageModel:
             tool(instruction)
         """
 
-    def check(self, mode):
-        
+    async def check(self, status, mode=None):
+        self.status_history.append(status)
+        await self.run("Probably finihsed last task...")
         
         if mode == "EXIT_E":
             task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
@@ -44,7 +56,8 @@ class DemoedLanguageModel:
         
         if mode == "EXIT_LOOP":
             dataset_name = input("Dataset name ([enter] to delete dataset): ")
-            return "DONE", dataset_name
+            return "CONTINUE", dataset_name
+        return "RERUN"
 
     def set_tools(self, vlacs):
         for vlac in vlacs:
@@ -67,7 +80,7 @@ class GDA:
         self._applicable = True
         self.running = False
         self.running_agents = 0
-
+        self.status_history = []
     @property
     def applicable(self):
         return self._applicable
@@ -100,7 +113,10 @@ class GDA:
 
     async def spin_off_async(self, agent, prompt):
         print(f"Running new decision-maker...")
-        result = await Runner.run(agent, prompt)
+        try:
+            result = await Runner.run(agent, prompt)
+        except Exception as e:
+            print("!!OOps! {e}!!")
 
     async def run(self, prompt=None):
         self.applicable = True
@@ -116,19 +132,21 @@ class GDA:
             tools=self.tools,
             model="o3-mini"
         )
-
+        print(f"Spinning off agent.")
         asyncio.create_task(self.spin_off_async(agent, prompt))
-        await asyncio.sleep(10)
+        while self.applicable:
+            await asyncio.sleep(1) # should then wait until its done?
         #thread = Thread(target=self.spin_off, args=[agent, prompt], daemon=True)
         #thread.start()
             
     def adjust(self, status: str):
         self.system["Status"] = status
+        self.system["History"] = self.status_history
         self.instructions = system_to_instructions(self.system)
 
     async def check(self, status, recommendation=None, recent_memory: List | None = None):
         self.last_status = status
-        
+        self.status_history.append(status)
         input = f"{self.overhead_prompt}\nStatus: {self.system['Status']}"
         if recommendation:
             input += f"\nRecommendation (from a vision system): {recommendation}"
@@ -153,12 +171,13 @@ class GDA:
             self.adjust(status)
             if recommendation:
                 print(f"Recommendation from VLA complex {recommendation}")
+            print(f"Running agent...`")
             await self.run(input)
             return RERUN
 
 
 def system_to_instructions(system):
-    return system["Instructions"]
+    return f"{system["Instructions"]}. You remember this: {system["History"]}"
     return json.dumps(system)
 
 def merge_past(lst):
