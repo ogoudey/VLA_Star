@@ -60,7 +60,7 @@ def get_destinations():
     json_text = json_bytes.decode("utf-8")
     obj = json.loads(json_text)
     
-    print(obj)
+    #print(obj)
     sock.close()
     return obj
 
@@ -78,7 +78,7 @@ def get_boat():
 
     obj = json.loads(json_text)
     
-    print(obj)
+    #print(obj)
     sock.close()
     return obj
 

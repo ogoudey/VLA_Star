@@ -5,6 +5,7 @@ import importlib.util
 import sys
 from pathlib import Path
 from typing import Any, List
+
 import vla_star
 import gda
 import vla_complex
@@ -216,13 +217,13 @@ class PathPlanner_VLAStar_Factory(Factory):
     f"Use to move robot (sailboat) to desired location. Only make one tool call. The destinations are the following (choose one BY EXACT NAME to pass as an argument):\n" \
     f"{planner.destinations} | STOP (which stops the model)", "go_to_destination")
         ]
-
         if use_text:
             vla_complexes.append(Logger())
+            vla_complexes.append(Chat())
 
         if demo_language_model:
             gda = DemoedLanguageModel(
-                "To be awesome."
+                "To respond adequately."
             )
         else:
             gda = GDA("name_for_traces", \
@@ -306,7 +307,7 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
     
         return VLA_Star(inputter, vla_complexes)
 
-from vla_complex import Logger
+from vla_complex import Logger, Chat
 class Mock_VLA_Star_Text(Factory):
     @staticmethod
     def create():

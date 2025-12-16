@@ -6,9 +6,12 @@ import time
 from typing import List, Any
 from signals import DONE
 from signals import CONTINUE, RERUN
-
+import os
+from datetime import datetime
 import threading
 import asyncio
+
+from logger import log
 
 RAW_EXECUTE = False
 EXECUTE = True
@@ -26,21 +29,18 @@ class VLA_Complex:
         
         self.tool_name = tool_name
 
+
     async def execute(self, instruction: str):
         """___________________________"""
         if self.parent:
             if not self.parent.applicable:
                 return f"Inapplicable call. Please finish execution (no final response needed)."
-        print(f"\t\"{instruction}\" presented to VLA Complex {self.tool_name}")
+            
+        log(f"\t\"{instruction}\" presented to VLA Complex {self.tool_name}", self)
 
-        if RAW_EXECUTE:
-            self.vla_dispatcher(instruction)
-            return f"Done. Call no more tools and return."
-        
         if self.parent:
             self.parent.applicable = False
-import os
-from datetime import datetime
+
 class Logger(VLA_Complex):
     def __init__(self):
         super().__init__(lambda text: self.log(text), "Print/log a message, which the programmer may or may not choose to view.", "text")
@@ -52,23 +52,79 @@ class Logger(VLA_Complex):
         await self.parent.check(f"Just logged '{text}'")
 
     def log(self, text: str):
-        log_name = str(self)
-        # Ensure logs directory exists
-        os.makedirs("logs", exist_ok=True)
-        
-        # Define log file path
-        log_path = os.path.join("logs", f"{log_name}.log")
-        
-        # Timestamp the message
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp}] {text}\n"
-        
-        # Append the message to the log file
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(formatted_message)
+        log(f"\"{text}\"", self)
+
+
+class Chat(VLA_Complex):
+    parent: GDA
+    def __init__(self):
+        super().__init__(lambda text: self.respond(text), "Say `text` to user.", "chat")
+        self.user_prompt = {"DONE": False, "Content": ""}
+        self.listener = threading.Thread(target=self.listen)
+        self.listening = False
+        self.long_term_chat_memory = None
+        self.session = None
+
+    async def execute(self, text: str):
+
+        await super().execute(text)
+        self.vla_dispatcher(text=text)
+
+        if not self.listening:
+            self.listener.start()
+            self.listening = True
+        if self.long_term_chat_memory is None:
+            self.long_term_chat_memory = []
+
+        if self.session is None:
+            self.session = []
+
+        self.session.append({"Me (robot)": f"{text}"})
+
+        check = "CONTINUE" 
+        while check == "CONTINUE":
+            while self.user_prompt["DONE"] == False:
+                time.sleep(0.1)
+                pass
+            log(f"New message received \"{self.user_prompt["Content"]}\"", self)
+            
+            # Construct rerun
+            rerun_input = {
+                "Long term memory": self.long_term_chat_memory,
+                "Session information": self.session,
+                "Current user message": self.user_prompt["Content"]
+            }
+            self.user_prompt["DONE"] = False # ready for new user message
+            await self.parent.check(rerun_input)
+            log(f"After rerun...", self)
+            self.session.append({"User":f"{self.user_prompt['Content']}"})
+        log("Shutting down", self)
+
+    def listen(self):
+        while True:
+            self.user_prompt["Content"] = input("Prompt >>>: ")
+            self.user_prompt["DONE"] = True
+            while self.user_prompt["DONE"] == True:
+                time.sleep(0.1)
+                pass
+
+    def respond(self, text: str):
+        print(f"Robot: {text}")
 
 
 class EpisodicRecorder(VLA_Complex):
+    """
+    Input:
+        Terminal IO and ^C
+    Checking signal:
+        CONTINUE, DONE
+    Running signal:
+        RUNNING_LOOP: bool
+        RUNNING_E: bool
+        task: str
+    """
+
+
     def __init__(self, dataset_recorder_caller, tool_name):
         self.record = dataset_recorder_caller
         super().__init__(lambda signal: self.record(signal), "Task", tool_name)
@@ -97,19 +153,15 @@ class EpisodicRecorder(VLA_Complex):
                     self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
             break
                 
-
-
-
-
-class AnnounceIntent(VLA_Complex):
-    def __init__(self, vlms):
-        super().__init__(lambda intention: self.update_intention(intention), "", "")
-        self.vlms = vlms
-    
-    def update_intention(self, intention):
-        pass
-
 class Single_VLA_w_Watcher(VLA_Complex):
+    """
+    Checking signal:
+        CONTINUE, RERUN, DONE
+    Running signal:
+        instruction: str
+        flag: STOP, GO
+    
+    """
     def __init__(self, vla: Any, vlm: Any, capability_desc: str, tool_name: str):
         self.vla = vla
         super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
@@ -135,10 +187,10 @@ class Single_VLA_w_Watcher(VLA_Complex):
         ### REAL EXECUTION ###
         self.execution_cache = []
         while check == CONTINUE:
-            print(f"\t\tContinuing to do \"{instruction}\"")
+            #print(f"\t\tContinuing to do \"{instruction}\"")
             if EXECUTE:
                 self.vla_dispatcher({"instruction": instruction, "flag": "GO"})
-            print(f"\t\tAfter executing \"{instruction}\"")
+            #print(f"\t\tAfter executing \"{instruction}\"")
             t = time.time()
             await asyncio.sleep(self.monitor_sleep_period)
             self.last_instruction = instruction
@@ -149,7 +201,7 @@ class Single_VLA_w_Watcher(VLA_Complex):
             status = self.watcher.status_sync(monitor_prompt) # Continuer
 
             if status == DONE:
-                print(f"\t\tDone with \"{instruction}\"")
+                log(f"\t\tDone with \"{instruction}\"", self)
                 self.vla_dispatcher({"instruction": instruction, "flag": "STOP"})
                 return "Done"
             
@@ -167,33 +219,38 @@ class Single_VLA_w_Watcher(VLA_Complex):
             # Status = OK, Check = CONTINUE
 
 class Navigator(VLA_Complex):
+    """
+    Running signal:
+        goal: str
+        flag: CONTINUE, DONE
+    Checking signal:
+        RERUN
+    """
     def __init__(self, vla: Any, capability_desc: str, tool_name: str):
         self.vla = vla
         super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
         self.signal = {"flag": ""}
-
+        
     async def execute(self, instruction: str):
         await super().execute(instruction)
         self.signal["flag"] = CONTINUE
         self.signal["goal"] = instruction
         
         try:
-            while self.signal["flag"] == CONTINUE:
-                print(f"\t\tContinuing to plan to \"{self.signal}\"")
-                self.vla_dispatcher(self.signal)
-                if EXECUTE:
-                    if not instruction == self.last_instruction:
-                        
-                        if self.signal["flag"] == DONE:
-                            check = await self.parent.check("Probably arrived.")
-                            if check == "RERUN":
-                                return f"Successfully arrived at {instruction}. Return immediately with no output."
-                print(f"\t\tAfter executing \"{instruction}\" (check: {self.signal["flag"]})")
-                #await asyncio.sleep(0.5)
-                #print(f"After awaiting")
+            log(f"\t\tContinuing to plan to \"{self.signal}\"", self)
+            self.vla_dispatcher(self.signal)
+            log(f"\t\tAfter executing \"{instruction}\" (check: {self.signal["flag"]})", self)
+
+            if not instruction == self.last_instruction:
+                if self.signal["flag"] == DONE:
+                    check = await self.parent.check("Probably arrived.")
+                    if check == "RERUN":
+                        return f"Successfully arrived at {instruction}. Return immediately with no output."
+            #await asyncio.sleep(0.5)
+            #print(f"After awaiting")
         except Exception as e:
             print(f"!!{e}!!")
-        print("Loop done")
+        log("Loop done", self)
 
             # Status = OK, Check = CONTINUE
 

@@ -9,6 +9,8 @@ from itertools import groupby
 import json
 import random
 
+from logger import log
+
 from multiprocessing import Process
 
 
@@ -20,8 +22,8 @@ class DemoedLanguageModel:
         self.status_history = []
 
     async def run(self, prompt="You got this..."):
+        
         # assume one tool (the recorder)
-        print(f"Status history:\n{self.status_history}")
         if len(self.tools) == 0:
             task_name = ""
             while task_name == "":
@@ -31,7 +33,7 @@ class DemoedLanguageModel:
         else:
             while True:
                 for tool in self.tools:
-                    task_name = input(f"Goal: {self.goal}\nModality name: {tool.tool_name}\nDocstring: {tool.execute.__func__.__doc__}\nPrompt: {prompt}\nInput ([enter] to bypass): ")
+                    task_name = input(f"\n___Modality name: {tool.tool_name}___\nGoal: {self.goal}\nDocstring: {tool.execute.__func__.__doc__}\nPrompt: {prompt}\nInput ([enter] to bypass): ")
                     if not task_name == "":
                         await tool.execute(task_name)
                         return task_name
@@ -46,9 +48,11 @@ class DemoedLanguageModel:
             tool(instruction)
         """
 
-    async def check(self, status, mode=None):
-        self.status_history.append(status)
-        await self.run("Probably finihsed last task...")
+    async def check(self, rerun_input, mode=None):
+        # Break context signal into contextual prompt
+
+        # or not...
+        return await self.run(rerun_input)
         
         if mode == "EXIT_E":
             task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
@@ -80,7 +84,7 @@ class GDA:
         self._applicable = True
         self.running = False
         self.running_agents = 0
-        self.status_history = []
+
     @property
     def applicable(self):
         return self._applicable
@@ -112,11 +116,11 @@ class GDA:
         self.running_agents -= 1
 
     async def spin_off_async(self, agent, prompt):
-        print(f"Running new decision-maker...")
+        log(f"Running new decision-maker...", self)
         try:
-            result = await Runner.run(agent, prompt)
+            result = await Runner.run(agent, json.dumps(prompt))
         except Exception as e:
-            print("!!OOps! {e}!!")
+            print(f"!!OOps! {e}!!")
 
     async def run(self, prompt=None):
         self.applicable = True
@@ -132,22 +136,17 @@ class GDA:
             tools=self.tools,
             model="o3-mini"
         )
-        print(f"Spinning off agent.")
+        log(f"Spinning off agent.", self)
         asyncio.create_task(self.spin_off_async(agent, prompt))
         while self.applicable:
             await asyncio.sleep(1) # should then wait until its done?
         #thread = Thread(target=self.spin_off, args=[agent, prompt], daemon=True)
         #thread.start()
             
-    def adjust(self, status: str):
-        self.system["Status"] = status
-        self.system["History"] = self.status_history
-        self.instructions = system_to_instructions(self.system)
 
-    async def check(self, status, recommendation=None, recent_memory: List | None = None):
-        self.last_status = status
-        self.status_history.append(status)
-        input = f"{self.overhead_prompt}\nStatus: {self.system['Status']}"
+
+    async def check(self, rerun_input, recommendation=None, recent_memory: List | None = None):
+        input = rerun_input
         if recommendation:
             input += f"\nRecommendation (from a vision system): {recommendation}"
         # All checks should take into account recent memory / execution cache
@@ -158,27 +157,24 @@ class GDA:
                 if len(recent_memory) > self.memory_lim_before_recompute:
                     print(f"Recomputing due to memory.   ↵")
                     
-                    self.adjust(status)
                     if recommendation:
                         print(f"Recommendation from VLA complex {recommendation}")
                     await self.run(input)
                     return RERUN
         
-        if status == OK:
+        if rerun_input == OK:
             return CONTINUE
         else:
-            print(f"Recomputing due to {status} status from child.")
-            self.adjust(status)
+            log(f"Recomputing due to {rerun_input} status from child.", self)
             if recommendation:
                 print(f"Recommendation from VLA complex {recommendation}")
-            print(f"Running agent...`")
+            log(f"Running agent... {input}", self)
             await self.run(input)
             return RERUN
 
 
 def system_to_instructions(system):
-    return f"{system["Instructions"]}. You remember this: {system["History"]}"
-    return json.dumps(system)
+    return json.dumps(system["Instructions"])
 
 def merge_past(lst):
     """
