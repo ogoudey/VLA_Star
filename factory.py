@@ -318,8 +318,17 @@ class Mock_VLA_Star_Text(Factory):
 
         inputter = DemoedLanguageModel()
 
+        inputter = GDA("name_for_traces", \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Reach the prompted goal by supplying adequate arguments to your functions.\n" \
+    "You may choose ANY of the available tools.\n"\
+    "You must call exactly ONE tool.\n"\
+    "After calling one tool, stop all further reasoning.\n"\
+    "Do not produce natural-language output. "\
+    "Return immediately after the tool call.\n")
+
         vla_complexes = [
-            Logger()
+            Logger(),
+            Chat()
         ]
     
         return VLA_Star(inputter, vla_complexes)

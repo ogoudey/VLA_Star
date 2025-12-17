@@ -11,10 +11,17 @@ class VLA_Star:
 
     def __init__(self, agent: GDA | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
         self.agent = agent
+        self.vla_complexes = vla_complexes
         self.agent.set_tools(vla_complexes)
 
     def run(self, prompt: str | None = None):
-        asyncio.run(self.agent.run(prompt))
+        for vlac in self.vla_complexes:
+            if hasattr(vlac, "start"):
+                print(f"Starting {vlac}")
+                asyncio.run(vlac.start())
+                
+        
+        #asyncio.run(self.agent.run(prompt))
 
 """
 ### Demos ###

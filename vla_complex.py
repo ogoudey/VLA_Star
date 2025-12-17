@@ -20,7 +20,7 @@ class VLA_Complex:
     # Everything that's treated the same by a GDA
     # [TODO] Need to provide dictionary for multiple different VLAs.
     tool_name: str
-    def __init__(self, vla_dispatcher: Any, capability_desc: str, tool_name: str):
+    def __init__(self, vla_dispatcher: Any, capability_desc: str, tool_name: str, on_start=False):
         self.vla_dispatcher = vla_dispatcher
         self.execute.__func__.__doc__ = capability_desc
         self.parent = None
@@ -28,15 +28,17 @@ class VLA_Complex:
         self.last_instruction = None
         
         self.tool_name = tool_name
+        self.on_start = on_start
 
 
     async def execute(self, instruction: str):
         """___________________________"""
         if self.parent:
-            if not self.parent.applicable:
-                return f"Inapplicable call. Please finish execution (no final response needed)."
+            log(f"{self.parent} called {self.tool_name}", self.parent)
+            #if not self.parent.applicable:
+            #    return f"Inapplicable call. Please finish execution (no final response needed)."
             
-        log(f"\t\"{instruction}\" presented to VLA Complex {self.tool_name}", self)
+        log(f"Instruction \"{instruction}\" presented to VLA Complex {self.tool_name}", self)
 
         if self.parent:
             self.parent.applicable = False
@@ -58,16 +60,21 @@ class Logger(VLA_Complex):
 class Chat(VLA_Complex):
     parent: GDA
     def __init__(self):
-        super().__init__(lambda text: self.respond(text), "Say `text` to user.", "chat")
-        self.user_prompt = {"DONE": False, "Content": ""}
-        self.listener = threading.Thread(target=self.listen)
-        self.listening = False
+        super().__init__(lambda text: self.respond(text), "Say `text` to user.", "chat", True)
+        
+        
         self.long_term_chat_memory = None
         self.session = None
+
+        self.listener = threading.Thread(target=self.listen)
+        self.listening = False
+
+        self.user_prompt = {"DONE": False, "Content": ""}
 
     async def execute(self, text: str):
 
         await super().execute(text)
+        log(f"\tSignal: {{...: {text}}}", self)
         self.vla_dispatcher(text=text)
 
         if not self.listening:
@@ -83,10 +90,11 @@ class Chat(VLA_Complex):
 
         check = "CONTINUE" 
         while check == "CONTINUE":
+            log(f"\tIdling before user prompt: \"{self.user_prompt}\"", self)
             while self.user_prompt["DONE"] == False:
                 time.sleep(0.1)
                 pass
-            log(f"New message received \"{self.user_prompt["Content"]}\"", self)
+            log(f"\tSensory check received: \"{self.user_prompt}\"", self)
             
             # Construct rerun
             rerun_input = {
@@ -95,21 +103,25 @@ class Chat(VLA_Complex):
                 "Current user message": self.user_prompt["Content"]
             }
             self.user_prompt["DONE"] = False # ready for new user message
-            await self.parent.check(rerun_input)
-            log(f"After rerun...", self)
+            await self.parent.check(rerun_input, signature=self.tool_name)
+            log(f"\tAfter rerun...", self)
             self.session.append({"User":f"{self.user_prompt['Content']}"})
-        log("Shutting down", self)
+        log("Execute process done", self)
+
+    async def start(self):
+        await self.execute("Introduce yourself briefly. (You are chatting to the user.)")
 
     def listen(self):
         while True:
-            self.user_prompt["Content"] = input("Prompt >>>: ")
+            self.user_prompt["Content"] = input("V\tV\tV Give prompt: V\tV\tV\n\t")
+            print("\t\t________________\n")
             self.user_prompt["DONE"] = True
             while self.user_prompt["DONE"] == True:
                 time.sleep(0.1)
                 pass
 
     def respond(self, text: str):
-        print(f"Robot: {text}")
+        print(f"\nRobot: {text}")
 
 
 class EpisodicRecorder(VLA_Complex):
@@ -222,7 +234,7 @@ class Navigator(VLA_Complex):
     """
     Running signal:
         goal: str
-        flag: CONTINUE, DONE
+        flag: CONTINUE, DONE, STOP
     Checking signal:
         RERUN
     """
@@ -230,29 +242,65 @@ class Navigator(VLA_Complex):
         self.vla = vla
         super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
         self.signal = {"flag": ""}
+        self.listening = False
+        self.long_term_nav_memory = None
+        self.session = None
         
     async def execute(self, instruction: str):
-        await super().execute(instruction)
-        self.signal["flag"] = CONTINUE
-        self.signal["goal"] = instruction
-        
         try:
-            log(f"\t\tContinuing to plan to \"{self.signal}\"", self)
-            self.vla_dispatcher(self.signal)
-            log(f"\t\tAfter executing \"{instruction}\" (check: {self.signal["flag"]})", self)
+            await super().execute(instruction)
+        except Exception as e:
+            print(f"Could not call super's execute: {e}")
+            log(f"Could not call super's execute: {e}", self) 
+        if self.long_term_nav_memory is None:
+            self.long_term_nav_memory = []
 
+        if self.session is None:
+            self.session = []
+
+
+        # Process signal
+        if instruction == "STOP":
+            self.signal["flag"] = "STOP"
+            self.signal["goal"] = "empty"
+        else:
+            self.signal["flag"] = CONTINUE
+            self.signal["goal"] = instruction
+
+        try:
+            log(f"\tDispatching VLA with signal: \"{self.signal}\"", self)
+            self.vla_dispatcher(self.signal)
+            log(f"\tAfter instructing \"{instruction}\" ", self)
+            log(f"\tSignal after: {self.signal}", self)
             if not instruction == self.last_instruction:
                 if self.signal["flag"] == DONE:
-                    check = await self.parent.check("Probably arrived.")
+                    rerun_input = self.get_rerun_input(f"Arrived at {self.signal["goal"]}.")
+                    check = await self.parent.check(rerun_input)
                     if check == "RERUN":
                         return f"Successfully arrived at {instruction}. Return immediately with no output."
+                if self.signal["flag"] == "STOP":
+                    return f"Stopped."
             #await asyncio.sleep(0.5)
             #print(f"After awaiting")
         except Exception as e:
             print(f"!!{e}!!")
-        log("Loop done", self)
+        log("Done with execute process", self)
 
             # Status = OK, Check = CONTINUE
+    
+    def get_rerun_input(self,status=None):
+        if status is None:
+            status = f"{len(self.vla.path.nodes)} waypoints left in path to {self.signal['goal']}"
+        rerun_input = {
+            "Long term memory": self.long_term_nav_memory,
+            "Session information": self.session,
+            "Current status": status
+        }
+        print(f"Input to rerun: {rerun_input}")
+        return rerun_input
+
+
+
 
 
 # Factory

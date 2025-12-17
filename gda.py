@@ -18,8 +18,8 @@ class DemoedLanguageModel:
     def __init__(self, goal: str = "Pass the proper args to your functions."):
         self.applicable = True # actions always have effects
         self.goal = goal
-
         self.status_history = []
+        self.context = {}
 
     async def run(self, prompt="You got this..."):
         
@@ -48,11 +48,13 @@ class DemoedLanguageModel:
             tool(instruction)
         """
 
-    async def check(self, rerun_input, mode=None):
+    async def check(self, rerun_input, signature, mode=None):
         # Break context signal into contextual prompt
+        if not signature in self.context:
+            self.context[signature] = []
+        self.context[signature].append[rerun_input]
 
-        # or not...
-        return await self.run(rerun_input)
+        return await self.run(json.loads(self.context))
         
         if mode == "EXIT_E":
             task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
@@ -71,8 +73,6 @@ class DemoedLanguageModel:
 
 
 class GDA:
-    
-
     def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []
         self.system = {"Instructions": instructions, "Status":OK}
@@ -84,6 +84,7 @@ class GDA:
         self._applicable = True
         self.running = False
         self.running_agents = 0
+        self.context = {}
 
     @property
     def applicable(self):
@@ -123,12 +124,9 @@ class GDA:
             print(f"!!OOps! {e}!!")
 
     async def run(self, prompt=None):
+        if not prompt:
+            prompt = self.goal
         self.applicable = True
-        if not self.overhead_prompt:
-            if not prompt:
-                raise Exception("No goal for GDA given.")
-            self.overhead_prompt = prompt
-        self.running_agents += 1
         
         agent = Agent(
             name=self.name + str(self.running_agents),
@@ -137,6 +135,7 @@ class GDA:
             model="o3-mini"
         )
         log(f"Spinning off agent.", self)
+        log(f"Prompt:\n{prompt}", self)
         asyncio.create_task(self.spin_off_async(agent, prompt))
         while self.applicable:
             await asyncio.sleep(1) # should then wait until its done?
@@ -145,32 +144,40 @@ class GDA:
             
 
 
-    async def check(self, rerun_input, recommendation=None, recent_memory: List | None = None):
-        input = rerun_input
-        if recommendation:
-            input += f"\nRecommendation (from a vision system): {recommendation}"
-        # All checks should take into account recent memory / execution cache
-        #print(f"Memory: {recent_memory}")
-        if recent_memory:
-            if len(recent_memory) > 0:
-                input += f"\n\nRecently you've performed {merge_past(recent_memory)}"
-                if len(recent_memory) > self.memory_lim_before_recompute:
-                    print(f"Recomputing due to memory.   ↵")
-                    
-                    if recommendation:
-                        print(f"Recommendation from VLA complex {recommendation}")
-                    await self.run(input)
-                    return RERUN
-        
-        if rerun_input == OK:
-            return CONTINUE
-        else:
-            log(f"Recomputing due to {rerun_input} status from child.", self)
+    async def check(self, rerun_input, signature=None, recommendation=None, recent_memory: List | None = None):
+        try:
             if recommendation:
-                print(f"Recommendation from VLA complex {recommendation}")
-            log(f"Running agent... {input}", self)
-            await self.run(input)
-            return RERUN
+                rerun_input += f"\nRecommendation (from a vision system): {recommendation}"
+            # All checks should take into account recent memory / execution cache
+            #print(f"Memory: {recent_memory}")
+            if recent_memory:
+                if len(recent_memory) > 0:
+                    rerun_input += f"\n\nRecently you've performed {merge_past(recent_memory)}"
+                    if len(recent_memory) > self.memory_lim_before_recompute:
+                        print(f"Recomputing due to memory.   ↵")
+                        
+                        if recommendation:
+                            print(f"Recommendation from VLA complex {recommendation}")
+                        await self.run(rerun_input)
+                        return RERUN
+            
+            if rerun_input == OK:
+                return CONTINUE
+            else:
+                log(f"Recomputing due to {rerun_input} status from child {signature}.", self)
+                if recommendation:
+                    print(f"Recommendation from VLA complex {recommendation}")
+                log(f"Running agent for {rerun_input}", self)
+
+                # Create context
+                if not signature in self.context:
+                    self.context[signature] = []
+                self.context[signature].append(rerun_input)
+
+                await self.run(self.context)
+                return RERUN
+        except Exception as e:
+            print(f"Error: {e}")
 
 
 def system_to_instructions(system):

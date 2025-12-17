@@ -117,7 +117,9 @@ class PathFollow(VLA):
         self.unity_environment = self.init_env()
 
         self.plan_thread = threading.Thread(target=self.plan)
+        self.planning = True
         self.follow_thread = threading.Thread(target=self.follower, daemon=True) 
+        self.following = True
 
     def init_env(self):
         terrain = terrain_fetcher.get_terrain()
@@ -139,42 +141,43 @@ class PathFollow(VLA):
         self.running_state["flag"] = "GO"
         return unity_environment
     
+
+
     def __call__(self, signal: dict) -> None:
         #print(f"PathFollow called on {signal}")
         if signal["flag"] == "STOP":
-            print(f"Stoppping immediately.")
+            log(f"Stopping immediately.", self)
             self.running_state["flag"] = signal["flag"]
             signal["flag"] = "DONE"
-        elif not signal["goal"] == self.running_state["goal"]:
-            if self.follow_thread:
-                if self.follow_thread.is_alive():
-                    self.follow_thread.join()
-            if self.plan_thread:
-                if self.plan_thread.is_alive():
-                    self.plan_thread.join()
+        else:
+            #not signal["goal"] == self.running_state["goal"]:
 
             self.running_state["goal"] = signal["goal"]
-            self.plan_thread.start()
-                                       
-            
-        else:
-            #print(f"No new goal... continuing... {self.running_state}")
-            if self.running_state["flag"] == "STOP":
-                signal["flag"] = "DONE"
-                return
-
+            if self.plan_thread.is_alive():
+                self.planning = True
+            else:
+                self.plan_thread.start()
         signal["flag"] = "CONTINUE"
             
     def plan(self):
-        log(f"Pathing to {self.running_state["goal"]}", self)
+        while True:
+            if self.planning:
+                log(f"Pathing to {self.running_state["goal"]}", self)
 
-        try:
-            self.unity_environment = self.init_env()
-            self.path = space.rrt_astar(self.unity_environment, self.running_state["goal"], num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01, logger=log)
-        except Exception as e:
-            log(f"Planning failed because {e}", self)
-
-        self.follow_thread.start()
+                try:
+                    self.unity_environment = self.init_env()
+                    self.path = space.rrt_astar(self.unity_environment, self.running_state["goal"], num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01, logger=log)
+                except Exception as e:
+                    log(f"Planning failed because {e}", self)
+                if self.running_state["flag"] == "STOP":
+                    self.planning = False
+                    continue # don't start the follower if we want to replan
+                if self.follow_thread.is_alive():
+                    self.following = True
+                else:
+                    self.follow_thread.start()
+                self.planning = False
+            time.sleep(1)
 
 
     def next_waypoint(self):
@@ -185,30 +188,34 @@ class PathFollow(VLA):
         self.waypoint = self.path.nodes.pop(0)
     
     def follower(self):
-        self.plan_thread.join()
         log(f"Follower thread started with {self.running_state}", self)
         try:
-            while not self.running_state["flag"] == "STOP":
-                if not self.waypoint:
-                    self.next_waypoint()
-                
-                if self.current_position:
-                    d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
-                    #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
-                    if d < 1:
-                        log(f"Arrived at waypoint {self.waypoint.state.coordinates}", self)
-                        if len(self.path.nodes) > 0:
-                            log(f"Path is not empty, updating waypoint.", self)
+            while True:
+                if self.following:
+                    while not self.running_state["flag"] == "STOP":
+                        if not self.waypoint:
                             self.next_waypoint()
-                        else:
-                            log(f"Path is empty, sending STOP", self)
-                            self.running_state["flag"] = "STOP"
-                            one_off("STOP")
-                            
-                if not self.running_state["flag"] == "STOP":
-                    self.follow()
-            log(f"Stopping because {self.running_state}", self)
-            one_off("STOP")
+                        
+                        if self.current_position:
+                            d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
+                            #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
+                            if d < 1:
+                                log(f"Arrived at waypoint {self.waypoint.state.coordinates}", self)
+                                if len(self.path.nodes) > 0:
+                                    log(f"Path is not empty, updating waypoint.", self)
+                                    self.next_waypoint()
+                                else:
+                                    log(f"Path is empty, sending STOP", self)
+                                    self.running_state["flag"] = "STOP"
+                                    one_off("STOP")
+                                    
+                        if not self.running_state["flag"] == "STOP":
+                            self.follow()
+                    self.following = False
+                log(f"Stopping because {self.running_state}", self)
+                one_off("STOP")
+                time.sleep(1)
+
         except Exception as e:
             print(f"!!{e}!!")
 
