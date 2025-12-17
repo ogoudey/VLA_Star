@@ -50,11 +50,10 @@ class DemoedLanguageModel:
 
     async def check(self, rerun_input, signature, mode=None):
         # Break context signal into contextual prompt
-        if not signature in self.context:
-            self.context[signature] = []
-        self.context[signature].append[rerun_input]
+        
+        
 
-        return await self.run(json.loads(self.context))
+        return await self.run(json.loads(rerun_input))
         
         if mode == "EXIT_E":
             task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
@@ -70,21 +69,27 @@ class DemoedLanguageModel:
             vlac.parent = self
         self.tools = vlacs
 
+    
 
 
 class GDA:
     def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []
+        self.vla_complexes = []
+        self.context = {}
+
         self.system = {"Instructions": instructions, "Status":OK}
+
         self.name = name
         self.goal = goal
+
         self.overhead_prompt = self.goal
         self.memory_lim_before_recompute = 4
         self.last_status = None
         self._applicable = True
         self.running = False
-        self.running_agents = 0
-        self.context = {}
+        self.agent_identities = 0
+        
 
     @property
     def applicable(self):
@@ -95,93 +100,68 @@ class GDA:
         self._applicable = value
 
     def set_tools(self, vlacs):
-        self.set_vla_complexes(vlacs)
-
-    def set_vla_complexes(self, vlacs):
         for vlac in vlacs:
-            self.set_vla_complex(vlac)
+            self.vla_complexes.append(vlac)
+            self.set_vla_complex(vlac)        
 
     def set_vla_complex(self, vlac):
-        method = vlac.execute
         self.tools.append(function_tool(
-            method,
-            #name_override=method.__self__.__class__.tool_name
+            vlac.execute,
             name_override=vlac.tool_name
         ))
-        vlac.parent = self
+        vlac.parent = self # The complex's check will go to this Agent
     
-
-    def spin_off(self, agent, prompt):
-        
-        Runner.run_sync(agent, prompt)
-        self.running_agents -= 1
-
     async def spin_off_async(self, agent, prompt):
-        log(f"Running new decision-maker...", self)
         try:
+            log(f"Agent {agent.name} is started.", self)
             result = await Runner.run(agent, json.dumps(prompt))
+            log(f"Agent {agent.name} is finished.", self)
         except Exception as e:
-            print(f"!!OOps! {e}!!")
+            print(f"!!Failed to run {agent.name}!!\nError:\n\t{e}")
 
-    async def run(self, prompt=None):
-        if not prompt:
-            prompt = self.goal
-        self.applicable = True
+    async def run(self, context=None):
+        """ Context includes prompt. """
+        self.applicable = True # output will be carried out
         
         agent = Agent(
-            name=self.name + str(self.running_agents),
-            instructions=system_to_instructions(self.system),
-            tools=self.tools,
+            name=self.name + str(self.agent_identities),
+            instructions=self.system_to_instructions(), # Yet to modify system instructions significantly
+            tools=self.tools, # The tool-ified VLA Complexes
             model="o3-mini"
         )
-        log(f"Spinning off agent.", self)
-        log(f"Prompt:\n{prompt}", self)
-        asyncio.create_task(self.spin_off_async(agent, prompt))
+
+        log(f"Context/prompt:\n{context}", self)
+        asyncio.create_task(self.spin_off_async(agent, context))
         while self.applicable:
             await asyncio.sleep(1) # should then wait until its done?
-        #thread = Thread(target=self.spin_off, args=[agent, prompt], daemon=True)
-        #thread.start()
-            
 
-
-    async def check(self, rerun_input, signature=None, recommendation=None, recent_memory: List | None = None):
-        try:
-            if recommendation:
-                rerun_input += f"\nRecommendation (from a vision system): {recommendation}"
-            # All checks should take into account recent memory / execution cache
-            #print(f"Memory: {recent_memory}")
-            if recent_memory:
-                if len(recent_memory) > 0:
-                    rerun_input += f"\n\nRecently you've performed {merge_past(recent_memory)}"
-                    if len(recent_memory) > self.memory_lim_before_recompute:
-                        print(f"Recomputing due to memory.   ↵")
-                        
-                        if recommendation:
-                            print(f"Recommendation from VLA complex {recommendation}")
-                        await self.run(rerun_input)
-                        return RERUN
-            
-            if rerun_input == OK:
-                return CONTINUE
-            else:
-                log(f"Recomputing due to {rerun_input} status from child {signature}.", self)
-                if recommendation:
-                    print(f"Recommendation from VLA complex {recommendation}")
-                log(f"Running agent for {rerun_input}", self)
-
-                # Create context
-                if not signature in self.context:
-                    self.context[signature] = []
-                self.context[signature].append(rerun_input)
-
-                await self.run(self.context)
-                return RERUN
+    async def check(self, rerun_input, signature="Anon"):
+        """ A request to check an input from a VLA Complex ."""
+        try: # Wrapped in a try
+            log(f"Rerun input: {rerun_input} from {signature}.", self)
+            self.context_from(rerun_input, signature) # Create context
+            await self.run(self.context)
+            return RERUN # return should be useful to VLA Complex
         except Exception as e:
             print(f"Error: {e}")
 
+    def context_from(self, rerun_input: dict, signature: str):
+        if not signature in self.context:
+            self.context[signature] = {}
+        for k, v in rerun_input.items():
+            if not rerun_input[k] is None:
+                if len(rerun_input[k]) > 0:
+                    self.context[signature][k] = v
 
-def system_to_instructions(system):
-    return json.dumps(system["Instructions"])
+        for vlac in self.vla_complexes:
+            if vlac.tool_name == signature:
+                continue
+            if not vlac.tool_name in self.context:
+                # vlac.give_updates
+                pass  
+
+    def system_to_instructions(self):
+        return json.dumps(self.system["Instructions"])
 
 def merge_past(lst):
     """

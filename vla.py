@@ -111,6 +111,9 @@ class PathFollow(VLA):
         self.waypoint: space.SearchNode = None
         self.current_position = None
         self.running_state = {"goal":"", "flag":"GO"}
+
+        self.travel_time = 0
+
         self.init_env()
         
         
@@ -192,11 +195,13 @@ class PathFollow(VLA):
         try:
             while True:
                 if self.following:
+                    travel_t0 = time.time()
                     while not self.running_state["flag"] == "STOP":
                         if not self.waypoint:
                             self.next_waypoint()
                         
                         if self.current_position:
+                            self.travel_time = time.time() - travel_t0
                             d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
                             #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
                             if d < 1:
@@ -209,8 +214,9 @@ class PathFollow(VLA):
                                     self.running_state["flag"] = "STOP"
                                     one_off("STOP")
                                     
-                        if not self.running_state["flag"] == "STOP":
-                            self.follow()
+                        if self.running_state["flag"] == "STOP":
+                            continue
+                        self.follow()
                     self.following = False
                 log(f"Stopping because {self.running_state}", self)
                 one_off("STOP")

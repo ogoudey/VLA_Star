@@ -20,8 +20,8 @@ class VLA_Complex:
     # Everything that's treated the same by a GDA
     # [TODO] Need to provide dictionary for multiple different VLAs.
     tool_name: str
-    def __init__(self, vla_dispatcher: Any, capability_desc: str, tool_name: str, on_start=False):
-        self.vla_dispatcher = vla_dispatcher
+    def __init__(self, vla: Any, capability_desc: str, tool_name: str, on_start=False):
+        self.vla = vla
         self.execute.__func__.__doc__ = capability_desc
         self.parent = None
         
@@ -33,24 +33,24 @@ class VLA_Complex:
 
     async def execute(self, instruction: str):
         """___________________________"""
-        if self.parent:
-            log(f"{self.parent} called {self.tool_name}", self.parent)
-            #if not self.parent.applicable:
-            #    return f"Inapplicable call. Please finish execution (no final response needed)."
-            
-        log(f"Instruction \"{instruction}\" presented to VLA Complex {self.tool_name}", self)
-
-        if self.parent:
-            self.parent.applicable = False
+        if not self.parent:
+            raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
+        log(f"{self.parent} called {self.tool_name}", self.parent)
+        if not self.parent.applicable:
+            log(f"{self.parent} call to {self.tool_name} is inapplicable ", self.parent)
+            log(f"{self.parent} call is inapplicable ", self)
+            return f"Inapplicable call. Please finish execution (no final response needed)."  
+        log(f"Instruction \"{instruction}\" is presented.", self)
+        self.parent.applicable = False # Parent can make no more calls.
 
 class Logger(VLA_Complex):
     def __init__(self):
-        super().__init__(lambda text: self.log(text), "Print/log a message, which the programmer may or may not choose to view.", "text")
+        super().__init__(log, "Print/log a message, which the programmer may or may not choose to view.", "text")
 
     async def execute(self, text: str):
         await super().execute(text)
 
-        self.vla_dispatcher(text=text)
+        self.vla(text=text)
         await self.parent.check(f"Just logged '{text}'")
 
     def log(self, text: str):
@@ -60,29 +60,31 @@ class Logger(VLA_Complex):
 class Chat(VLA_Complex):
     parent: GDA
     def __init__(self):
-        super().__init__(lambda text: self.respond(text), "Say `text` to user.", "chat", True)
+        super().__init__(self.respond, "Say something directly to user.", "chat", True)
         
-        
-        self.long_term_chat_memory = None
+        ### State ###
+        self.long_term_memory = None
         self.session = None
 
+        ### Threads ###
         self.listener = threading.Thread(target=self.listen)
         self.listening = False
 
+        # Signal like
         self.user_prompt = {"DONE": False, "Content": ""}
 
     async def execute(self, text: str):
-
         await super().execute(text)
-        log(f"\tSignal: {{...: {text}}}", self)
-        self.vla_dispatcher(text=text)
+        log(f"Calling vla {self.vla}...", self)
+        self.vla(text=text)
+        log(f"After having called vla {self.vla}.", self)
 
         if not self.listening:
             self.listener.start()
             self.listening = True
-        if self.long_term_chat_memory is None:
-            self.long_term_chat_memory = []
 
+        if self.long_term_memory is None:
+            self.long_term_memory = []
         if self.session is None:
             self.session = []
 
@@ -98,7 +100,7 @@ class Chat(VLA_Complex):
             
             # Construct rerun
             rerun_input = {
-                "Long term memory": self.long_term_chat_memory,
+                "Long term memory": self.long_term_memory,
                 "Session information": self.session,
                 "Current user message": self.user_prompt["Content"]
             }
@@ -139,7 +141,7 @@ class EpisodicRecorder(VLA_Complex):
 
     def __init__(self, dataset_recorder_caller, tool_name):
         self.record = dataset_recorder_caller
-        super().__init__(lambda signal: self.record(signal), "Task", tool_name)
+        super().__init__(signal, "Task", tool_name)
 
     async def execute(self, instruction):
         await super().execute(instruction)
@@ -147,22 +149,22 @@ class EpisodicRecorder(VLA_Complex):
         
         while check == "CONTINUE":
             try:
-                self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
+                self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
                 while True:
                     pass
             except KeyboardInterrupt:
-                self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": False, "task": ""})
+                self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": False, "task": ""})
                 try:
                     check, new_task_name = self.parent.check("EXIT_E")
                     if new_task_name == "":
                         continue
                     else:
                         task_name = new_task_name
-                        self.vla_dispatcher(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
+                        self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
                 except KeyboardInterrupt:
-                    self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "task": ""})
+                    self.vla(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "task": ""})
                     check, dataset_name = self.parent.check("EXIT_LOOP")
-                    self.vla_dispatcher(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
+                    self.vla(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
             break
                 
 class Single_VLA_w_Watcher(VLA_Complex):
@@ -176,7 +178,7 @@ class Single_VLA_w_Watcher(VLA_Complex):
     """
     def __init__(self, vla: Any, vlm: Any, capability_desc: str, tool_name: str):
         self.vla = vla
-        super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
+        super().__init__(self.vla, capability_desc, tool_name)
         self.watcher = vlm
 
         self.monitor_sleep_period = 2.0
@@ -201,7 +203,7 @@ class Single_VLA_w_Watcher(VLA_Complex):
         while check == CONTINUE:
             #print(f"\t\tContinuing to do \"{instruction}\"")
             if EXECUTE:
-                self.vla_dispatcher({"instruction": instruction, "flag": "GO"})
+                self.vla({"instruction": instruction, "flag": "GO"})
             #print(f"\t\tAfter executing \"{instruction}\"")
             t = time.time()
             await asyncio.sleep(self.monitor_sleep_period)
@@ -214,7 +216,7 @@ class Single_VLA_w_Watcher(VLA_Complex):
 
             if status == DONE:
                 log(f"\t\tDone with \"{instruction}\"", self)
-                self.vla_dispatcher({"instruction": instruction, "flag": "STOP"})
+                self.vla({"instruction": instruction, "flag": "STOP"})
                 return "Done"
             
             if status == RERUN: # Address: how would we get here?
@@ -239,25 +241,29 @@ class Navigator(VLA_Complex):
         RERUN
     """
     def __init__(self, vla: Any, capability_desc: str, tool_name: str):
-        self.vla = vla
-        super().__init__(lambda instruction: self.vla(instruction), capability_desc, tool_name)
-        self.signal = {"flag": ""}
-        self.listening = False
-        self.long_term_nav_memory = None
+        super().__init__(vla, capability_desc, tool_name)
+
+        ### State
+        self.long_term_memory = None
         self.session = None
         
+        ### Signal
+        self.signal = {"flag": ""}
+
+        ### Threads
+        # Internal to planner
+
     async def execute(self, instruction: str):
         try:
             await super().execute(instruction)
         except Exception as e:
             print(f"Could not call super's execute: {e}")
             log(f"Could not call super's execute: {e}", self) 
-        if self.long_term_nav_memory is None:
-            self.long_term_nav_memory = []
+        if self.long_term_memory is None:
+            self.long_term_memory = []
 
         if self.session is None:
             self.session = []
-
 
         # Process signal
         if instruction == "STOP":
@@ -269,7 +275,7 @@ class Navigator(VLA_Complex):
 
         try:
             log(f"\tDispatching VLA with signal: \"{self.signal}\"", self)
-            self.vla_dispatcher(self.signal)
+            self.vla(self.signal)
             log(f"\tAfter instructing \"{instruction}\" ", self)
             log(f"\tSignal after: {self.signal}", self)
             if not instruction == self.last_instruction:
@@ -280,6 +286,8 @@ class Navigator(VLA_Complex):
                         return f"Successfully arrived at {instruction}. Return immediately with no output."
                 if self.signal["flag"] == "STOP":
                     return f"Stopped."
+                else:
+                    self.session.append(f"Followed instruction to {self.signal['goal']}")
             #await asyncio.sleep(0.5)
             #print(f"After awaiting")
         except Exception as e:
@@ -290,9 +298,9 @@ class Navigator(VLA_Complex):
     
     def get_rerun_input(self,status=None):
         if status is None:
-            status = f"{len(self.vla.path.nodes)} waypoints left in path to {self.signal['goal']}"
+            status = f"{len(self.vla.path.nodes)} waypoints left in path to {self.signal['goal']}. Travel time: {self.vla.travel_time}"
         rerun_input = {
-            "Long term memory": self.long_term_nav_memory,
+            "Long term memory": self.long_term_memory,
             "Session information": self.session,
             "Current status": status
         }
