@@ -214,10 +214,11 @@ class PathPlanner_VLAStar_Factory(Factory):
         from vla_complex import Navigator
         vla_complexes:List[Any] = [
             Navigator(planner, \
-    f"Use to move robot (sailboat) to desired location. Only make one tool call. The destinations are the following (choose one BY EXACT NAME to pass as an argument):\n" \
-    f"{planner.destinations} | STOP (which stops the model)", "go_to_destination")
+    f"Use to move robot (sailboat) to desired location. Only call this when you're sure you want to start a journey to the destination. Only call this tool once. The destinations are the following (choose one BY EXACT NAME to pass as an argument):\n" \
+    f"destination: {planner.destinations} | STOP (which stops the model)", "go_to_destination")
         ]
         if use_text:
+            vla_complexes.append(DrawOnBlackboard())
             vla_complexes.append(Logger())
             vla_complexes.append(Chat())
 
@@ -229,10 +230,10 @@ class PathPlanner_VLAStar_Factory(Factory):
             gda = GDA("name_for_traces", \
     "You are a decision-making agent in a network of LLMs that compose a physical agent. Reach the prompted goal by supplying adequate arguments to your functions.\n" \
     "You may choose ANY of the available tools.\n"\
-    "You must call exactly ONE tool.\n"\
-    "After calling one tool, stop all further reasoning.\n"\
-    "Do not produce natural-language output. "\
-    "Return immediately after the tool call.\n")
+    "You must call exactly ONE tool (unless logging).\n"\
+    "After calling one tool (except log), stop all further reasoning.\n"\
+    "Do not produce natural-language final_output. "\
+    "It is recommended to use the `draw_on_blackboard` function when you want to make a plan that persists across agents.\n")
         return VLA_Star(gda, vla_complexes)
 
 
@@ -307,7 +308,7 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
     
         return VLA_Star(inputter, vla_complexes)
 
-from vla_complex import Logger, Chat
+from vla_complex import Logger, Chat, DrawOnBlackboard
 class Mock_VLA_Star_Text(Factory):
     @staticmethod
     def create():

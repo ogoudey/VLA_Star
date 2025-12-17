@@ -105,6 +105,7 @@ class GDA:
             self.set_vla_complex(vlac)        
 
     def set_vla_complex(self, vlac):
+        print(f"{vlac.tool_name} linked to {self.name}")
         self.tools.append(function_tool(
             vlac.execute,
             name_override=vlac.tool_name
@@ -129,6 +130,7 @@ class GDA:
             tools=self.tools, # The tool-ified VLA Complexes
             model="o3-mini"
         )
+        self.agent_identities += 1
 
         log(f"Context/prompt:\n{context}", self)
         asyncio.create_task(self.spin_off_async(agent, context))

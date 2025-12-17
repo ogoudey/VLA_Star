@@ -10,6 +10,9 @@ if os.path.exists("logs"):
                 f.write("\n" * 20)
             #print(f"Appended {10} blank lines to {filename}")
 
+def timestamp():
+    return f"[{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]"
+
 def log(text: str, self=Any):
         log_name = str(type(self))
         # Ensure logs directory exists
@@ -19,8 +22,7 @@ def log(text: str, self=Any):
         log_path = os.path.join("logs", f"{log_name}.log")
         
         # Timestamp the message
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        formatted_message = f"[{timestamp}] {text}\n"
+        formatted_message = f"{timestamp()} {text}\n"
         
         # Append the message to the log file
         with open(log_path, "a", encoding="utf-8") as f:

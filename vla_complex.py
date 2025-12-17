@@ -11,7 +11,7 @@ from datetime import datetime
 import threading
 import asyncio
 
-from logger import log
+from logger import log, timestamp
 
 RAW_EXECUTE = False
 EXECUTE = True
@@ -35,23 +35,59 @@ class VLA_Complex:
         """___________________________"""
         if not self.parent:
             raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
-        log(f"{self.parent} called {self.tool_name}", self.parent)
+        instruction_print = f"...{instruction[-20:]}" if len(instruction) > 20 else instruction
+        log(f"{self.parent.name} called {self.tool_name} with {instruction_print}", self.parent)
         if not self.parent.applicable:
-            log(f"{self.parent} call to {self.tool_name} is inapplicable ", self.parent)
-            log(f"{self.parent} call is inapplicable ", self)
+            log(f"{self.parent.name} call to {self.tool_name} is inapplicable ", self.parent)
+            log(f"{self.parent.name} call is inapplicable ", self)
             return f"Inapplicable call. Please finish execution (no final response needed)."  
-        log(f"Instruction \"{instruction}\" is presented.", self)
+        log(f"Instruction \"{instruction_print}\" is presented.", self)
         self.parent.applicable = False # Parent can make no more calls.
+import json
+class DrawOnBlackboard(VLA_Complex):
+    def __init__(self):
+        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment. `str` will update the entire blackboard, replacing all keys with the updated values (python's `dict.update()` function).", "draw_on_blackboard")
+        self.blackboard = {}
+    
+    async def execute(self, str_dict: str):
+        await super().execute(str_dict)
+        try:
+            await self.vla(str_dict=str_dict)
+        except Exception:
+            log(f"Failed to start `draw` method.", self)
+        
+
+    async def draw(self, str_dict: str):
+        try:
+            bb_dict = json.loads(str_dict)
+            self.blackboard.update(bb_dict)
+            log(f"Blackboard updated to:\n{self.blackboard}", self)
+            rerun_input = self.blackboard
+            await self.parent.check(rerun_input, self.tool_name)
+            return "Added to blackboard. Return immediately."
+        except Exception:
+            dict_print = f"...{str_dict[-20:]}" if len(str_dict) > 20 else str_dict
+
+            log(f"{dict_print} is not JSON-loadable...", self)
+            try:   
+                self.blackboard["Blackboard"] = str_dict
+                log(f"Blackboard updated to:\n{self.blackboard}", self)
+                rerun_input = self.blackboard
+                await self.parent.check(rerun_input, self.tool_name)
+                return "Added to blackboard. Return immediately."
+            except Exception as e:
+                return f"Failed to modify blackboard: {e}."
+        
 
 class Logger(VLA_Complex):
     def __init__(self):
-        super().__init__(log, "Print/log a message, which the programmer may or may not choose to view.", "text")
+        super().__init__(log, "Print/log a message, which the programmer may or may not choose to view. Can be called before other more serious functions.", "log")
 
     async def execute(self, text: str):
         await super().execute(text)
 
         self.vla(text=text)
-        await self.parent.check(f"Just logged '{text}'")
+        return "added to logs*"
 
     def log(self, text: str):
         log(f"\"{text}\"", self)
@@ -107,11 +143,11 @@ class Chat(VLA_Complex):
             self.user_prompt["DONE"] = False # ready for new user message
             await self.parent.check(rerun_input, signature=self.tool_name)
             log(f"\tAfter rerun...", self)
-            self.session.append({"User":f"{self.user_prompt['Content']}"})
+            self.session.append({f"{timestamp()} User":f"{self.user_prompt['Content']}"})
         log("Execute process done", self)
 
     async def start(self):
-        await self.execute("Introduce yourself briefly. (You are chatting to the user.)")
+        await self.execute("Hello?")
 
     def listen(self):
         while True:
@@ -253,9 +289,9 @@ class Navigator(VLA_Complex):
         ### Threads
         # Internal to planner
 
-    async def execute(self, instruction: str):
+    async def execute(self, destination: str):
         try:
-            await super().execute(instruction)
+            await super().execute(destination)
         except Exception as e:
             print(f"Could not call super's execute: {e}")
             log(f"Could not call super's execute: {e}", self) 
@@ -266,32 +302,34 @@ class Navigator(VLA_Complex):
             self.session = []
 
         # Process signal
-        if instruction == "STOP":
+        if destination == "STOP":
             self.signal["flag"] = "STOP"
             self.signal["goal"] = "empty"
         else:
             self.signal["flag"] = CONTINUE
-            self.signal["goal"] = instruction
+            self.signal["goal"] = destination
 
         try:
             log(f"\tDispatching VLA with signal: \"{self.signal}\"", self)
             self.vla(self.signal)
-            log(f"\tAfter instructing \"{instruction}\" ", self)
+            log(f"\tAfter instructing \"{destination}\" ", self)
             log(f"\tSignal after: {self.signal}", self)
-            if not instruction == self.last_instruction:
-                if self.signal["flag"] == DONE:
-                    rerun_input = self.get_rerun_input(f"Arrived at {self.signal["goal"]}.")
-                    check = await self.parent.check(rerun_input)
-                    if check == "RERUN":
-                        return f"Successfully arrived at {instruction}. Return immediately with no output."
-                if self.signal["flag"] == "STOP":
-                    return f"Stopped."
-                else:
-                    self.session.append(f"Followed instruction to {self.signal['goal']}")
+            if destination == self.last_instruction:
+                return f"Try again. You're either already pathing there (no need to call this tool), or you've already arrived."
+            if self.signal["flag"] == DONE:
+                rerun_input = self.get_rerun_input(f"Arrived at {self.signal["goal"]}.")
+                check = await self.parent.check(rerun_input)
+                if check == "RERUN":
+                    return f"Successfully arrived at {destination}. Return immediately with no output."
+            if self.signal["flag"] == "STOP":
+                return f"Stopped."
+            else:
+                self.session.append(f"Followed instruction to {self.signal['goal']}")
             #await asyncio.sleep(0.5)
             #print(f"After awaiting")
         except Exception as e:
             print(f"!!{e}!!")
+            return f"Planning failed. Make sure to pass a destination from {self.vla.destinations} (or STOP), and nothing more."
         log("Done with execute process", self)
 
             # Status = OK, Check = CONTINUE

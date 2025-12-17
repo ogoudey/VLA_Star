@@ -195,6 +195,7 @@ class PathFollow(VLA):
         try:
             while True:
                 if self.following:
+                    this_goal = self.running_state["goal"]
                     travel_t0 = time.time()
                     while not self.running_state["flag"] == "STOP":
                         if not self.waypoint:
@@ -206,7 +207,11 @@ class PathFollow(VLA):
                             #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
                             if d < 1:
                                 log(f"Arrived at waypoint {self.waypoint.state.coordinates}", self)
-                                if len(self.path.nodes) > 0:
+                                if not self.running_state["goal"] == this_goal:
+                                    log(f"Running state goal has changed. Stopping.", self)
+                                    self.running_state["flag"] = "STOP"
+                                    one_off("STOP")
+                                elif len(self.path.nodes) > 0:
                                     log(f"Path is not empty, updating waypoint.", self)
                                     self.next_waypoint()
                                 else:
