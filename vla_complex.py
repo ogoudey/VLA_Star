@@ -36,7 +36,7 @@ class VLA_Complex:
         if not self.parent:
             raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
         instruction_print = f"...{instruction[-20:]}" if len(instruction) > 20 else instruction
-        log(f"{self.parent.name} called {self.tool_name} with {instruction_print}", self.parent)
+        log(f"{self.parent.name} called {self.tool_name}({instruction_print})", self.parent)
         if not self.parent.applicable:
             log(f"{self.parent.name} call to {self.tool_name} is inapplicable ", self.parent)
             log(f"{self.parent.name} call is inapplicable ", self)
@@ -46,7 +46,7 @@ class VLA_Complex:
 import json
 class DrawOnBlackboard(VLA_Complex):
     def __init__(self):
-        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment. `str` will update the entire blackboard, replacing all keys with the updated values (python's `dict.update()` function).", "draw_on_blackboard")
+        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment (while still calling one at tool once). This is for internal use only, think of it like an internal script for an agent to follow at each step. The `str_dict` arg will replace the entire blackboard.", "draw_on_blackboard")
         self.blackboard = {}
     
     async def execute(self, str_dict: str):
@@ -111,9 +111,9 @@ class Chat(VLA_Complex):
 
     async def execute(self, text: str):
         await super().execute(text)
-        log(f"Calling vla {self.vla}...", self)
+        log(f"Calling vla {self.vla.__name__}...", self)
         self.vla(text=text)
-        log(f"After having called vla {self.vla}.", self)
+        log(f"After having called vla {self.vla.__name__}.", self)
 
         if not self.listening:
             self.listener.start()

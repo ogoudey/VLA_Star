@@ -132,7 +132,7 @@ class GDA:
         )
         self.agent_identities += 1
 
-        log(f"Context/prompt:\n{context}", self)
+        log(f"Context/prompt:\n{json.dumps(context)}", self)
         asyncio.create_task(self.spin_off_async(agent, context))
         while self.applicable:
             await asyncio.sleep(1) # should then wait until its done?
