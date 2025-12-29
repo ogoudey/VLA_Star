@@ -42,12 +42,15 @@ def get_terrain():
     json_text = json_bytes.decode("utf-8")
 
     obj = json.loads(json_text)
-    w, h = obj["width"], obj["height"]
-    flat = obj["data"]
+    try:
+        w, h = obj["width"], obj["height"]
+        flat = obj["data"]
 
-    arr = np.array(flat).reshape((w, h))
+        data = np.array(flat).reshape((w, h))
+    except KeyError:
+        data = obj
     sock.close()
-    return arr
+    return data
 
 # Send the request
 def get_destinations():
