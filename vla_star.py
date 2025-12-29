@@ -17,8 +17,9 @@ class VLA_Star:
     def run(self, prompt: str | None = None):
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
-                print(f"Starting {vlac}")
+                print(f"Starting {vlac.tool_name}")
                 asyncio.run(vlac.start())
+        print(f"After for loop of all starting all VLA Complexes.")
                 
         
         #asyncio.run(self.agent.run(prompt))

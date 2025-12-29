@@ -169,7 +169,8 @@ class PathFollow(VLA):
 
                 try:
                     self.unity_environment = self.init_env()
-                    self.path = space.rrt_astar(self.unity_environment, self.running_state["goal"], num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01, logger=log)
+                    #self.path = space.rrt_astar(self.unity_environment, self.running_state["goal"], num_nodes=5000, terrain_aabb=((0, 1000), (0, 1000)), costly_altitude=0.01, logger=log)
+                    self.path = space.rrt_astar(self.unity_environment, self.running_state["goal"], num_nodes=5000, terrain_aabb=((-5000, 5000), (-5000, 5000)), costly_altitude=0.00, dT=200.0, beta=100.0, logger=log)
                 except Exception as e:
                     log(f"Planning failed because {e}", self)
                 if self.running_state["flag"] == "STOP":
@@ -205,7 +206,7 @@ class PathFollow(VLA):
                             self.travel_time = time.time() - travel_t0
                             d = math.sqrt( math.pow(self.waypoint.state.coordinates[0] - self.current_position[0], 2) + math.pow(self.waypoint.state.coordinates[1] - self.current_position[1], 2) )
                             #print(f"{self.current_position} is {d} away from {self.waypoint.state.coordinates}")
-                            if d < 1:
+                            if d < 5:
                                 log(f"Arrived at waypoint {self.waypoint.state.coordinates}", self)
                                 if not self.running_state["goal"] == this_goal:
                                     log(f"Running state goal has changed. Stopping.", self)
