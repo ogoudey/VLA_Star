@@ -4,6 +4,8 @@ import asyncio
 from gda import GDA, DemoedLanguageModel
 from vla_complex import VLA_Complex
 
+from exceptions import Shutdown
+
 
 class VLA_Star:
     agent: GDA | DemoedLanguageModel
@@ -18,7 +20,10 @@ class VLA_Star:
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
                 print(f"Starting {vlac.tool_name}")
-                asyncio.run(vlac.start())
+                try:
+                    asyncio.run(vlac.start())
+                except Shutdown:
+                    print(f"Safely shut down {vlac.tool_name}.")
         print(f"After for loop of all starting all VLA Complexes.")
                 
         

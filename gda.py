@@ -9,7 +9,9 @@ from itertools import groupby
 import json
 import random
 
-from logger import log
+from exceptions import Shutdown
+
+from displays import log
 
 from multiprocessing import Process
 
@@ -90,6 +92,8 @@ class GDA:
         self.running = False
         self.agent_identities = 0
         
+    def __str__(self):
+        return f"LLM {self.name}"
 
     @property
     def applicable(self):
@@ -114,9 +118,9 @@ class GDA:
     
     async def spin_off_async(self, agent, prompt):
         try:
-            log(f"Agent {agent.name} is started.", self)
+            log(f"\tI am started.", self)
             result = await Runner.run(agent, json.dumps(prompt))
-            log(f"Agent {agent.name} is finished.", self)
+            log(f"\tI am finished.", self)
         except Exception as e:
             print(f"!!Failed to run {agent.name}!!\nError:\n\t{e}")
 
@@ -132,15 +136,19 @@ class GDA:
         )
         self.agent_identities += 1
 
-        log(f"Context/prompt:\n{json.dumps(context)}", self)
+        log(f"\tContext/prompt:\n{json.dumps(context)}", self)
         asyncio.create_task(self.spin_off_async(agent, context))
-        while self.applicable:
-            await asyncio.sleep(1) # should then wait until its done?
+        try:
+            while self.applicable:
+                await asyncio.sleep(1) # should then wait until its done?
+        except KeyboardInterrupt:
+            print("KI from LLM run")
+            raise Shutdown()
 
     async def check(self, rerun_input, signature="Anon"):
         """ A request to check an input from a VLA Complex ."""
         try: # Wrapped in a try
-            log(f"Rerun input: {rerun_input} from {signature}.", self)
+            log(f"{signature} >>> Rerun input: {rerun_input}", self)
             self.context_from(rerun_input, signature) # Create context
             await self.run(self.context)
             return RERUN # return should be useful to VLA Complex

@@ -11,10 +11,14 @@ from datetime import datetime
 import threading
 import asyncio
 
-from logger import log, timestamp
+from displays import log, timestamp, update_activity
 
 RAW_EXECUTE = False
 EXECUTE = True
+
+from exceptions import Shutdown
+
+
 
 class VLA_Complex:
     # Everything that's treated the same by a GDA
@@ -36,12 +40,12 @@ class VLA_Complex:
         if not self.parent:
             raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
         instruction_print = f"...{instruction[-20:]}" if len(instruction) > 20 else instruction
-        log(f"{self.parent.name} called {self.tool_name}({instruction_print})", self.parent)
+        log(f"\t{self.parent.name} >>> {self.tool_name}(\"{instruction_print}\")", self.parent)
         if not self.parent.applicable:
             log(f"{self.parent.name} call to {self.tool_name} is inapplicable ", self.parent)
             log(f"{self.parent.name} call is inapplicable ", self)
             return f"Inapplicable call. Please finish execution (no final response needed)."  
-        log(f"Instruction \"{instruction_print}\" is presented.", self)
+        log(f"LLM >>> {self.tool_name}(\"{instruction_print}\")", self)
         self.parent.applicable = False # Parent can make no more calls.
 import json
 class DrawOnBlackboard(VLA_Complex):
@@ -95,6 +99,7 @@ class Logger(VLA_Complex):
 
 class Chat(VLA_Complex):
     parent: GDA
+    
     def __init__(self):
         super().__init__(self.respond, "Say something directly to user.", "chat", True)
         
@@ -103,21 +108,28 @@ class Chat(VLA_Complex):
         self.session = None
 
         ### Threads ###
-        self.listener = threading.Thread(target=self.listen)
+        self.listener = threading.Thread(target=self.listen, daemon=True)
         self.listening = False
 
         # Signal like
         self.user_prompt = {"DONE": False, "Content": ""}
 
+    def _repr__(self):
+        return f"Chat repr"
+
+    def __str__(self):
+        return f"Chat"
+    
     async def execute(self, text: str):
         await super().execute(text)
-        log(f"Calling vla {self.vla.__name__}...", self)
+        update_activity("Responding...", self)
+        log(f"\tCalling vla {self.vla.__name__}...", self)
         self.vla(text=text)
-        log(f"After having called vla {self.vla.__name__}.", self)
 
         if not self.listening:
-            self.listener.start()
             self.listening = True
+            self.listener.start()
+            
 
         if self.long_term_memory is None:
             self.long_term_memory = []
@@ -127,38 +139,70 @@ class Chat(VLA_Complex):
         self.session.append({"Me (robot)": f"{text}"})
 
         check = "CONTINUE" 
-        while check == "CONTINUE":
-            log(f"\tIdling before user prompt: \"{self.user_prompt}\"", self)
-            while self.user_prompt["DONE"] == False:
-                time.sleep(0.1)
-                pass
-            log(f"\tSensory check received: \"{self.user_prompt}\"", self)
-            
-            # Construct rerun
-            rerun_input = {
-                "Long term memory": self.long_term_memory,
-                "Session information": self.session,
-                "Current user message": self.user_prompt["Content"]
-            }
-            self.user_prompt["DONE"] = False # ready for new user message
-            await self.parent.check(rerun_input, signature=self.tool_name)
-            log(f"\tAfter rerun...", self)
-            self.session.append({f"{timestamp()} User":f"{self.user_prompt['Content']}"})
-        log("Execute process done", self)
+        try:
+            while check == "CONTINUE":
+                log(f"\tIdling before user input...", self)
+                
+                update_activity("Waiting for user input...", self)
+                while self.user_prompt["DONE"] == False:
+                    time.sleep(0.1)
+                    pass
+                update_activity("Processing user input...", self)
+                
+                # Construct rerun
+                rerun_input = {
+                    "Long term memory": self.long_term_memory,
+                    "Session information": self.session,
+                    "Current user message": self.user_prompt["Content"]
+                }
+                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+                self.user_prompt["DONE"] = False # ready for new user message
+                await self.parent.check(rerun_input, signature=self.tool_name)
+                log(f"\tAfter rerun...", self)
+                self.session.append({f"{timestamp()} User":f"{self.user_prompt['Content']}"})
+        except KeyboardInterrupt:
+            print("KI at check loop")
+            update_activity("Shutting down.", self, exit=True)
+            self.listening = False
+            self.listener.join()
+            print("check loop joined listener")
+            raise Shutdown("Shutting down.")
+        except Shutdown:
+            print("Shutdown at check loop")
+            update_activity("Shutting down.", self, exit=True)
+            self.listening = False
+            self.listener.join()
+            raise Shutdown()
+        
+        log("\tExecute process done", self)
 
     async def start(self):
-        await self.execute("Hello?")
+        try:
+            await self.execute("Hello?")
+        except Shutdown:
+            print(f"\nSystem shutting down...")
+            raise Shutdown()
 
     def listen(self):
-        while True:
-            self.user_prompt["Content"] = input("V\tV\tV Give prompt: V\tV\tV\n\t")
-            print("\t\t________________\n")
-            self.user_prompt["DONE"] = True
-            while self.user_prompt["DONE"] == True:
-                time.sleep(0.1)
-                pass
+        try:
+            while self.listening:
+                self.user_prompt["Content"] = input("V\tV\tV Give prompt: V\tV\tV\n\t")
+                print("\t\t________________\n")
+                self.user_prompt["DONE"] = True
+                while self.user_prompt["DONE"] == True and self.listening:
+                    time.sleep(0.1)
+                    pass
+        except KeyboardInterrupt:
+            print("KI at listen")
+            print(f"\t\tClosing.")
+            raise Shutdown("Shutting down.")
+        except Shutdown:
+            print("Shutdown at listen")
+            print(f"\t\tClosing.")
+            raise Shutdown("Shutting down.")
 
     def respond(self, text: str):
+        log("\t\tExecute process done", self)
         print(f"\nRobot: {text}")
 
 

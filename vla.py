@@ -1,7 +1,7 @@
 import threading
 from typing import Any
 
-from logger import log
+from displays import log
 
 class VLA:
     """Takes a function that takes a string. Can be called like VLA()(...)"""
