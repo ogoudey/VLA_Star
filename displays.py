@@ -17,6 +17,25 @@ if os.path.exists("logs"):
                 f.write(f"\n\n\n\n{timestamp()}\t\t\t\t__ New chunk started __\n")
             #print(f"Appended {10} blank lines to {filename}")
 
+
+"""
+watch -n 0.1 'tail -n 20 logs/context.json'
+"""
+def show_context(context,):
+    display_path = os.path.join("logs", f"context.json")
+
+    with open(display_path, "w", encoding="utf-8") as f:
+        json.dump(
+            context,
+            f,
+            indent=2,
+            sort_keys=True,
+            default=str,   # safety for non-JSON types
+        )
+
+"""
+watch -n 0.1 'tail -n 20 logs/display.json'
+"""
 def update_activity(data, self=Any, exit=False):
     display_path = os.path.join("logs", f"display.json")
     if not self in total_activity:

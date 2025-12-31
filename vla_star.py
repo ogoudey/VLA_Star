@@ -6,29 +6,41 @@ from vla_complex import VLA_Complex
 
 from exceptions import Shutdown
 
+from llms.runner import ThinkingMachine
 
 class VLA_Star:
     agent: GDA | DemoedLanguageModel
     vla_complexes: List[VLA_Complex]
 
-    def __init__(self, agent: GDA | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
-        self.agent = agent
+    def __init__(self, prototype_agent: GDA | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
+        self.prototype_agent = prototype_agent
         self.vla_complexes = vla_complexes
-        self.agent.set_tools(vla_complexes)
+        self.prototype_agent.set_tools(vla_complexes)
 
     def run(self, prompt: str | None = None):
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
                 print(f"Starting {vlac.tool_name}")
                 try:
-                    asyncio.run(vlac.start())
+                    asyncio.run(self.start_with_vlac(vlac))
                 except Shutdown:
                     print(f"Safely shut down {vlac.tool_name}.")
-        print(f"After for loop of all starting all VLA Complexes.")
+        print(f"After for loop of all starting with a VLA Complex.")
                 
-        
-        #asyncio.run(self.agent.run(prompt))
+    async def start_with_vlac(self, vlac: VLA_Complex):
+        # start the "scheduler"
+        tm = ThinkingMachine(self.prototype_agent)
 
+
+        asyncio.create_task(tm.start())
+
+        # other async work if needed
+
+        await vlac.start(tm.rerun)
+
+        # keep main loop alive
+        while True:
+            await asyncio.sleep(60)
 """
 ### Demos ###
 def street_and_crosswalks():

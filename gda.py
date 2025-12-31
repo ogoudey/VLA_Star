@@ -11,7 +11,7 @@ import random
 
 from exceptions import Shutdown
 
-from displays import log
+from displays import log, show_context, timestamp
 
 from multiprocessing import Process
 
@@ -72,7 +72,16 @@ class DemoedLanguageModel:
         self.tools = vlacs
 
     
+import asyncio
 
+pending_agents = []
+
+async def agent_scheduler():
+    while True:
+        if pending_agents:
+            agent, prompt = pending_agents.pop(0)
+            asyncio.create_task(Runner.run(agent, prompt))
+        await asyncio.sleep(0.1)  # throttle loop
 
 class GDA:
     def __init__(self, name: str, instructions: str, goal:str | None = None):
@@ -90,6 +99,10 @@ class GDA:
         self.last_status = None
         self._applicable = True
         self.running = False
+
+
+
+        self.total_session_t0 = time.time()
         self.agent_identities = 0
         
     def __str__(self):
@@ -116,6 +129,29 @@ class GDA:
         ))
         vlac.parent = self # The complex's check will go to this Agent
     
+    async def run_identity(self, context):
+        
+        identity = Agent(
+            name=self.name + str(self.agent_identities),
+            instructions=self.system_to_instructions(), # Yet to modify system instructions significantly
+            tools=self.tools, # The tool-ified VLA Complexes
+            model="o3-mini",
+        )
+        self.agent_identities += 1
+
+        context["Current time"] = timestamp()
+        context["Session length"] = time.time() - self.total_session_t0
+        prompt = json.dumps(context)
+        show_context(context)
+
+        self.clean_context()
+        try:
+            result = await Runner.run(identity, prompt, max_turns=2)
+        except Exception as e:
+            print(f"Max turns exceeded so just leaving it...")
+            result = "Max turns exceeded."
+        return result
+
     async def spin_off_async(self, agent, prompt):
         try:
             log(f"\tI am started.", self)
@@ -155,6 +191,13 @@ class GDA:
         except Exception as e:
             print(f"Error: {e}")
 
+    def clean_context(self):
+        #print(f"Cleaning {self.context}")
+        if "Chat" in self.context:
+            if "Current user message" in self.context["Chat"]:
+                #print(f"Deleting {self.context["Chat"]["Current user message"]}")
+                del self.context["Chat"]["Current user message"]
+
     def context_from(self, rerun_input: dict, signature: str):
         if not signature in self.context:
             self.context[signature] = {}
@@ -164,11 +207,14 @@ class GDA:
                     self.context[signature][k] = v
 
         for vlac in self.vla_complexes:
-            if vlac.tool_name == signature:
-                continue
+            
+            
             if not vlac.tool_name in self.context:
-                # vlac.give_updates
-                pass  
+                self.context[vlac.tool_name] = {}
+                pass
+            self.context[vlac.tool_name]["f"] = f"{round(vlac.use_frequency / (time.time() - self.total_session_t0), 3)} Hz"
+
+        return self.context 
 
     def system_to_instructions(self):
         return json.dumps(self.system["Instructions"])

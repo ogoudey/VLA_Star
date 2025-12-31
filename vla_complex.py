@@ -3,7 +3,7 @@ from gda import GDA
 from vla import VLA
 from vlm import VLM
 import time
-from typing import List, Any
+from typing import List, Any, Callable
 from signals import DONE
 from signals import CONTINUE, RERUN
 import os
@@ -18,7 +18,8 @@ EXECUTE = True
 
 from exceptions import Shutdown
 
-
+global runner
+runner: Callable = None
 
 class VLA_Complex:
     # Everything that's treated the same by a GDA
@@ -33,10 +34,11 @@ class VLA_Complex:
         
         self.tool_name = tool_name
         self.on_start = on_start
-
+        self.use_frequency = 0.0
 
     async def execute(self, instruction: str):
         """___________________________"""
+        self.use_frequency += 1
         if not self.parent:
             raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
         instruction_print = f"...{instruction[-20:]}" if len(instruction) > 20 else instruction
@@ -46,43 +48,50 @@ class VLA_Complex:
             log(f"{self.parent.name} call is inapplicable ", self)
             return f"Inapplicable call. Please finish execution (no final response needed)."  
         log(f"LLM >>> {self.tool_name}(\"{instruction_print}\")", self)
-        self.parent.applicable = False # Parent can make no more calls.
+        
 import json
 class DrawOnBlackboard(VLA_Complex):
     def __init__(self):
-        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment (while still calling one at tool once). This is for internal use only, think of it like an internal script for an agent to follow at each step. The `str_dict` arg will replace the entire blackboard.", "draw_on_blackboard")
+        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment (calling only once). This is a mnemonic device. You can use it to make your thinking available to other versions of yourself at other times, or fore transparently sharing plans with the user. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", "draw_on_blackboard")
         self.blackboard = {}
+    def __str__(self):
+        return f"DrawOnBlackBoard"
     
-    async def execute(self, str_dict: str):
+    async def execute(self, str_dict: str=""):
         await super().execute(str_dict)
         try:
-            await self.vla(str_dict=str_dict)
+            return self.vla(str_dict=str_dict)
         except Exception:
             log(f"Failed to start `draw` method.", self)
         
 
-    async def draw(self, str_dict: str):
+    def draw(self, str_dict: str):
+        global runner
+        if str_dict == "":
+            rerun_input = self.blackboard 
+            
+            runner(rerun_input, str(self))
+            return "Success. Return immediately."
         try:
             bb_dict = json.loads(str_dict)
             self.blackboard.update(bb_dict)
-            log(f"Blackboard updated to:\n{self.blackboard}", self)
-            rerun_input = self.blackboard
-            await self.parent.check(rerun_input, self.tool_name)
-            return "Added to blackboard. Return immediately."
+            
         except Exception:
             dict_print = f"...{str_dict[-20:]}" if len(str_dict) > 20 else str_dict
 
             log(f"{dict_print} is not JSON-loadable...", self)
             try:   
                 self.blackboard["Blackboard"] = str_dict
-                log(f"Blackboard updated to:\n{self.blackboard}", self)
-                rerun_input = self.blackboard
-                await self.parent.check(rerun_input, self.tool_name)
-                return "Added to blackboard. Return immediately."
             except Exception as e:
                 return f"Failed to modify blackboard: {e}."
+            
+            self.blackboard["Timestamp"] = timestamp()
+            log(f"Blackboard updated to:\n{self.blackboard}", self)
+            rerun_input = self.blackboard 
+            
+            runner(rerun_input, str(self))
+            return "Added to blackboard. Return immediately."
         
-
 class Logger(VLA_Complex):
     def __init__(self):
         super().__init__(log, "Print/log a message, which the programmer may or may not choose to view. Can be called before other more serious functions.", "log")
@@ -101,7 +110,7 @@ class Chat(VLA_Complex):
     parent: GDA
     
     def __init__(self):
-        super().__init__(self.respond, "Say something directly to user.", "chat", True)
+        super().__init__(self.respond, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
         
         ### State ###
         self.long_term_memory = None
@@ -112,7 +121,7 @@ class Chat(VLA_Complex):
         self.listening = False
 
         # Signal like
-        self.user_prompt = {"DONE": False, "Content": ""}
+        self.user_input = ""
 
     def _repr__(self):
         return f"Chat repr"
@@ -122,61 +131,27 @@ class Chat(VLA_Complex):
     
     async def execute(self, text: str):
         await super().execute(text)
-        update_activity("Responding...", self)
+
         log(f"\tCalling vla {self.vla.__name__}...", self)
         self.vla(text=text)
 
-        if not self.listening:
-            self.listening = True
-            self.listener.start()
-            
-
+        
         if self.long_term_memory is None:
             self.long_term_memory = []
         if self.session is None:
             self.session = []
+        if not self.listening:
+            self.listening = True
+            self.listener.start()
 
-        self.session.append({"Me (robot)": f"{text}"})
-
-        check = "CONTINUE" 
-        try:
-            while check == "CONTINUE":
-                log(f"\tIdling before user input...", self)
-                
-                update_activity("Waiting for user input...", self)
-                while self.user_prompt["DONE"] == False:
-                    time.sleep(0.1)
-                    pass
-                update_activity("Processing user input...", self)
-                
-                # Construct rerun
-                rerun_input = {
-                    "Long term memory": self.long_term_memory,
-                    "Session information": self.session,
-                    "Current user message": self.user_prompt["Content"]
-                }
-                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-                self.user_prompt["DONE"] = False # ready for new user message
-                await self.parent.check(rerun_input, signature=self.tool_name)
-                log(f"\tAfter rerun...", self)
-                self.session.append({f"{timestamp()} User":f"{self.user_prompt['Content']}"})
-        except KeyboardInterrupt:
-            print("KI at check loop")
-            update_activity("Shutting down.", self, exit=True)
-            self.listening = False
-            self.listener.join()
-            print("check loop joined listener")
-            raise Shutdown("Shutting down.")
-        except Shutdown:
-            print("Shutdown at check loop")
-            update_activity("Shutting down.", self, exit=True)
-            self.listening = False
-            self.listener.join()
-            raise Shutdown()
+        self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
         
         log("\tExecute process done", self)
 
-    async def start(self):
+    async def start(self, rerun_function: Callable):
+        global runner
+        if runner is None:
+            runner = rerun_function
         try:
             await self.execute("Hello?")
         except Shutdown:
@@ -186,16 +161,22 @@ class Chat(VLA_Complex):
     def listen(self):
         try:
             while self.listening:
-                self.user_prompt["Content"] = input("V\tV\tV Give prompt: V\tV\tV\n\t")
+                update_activity("Listening...", self)
+                self.user_input = input("V\tV\tV Give prompt: V\tV\tV\n")
                 print("\t\t________________\n")
-                self.user_prompt["DONE"] = True
-                while self.user_prompt["DONE"] == True and self.listening:
-                    time.sleep(0.1)
-                    pass
-        except KeyboardInterrupt:
-            print("KI at listen")
-            print(f"\t\tClosing.")
-            raise Shutdown("Shutting down.")
+                rerun_input = {
+                        "Long term memory": self.long_term_memory,
+                        "Session information": self.session.copy()
+                    }
+                if self.user_input == "":
+                    log(f"{self.tool_name} >>> LLM: ...no new signal...", self)
+                else:
+                    rerun_input["Current user message"] = self.user_input
+                    log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+                    self.session.append({f"{timestamp()} User":f"{self.user_input}"})
+                
+                global runner
+                runner(rerun_input, str(self))
         except Shutdown:
             print("Shutdown at listen")
             print(f"\t\tClosing.")
@@ -212,7 +193,7 @@ class EpisodicRecorder(VLA_Complex):
         Terminal IO and ^C
     Checking signal:
         CONTINUE, DONE
-    Running signal:
+    Running signal:behavior tree
         RUNNING_LOOP: bool
         RUNNING_E: bool
         task: str
