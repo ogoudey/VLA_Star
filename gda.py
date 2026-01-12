@@ -18,29 +18,33 @@ from multiprocessing import Process
 
 class DemoedLanguageModel:
     def __init__(self, goal: str = "Pass the proper args to your functions."):
+        self.name = "Dev"
         self.applicable = True # actions always have effects
         self.goal = goal
         self.status_history = []
         self.context = {}
 
-    async def run(self, prompt="You got this..."):
+
+    def run(self, rerun_input, source):
         
         # assume one tool (the recorder)
         if len(self.tools) == 0:
             task_name = ""
             while task_name == "":
-                task_name = input(f"Goal: {self.goal}\nPrompt: {prompt}\nTask label: ")
-            await self.tools[0].execute(task_name)
+                task_name = input(f"\"{rerun_input}\" from {source}")
+            self.use_tool(self.tools[0], task_name)
             return task_name
         else:
             while True:
                 for tool in self.tools:
-                    task_name = input(f"\n___Modality name: {tool.tool_name}___\nGoal: {self.goal}\nDocstring: {tool.execute.__func__.__doc__}\nPrompt: {prompt}\nInput ([enter] to bypass): ")
+                    task_name = input(f"\"{rerun_input}\" from {source}")
                     if not task_name == "":
-                        await tool.execute(task_name)
+                        self.use_tool(tool, task_name)
                         return task_name
                 print(f"Back to the top...")
 
+    def use_tool(self, tool, instruction):
+        asyncio.run(tool.execute(instruction))
         """
         for vlac in self.tools:
             inp = input(f"({vlac.tool_name}) {vlac.capability_desc}: ")
@@ -75,13 +79,6 @@ class DemoedLanguageModel:
 import asyncio
 
 pending_agents = []
-
-async def agent_scheduler():
-    while True:
-        if pending_agents:
-            agent, prompt = pending_agents.pop(0)
-            asyncio.create_task(Runner.run(agent, prompt))
-        await asyncio.sleep(0.1)  # throttle loop
 
 class GDA:
     def __init__(self, name: str, instructions: str, goal:str | None = None):

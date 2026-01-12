@@ -10,7 +10,7 @@ import os
 from datetime import datetime
 import threading
 import asyncio
-
+import socket
 from displays import log, timestamp, update_activity
 
 RAW_EXECUTE = False
@@ -109,7 +109,7 @@ class Logger(VLA_Complex):
 class Chat(VLA_Complex):
     parent: GDA
     
-    def __init__(self):
+    def __init__(self, as_client=False):
         super().__init__(self.respond, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
         
         ### State ###
@@ -117,8 +117,10 @@ class Chat(VLA_Complex):
         self.session = None
 
         ### Threads ###
+        self.is_client = as_client
         self.listener = threading.Thread(target=self.listen, daemon=True)
         self.listening = False
+        self.sock_write = False
 
         # Signal like
         self.user_input = ""
@@ -132,8 +134,7 @@ class Chat(VLA_Complex):
     async def execute(self, text: str):
         await super().execute(text)
 
-        log(f"\tCalling vla {self.vla.__name__}...", self)
-        self.vla(text=text)
+        
 
         
         if self.long_term_memory is None:
@@ -141,8 +142,14 @@ class Chat(VLA_Complex):
         if self.session is None:
             self.session = []
         if not self.listening:
+            if self.is_client:
+                self.open_client()
             self.listening = True
+            
             self.listener.start()
+        
+        log(f"\tCalling vla {self.vla.__name__}...", self)
+        self.vla(text=text)
 
         self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
         
@@ -158,11 +165,25 @@ class Chat(VLA_Complex):
             print(f"\nSystem shutting down...")
             raise Shutdown()
 
+    def get_data_over_socket(self):
+        data = self.conn.recv(1024)
+        if not data:
+            return
+        return data.decode().strip()
+
     def listen(self):
+        print(f"Sleeping for 3 seconds before starting chat")
+        time.sleep(3)
         try:
             while self.listening:
                 update_activity("Listening...", self)
-                self.user_input = input("V\tV\tV Give prompt: V\tV\tV\n")
+                if self.is_client:
+                    self.wait_for_get_access()
+                    self.user_input = self.get_data_over_socket()
+                    print(f"Received {self.user_input}")
+                    self.sock_write = True
+                else:
+                    self.user_input = input("V\tV\tV Give prompt: V\tV\tV\n")
                 print("\t\t________________\n")
                 rerun_input = {
                         "Long term memory": self.long_term_memory,
@@ -174,18 +195,56 @@ class Chat(VLA_Complex):
                     rerun_input["Current user message"] = self.user_input
                     log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
                     self.session.append({f"{timestamp()} User":f"{self.user_input}"})
-                
+
                 global runner
-                runner(rerun_input, str(self))
+                #runner(rerun_input, str(self))
+            self.sock.close()
         except Shutdown:
             print("Shutdown at listen")
             print(f"\t\tClosing.")
             raise Shutdown("Shutting down.")
+    
+    def wait_for_get_access(self):
+        print(f"Waiting for read access")
+        while self.sock_write:
+            time.sleep(0.1)
+
+    def open_client(self):
+        PORT = 5001
+        HOST = "127.0.0.1"
+
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        
+        self.sock.bind((HOST, PORT))
+        print(f"Open a client... (python3 chat.py)")
+        self.sock.listen()
+        self.conn, addr = self.sock.accept()
+        print(f"Intro {self.get_data_over_socket()}")
+        self.sock_write = True
+
+    def wait_for_sock_access(self):
+        print(f"Waiting for write access")
+        while not self.sock_write:
+            time.sleep(0.1)
 
     def respond(self, text: str):
         log("\t\tExecute process done", self)
-        print(f"\nRobot: {text}")
+        print(f"respond({text})")
+        if self.is_client:
+            self.wait_for_sock_access()
+            text = f"Robot: {text}\n"
+            print(f"Responding... {text}")
+            try:
+                self.sock.sendall(text.encode("utf-8"))
+            except Exception as e:
+                print(f"Error {e} when responding {text}")
+            self.sock_write = False
+        else:
+            print(f"\nRobot: {text}")
 
+    
+
+    
 
 class EpisodicRecorder(VLA_Complex):
     """

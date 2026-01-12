@@ -311,15 +311,16 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
 from vla_complex import Logger, Chat, DrawOnBlackboard
 class Mock_VLA_Star_Text(Factory):
     @staticmethod
-    def create():
+    def create(demo_language=False):
         Factory.common()
         ### ====== Morphology ===== ###
 
         m = Morphology()
 
-        inputter = DemoedLanguageModel()
-
-        inputter = GDA("name_for_traces", \
+        if demo_language:
+            inputter = DemoedLanguageModel()
+        else:
+            inputter = GDA("name_for_traces", \
     "You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.\n" \
     "You may choose ANY of the available tools.\n"\
     "You must call only ONE tool. Your job is to efficiently call that single tool.\n"\
@@ -330,7 +331,7 @@ class Mock_VLA_Star_Text(Factory):
 
         vla_complexes = [
             Logger(),
-            Chat(),
+            Chat(demo_language),
             DrawOnBlackboard()
         ]
     
