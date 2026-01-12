@@ -1,34 +1,57 @@
 import socket
+import threading
+import queue
+import time
+from chat_utils import recv_line, recv_loop, send_loop
+
+def respond_loop(inbound_q, send_q, stop_event):
+    try:
+        while not stop_event.is_set():
+            msg = inbound_q.get()
+            reply = input(f"Robot: {msg}\nReply: ")
+            send_q.put(reply)
+    except Exception as e:
+        print(f"Error in respond loop!: {e}")
+
+def run_client():
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    sock.connect(("127.0.0.1", 5001))
+
+    stop_event = threading.Event()
+    inbound_q = queue.Queue()
+    send_q = queue.Queue()
+
+    threading.Thread(
+        target=recv_loop,
+        args=(sock, inbound_q, stop_event),
+        daemon=True
+    ).start()
+
+    threading.Thread(
+        target=send_loop,
+        args=(sock, send_q, stop_event),
+        daemon=True
+    ).start()
+
+    threading.Thread(
+        target=respond_loop,
+        args=(inbound_q, send_q, stop_event),
+        daemon=True
+    ).start()
+    
+    inbound_q.put("")
+    try:
+        while not stop_event.is_set():
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    finally:
+        stop_event.set()
+        sock.close()
 
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-print("Connecting...")
-s.connect(("127.0.0.1", 5001))
-print("Connected!")
-
-intro = "From client"
-s.sendall(intro.encode("utf-8"))
-
-buffer = b""
-print("Waiting for initiation...")
-while not buffer.endswith(b"\n"):
-    chunk = s.recv(1)
-    if not chunk:
-        break
-    buffer += chunk
-print(buffer.decode().strip())
-try:
-    while True:
-        msg = input("Input: ")
-        # send
-        s.sendall(msg.encode("utf-8"))
-
-        buffer = b""
-        while not buffer.endswith(b"\n"):
-            chunk = s.recv(1)
-            if not chunk:
-                break
-            buffer += chunk
-        print("Response:", buffer.decode().strip())
-except KeyboardInterrupt:
-    s.close() 
+if __name__ == "__main__":
+    try:
+        run_client()
+    except OSError:
+        print("Failed to run client. Make sure a Chat is beginning to listen/listening.")
