@@ -35,7 +35,7 @@ class VLA_Star:
             asyncio.create_task(tm.start())
             
         else:
-            rerun_function = self.prototype_agent.run
+            rerun_function = self.prototype_agent.run_identity
 
         
         await vlac.start(rerun_function)

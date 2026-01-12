@@ -24,9 +24,8 @@ class DemoedLanguageModel:
         self.status_history = []
         self.context = {}
 
-
-    def run(self, rerun_input, source):
-        
+    def run_identity(self, rerun_input, source):
+        print(f"Tools: {self.tools}")
         # assume one tool (the recorder)
         if len(self.tools) == 0:
             task_name = ""
@@ -36,8 +35,9 @@ class DemoedLanguageModel:
             return task_name
         else:
             while True:
+                print(f"\"{rerun_input}\" from {source}")
                 for tool in self.tools:
-                    task_name = input(f"\"{rerun_input}\" from {source}")
+                    task_name = input(f"{tool.tool_name}: ")
                     if not task_name == "":
                         self.use_tool(tool, task_name)
                         return task_name
@@ -97,8 +97,6 @@ class GDA:
         self._applicable = True
         self.running = False
 
-
-
         self.total_session_t0 = time.time()
         self.agent_identities = 0
         
@@ -149,44 +147,7 @@ class GDA:
             result = "Max turns exceeded."
         return result
 
-    async def spin_off_async(self, agent, prompt):
-        try:
-            log(f"\tI am started.", self)
-            result = await Runner.run(agent, json.dumps(prompt))
-            log(f"\tI am finished.", self)
-        except Exception as e:
-            print(f"!!Failed to run {agent.name}!!\nError:\n\t{e}")
-
-    async def run(self, context=None):
-        """ Context includes prompt. """
-        self.applicable = True # output will be carried out
-        
-        agent = Agent(
-            name=self.name + str(self.agent_identities),
-            instructions=self.system_to_instructions(), # Yet to modify system instructions significantly
-            tools=self.tools, # The tool-ified VLA Complexes
-            model="o3-mini"
-        )
-        self.agent_identities += 1
-
-        log(f"\tContext/prompt:\n{json.dumps(context)}", self)
-        asyncio.create_task(self.spin_off_async(agent, context))
-        try:
-            while self.applicable:
-                await asyncio.sleep(1) # should then wait until its done?
-        except KeyboardInterrupt:
-            print("KI from LLM run")
-            raise Shutdown()
-
-    async def check(self, rerun_input, signature="Anon"):
-        """ A request to check an input from a VLA Complex ."""
-        try: # Wrapped in a try
-            log(f"{signature} >>> Rerun input: {rerun_input}", self)
-            self.context_from(rerun_input, signature) # Create context
-            await self.run(self.context)
-            return RERUN # return should be useful to VLA Complex
-        except Exception as e:
-            print(f"Error: {e}")
+    
 
     def clean_context(self):
         #print(f"Cleaning {self.context}")

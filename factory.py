@@ -312,6 +312,7 @@ from vla_complex import Logger, Chat, DrawOnBlackboard
 class Mock_VLA_Star_Text(Factory):
     @staticmethod
     def create(demo_language=False):
+        
         Factory.common()
         ### ====== Morphology ===== ###
 
@@ -319,6 +320,7 @@ class Mock_VLA_Star_Text(Factory):
 
         if demo_language:
             inputter = DemoedLanguageModel()
+            print(f"Prepare to demonstrate language.")
         else:
             inputter = GDA("name_for_traces", \
     "You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.\n" \
@@ -331,7 +333,7 @@ class Mock_VLA_Star_Text(Factory):
 
         vla_complexes = [
             Logger(),
-            Chat(demo_language),
+            Chat(),
             DrawOnBlackboard()
         ]
     

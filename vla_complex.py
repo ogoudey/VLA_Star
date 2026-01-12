@@ -112,7 +112,7 @@ class Logger(VLA_Complex):
 class Chat(VLA_Complex):
     parent: GDA
     
-    def __init__(self, as_client=False):
+    def __init__(self):
         super().__init__(self.reply, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
         
         ### State ###
@@ -120,14 +120,7 @@ class Chat(VLA_Complex):
         self.session = []
 
         ### Threads ###
-        self.is_client = as_client
         self.listening = False
-        self.sock_write = False
-
-        # Signal like
-        self.user_input = ""
-
-        self.run_server()
 
     def _repr__(self):
         return f"Chat repr"
@@ -136,10 +129,13 @@ class Chat(VLA_Complex):
         return f"Chat"
     
     async def execute(self, text: str):
+        if not self.listening:
+            self.run_server()
+
         await super().execute(text)
-                    
+         
         log(f"\tCalling vla {self.vla.__name__}...", self)
-        self.vla(text=text)
+        self.vla(text)
 
         self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
         
