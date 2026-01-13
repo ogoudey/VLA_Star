@@ -122,15 +122,21 @@ class Chat(VLA_Complex):
         ### Threads ###
         self.listening = False
 
+        self.send_q = queue.Queue()
+        self.inbound_q = queue.Queue()
+
     def _repr__(self):
         return f"Chat repr"
 
     def __str__(self):
         return f"Chat"
     
+
+    
+
     async def execute(self, text: str):
         if not self.listening:
-            self.run_server()
+            self.start_server()
 
         await super().execute(text)
          
@@ -148,7 +154,7 @@ class Chat(VLA_Complex):
         server.listen()
         self.listening = True
         print("Chat server waiting...")
-        update_activity("Chat server waiting...", __name__)
+        update_activity("Chat server waiting...", self.tool_name)
         while self.listening:
             client_sock, addr = server.accept()
             print("Client connected:", addr)
@@ -158,10 +164,13 @@ class Chat(VLA_Complex):
                 daemon=True
             ).start()
 
+    def start_server(self):
+        """Starts the server loop in a background thread."""
+        threading.Thread(target=self.run_server, daemon=True).start()
+
     def handle_client(self, sock):
         stop_event = threading.Event()
-        self.send_q = queue.Queue()
-        self.inbound_q = queue.Queue()
+        
 
         threading.Thread(
             target=recv_loop,
@@ -181,14 +190,12 @@ class Chat(VLA_Complex):
             daemon=True
         ).start()
 
-        update_activity("Listening...", __name__)
+        update_activity("Listening...", self.tool_name)
         try:
             while not stop_event.is_set():
-                update_activity(list(self.send_q.queue), "send_Q")
-                update_activity(list(self.inbound_q.queue), "inbound_q")
                 time.sleep(1)
         finally:
-            update_activity("Stopping listening...")
+            update_activity("Stopping listening...", self.tool_name)
             stop_event.set()
             sock.close()
 

@@ -71,7 +71,7 @@ def instantiate_chatting_bot():
 
 if __name__ == "__main__":
     v = instantiate_chatting_bot()
-    v.run()
+    v.start()
 
 
 """

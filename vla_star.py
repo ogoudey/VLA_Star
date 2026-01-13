@@ -17,7 +17,7 @@ class VLA_Star:
         self.vla_complexes = vla_complexes
         self.prototype_agent.set_tools(vla_complexes)
 
-    def run(self, prompt: str | None = None):
+    def start(self, prompt: str | None = None):
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
                 print(f"Starting {vlac.tool_name}")

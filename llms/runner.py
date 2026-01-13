@@ -29,9 +29,7 @@ class ThinkingMachine:
             if not self.updated:
                 update_activity("ThinkingMachine idle.", self)
             try:
-                print(f"Before get_nowait()")
                 rerun_input, source = self.reruns.get_nowait()
-                print(f"After get_nowait()")
                 update_activity("Thinking...", self) # Never gets here (good)
             except queue.Empty:
                 await asyncio.sleep(0.1)  # throttle
