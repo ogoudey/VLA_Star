@@ -5,7 +5,7 @@ from configs import RobotType, AgencyType, MonitorType, VLAType
 
 
 
-def vla_kinova_training():
+def instantiate_vla_kinova_training():
     """
     This is a Kinova with fixed (no) agency, and ['a conducted and demoed with vr arm while being recorded']
     """
@@ -38,7 +38,7 @@ def vla_kinova_training():
     
     print(factory.get_vla_star())
 
-def instantiate_the_vla_star():
+def instantiate_chatting_bot():
     """
     This is a non-robot with demonstrated agency, and ['a default chat interface']
     """
@@ -48,7 +48,7 @@ def instantiate_the_vla_star():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.DEMOED,
+        agency_type = AgencyType.AUTO,
         recorded = False
     )
 
@@ -70,7 +70,7 @@ def instantiate_the_vla_star():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_the_vla_star()
+    v = instantiate_chatting_bot()
     v.run()
 
 

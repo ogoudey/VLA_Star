@@ -129,7 +129,6 @@ class Chat(VLA_Complex):
         return f"Chat"
     
     async def execute(self, text: str):
-        print(f"In Chat execute()...")
         if not self.listening:
             self.run_server()
 
@@ -148,8 +147,8 @@ class Chat(VLA_Complex):
         server.bind(("127.0.0.1", 5001))
         server.listen()
         self.listening = True
-        print("Server beginning to listen...")
-        update_activity("Beginning to listen...", __name__)
+        print("Chat server waiting...")
+        update_activity("Chat server waiting...", __name__)
         while self.listening:
             client_sock, addr = server.accept()
             print("Client connected:", addr)
@@ -217,7 +216,7 @@ class Chat(VLA_Complex):
         if runner:
             runner(rerun_input, str(self))
         else:
-            self.send_q.put(input(f"User: {user_input}\nReply: "))
+            raise Exception("Why is there no runner function?")
 
     async def start(self, rerun_function: Callable):
         print(f"In Chat start()...")

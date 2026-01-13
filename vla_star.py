@@ -33,13 +33,13 @@ class VLA_Star:
             print("Starting GDA")
             tm = ThinkingMachine(self.prototype_agent)
             rerun_function = tm.rerun
+            print("Creating task...")
             asyncio.create_task(tm.start())
-            
+            print("Task created.")
         else:
             print("Not starting GDA")
             rerun_function = self.prototype_agent.run_identity
 
-        await asyncio.sleep(1)
         await vlac.start(rerun_function)
 
         # keep main loop alive
