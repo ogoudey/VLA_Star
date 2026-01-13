@@ -16,47 +16,7 @@ from vla_complex import VLA_Complex
 
 from vla import VLA
 from gda import GDA, DemoedLanguageModel
-
-class Factory:
-    @classmethod
-    def test(cls, verbose=False):
-        if not hasattr(cls, "create"):
-            return False
-        if hasattr(cls, "requirements"):
-            if "modules" in cls.requirements:
-                for m in cls.requirements["modules"]:
-                    if not Factory.module_exists(m):
-                        if verbose:
-                            print(f"{m} is required to create this")
-                        return False
-        return True
-        
-    @staticmethod  
-    def module_exists(name):
-        return importlib.util.find_spec(name) is not None
-    
-    @staticmethod
-    def common():
-        try:
-            # shouldnt do imports here... scope problem...
-            pass
-            
-        except Exception as e:
-            print(f"Could not import vla_star: {e}")
-            raise FactoryException(f"Could not import vla_star: {e}")
-
-
-class LLM:
-    pass
-
-class CloudLLM(LLM):
-    pass
-
-class FactoryException(Exception):
-    pass
-
-class Morphology:
-    pass
+from vla_complex import Logger, Chat, DrawOnBlackboard
 
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType
@@ -79,7 +39,7 @@ def produce_robot(cfg: RobotConfig):
         case RobotType.KINOVA:
             robot = "This is a Kinova "
         case RobotType.NONE:
-            robot = "This is a non-robot "
+            robot = None
         case _:
             raise ValueError(f"Unsupported robot type: {cfg.robot_type}")
     return robot
@@ -87,10 +47,12 @@ def produce_robot(cfg: RobotConfig):
 def produce_agency(cfg: AgencyConfig):
     global agency
     match cfg.agency_type:
+        case AgencyType.AUTO:
+            agency = make_agent()
         case AgencyType.FIXED:
             agency = "with fixed (no) agency, "
         case AgencyType.DEMOED:
-            agency = "with demonstrated agency, "    
+            agency = make_demoed_agent()   
         case _:
             raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
     return agency
@@ -99,32 +61,30 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
     global vla_complexes
     complexes = []
     for cfg in cfgs:
-        vla_complex = "a "
+        vla_complex = None
         if cfg.monitor_types:
             for monitor_type in cfg.monitor_types:
                 match monitor_type:
                     case MonitorType.CONDUCT_RECORDING:
-                        vla_complex += "conducted and "
+                        vla_complex = "conducted and "
                     case _:
                         raise ValueError(f"Unsupported monitor type: {monitor_type}")
         match cfg.agency_type:
             case AgencyType.ARM_VR_DEMO:
-                vla_complex += "demoed with vr "
+                vla_complex = "demoed with vr "
             case AgencyType.PASS_THROUGH:
-                vla_complex += "default "
+                vla_complex = None
             case AgencyType.FIXED:
-                vla_complex += "default "
+                vla_complex = None
             case _:
                 raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
         match cfg.vla_type:
             case VLAType.TEXT:
-                vla_complex += "chat interface"
+                vla_complex = Chat()
             case VLAType.ACTUATION:
-                vla_complex += "arm"
+                vla_complex = "arm"
             case _:
                 raise ValueError(f"Unsupported VLA type: {cfg.vla_type}")
-        
-        
         if cfg.recorded:
             vla_complex += " while being recorded"
         complexes.append(vla_complex)
@@ -137,61 +97,33 @@ def produce_vla_star():
     global vla_complexes
     global _vla_star
     try:
-        _vla_star = robot + agency + "and " + str(vla_complexes)
+        _vla_star = VLA_Star(agency, vla_complexes)
         return _vla_star
     except Exception as e:
-        raise Exception(f"Cannot produce VLA*. Must produce {e}.")
+        raise Exception(f"Cannot produce VLA*. {e}.")
 
 def get_vla_star():
     try:
         return _vla_star
     except Exception as e:
         raise Exception(f"Cannot return VLA*. Missing call to factory.produce_vla_star()")
+    
+#########3 Helpers ###########
+def make_agent() -> GDA:
+    return GDA("name_for_traces", \
+    "You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.\n" \
+    "You may choose ANY of the available tools.\n"\
+    "You must call only ONE tool. Your job is to efficiently call that single tool.\n"\
+    "After calling a SINGLE tool, stop all further reasoning.\n"\
+    "Do not produce natural-language final output. "\
+    "Return immediately after the ONE tool call.\n"\
+    "Use the blackboard to do any and all planning, like a 'behavior tree' might, but still, as for every tool call, return immediately after.\n")
 
-class Robot:
-    pass
+def make_demoed_agent():
+    return DemoedLanguageModel()
 
-class Kinova(Robot):
-    pass
-
-
-
-
-
-
-class BlindLeader(Factory):
-    pass
-    @staticmethod
-    def create():
-        Factory.common()
-        blind_person = Morphology()
-        image_processors = get_real_vision()
-
-        blind_person.eyes = image_processors
-
-        policy = "act_blind_with_info_from_vlms"
-
-        ### CLOUD LOCATION for llm and vlm ###
-        if "OPENAI_API_KEY" in os.environ:
-            pass
-        else:
-            # look for local models?
-            raise FactoryException("Could not find OPENAI_API_KEY environment variable.")
-        # no backup
-        
-        ### Initialize watcher
-        vlm_guide = VLM("guide", "o4-mini", system_prompt="You are a visual system for a blind person. Help them to function by responding to their queries and providing necessary status updates.",\
-                          recommendation_system_prompt="You are a visual system for a blind person. Help them to function by guiding their movement in a world they cannot see directly.")
-        
-        gda = None # the person makes the decisions 
-
-        ### Initialize VLA Complexes ###
-        from vla_complex import AnnounceIntent
-
-        pass
-
+"""
 def get_real_vision(override_values=[]):
-    """Tries a series of initializations for webcams. Pass values that are webcam URLS or cv2.VideoCapture indices. """
     try:
         import image_processors as v
         image_processors = v.create(values=[2,4])
@@ -409,7 +341,8 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
     
         return VLA_Star(inputter, vla_complexes)
 
-from vla_complex import Logger, Chat, DrawOnBlackboard
+
+
 class Mock_VLA_Star_Text(Factory):
     @staticmethod
     def create():
@@ -420,15 +353,7 @@ class Mock_VLA_Star_Text(Factory):
 
         inputter = DemoedLanguageModel()
 
-        inputter = GDA("name_for_traces", \
-    "You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.\n" \
-    "You may choose ANY of the available tools.\n"\
-    "You must call only ONE tool. Your job is to efficiently call that single tool.\n"\
-    "After calling a SINGLE tool, stop all further reasoning.\n"\
-    "Do not produce natural-language final output. "\
-    "Return immediately after the ONE tool call.\n"\
-    "Use the blackboard to do any and all planning, like a 'behavior tree' might, but still, as for every tool call, return immediately after.\n")
-
+        inputter = make_agent()
         vla_complexes = [
             Logger(),
             Chat(),
@@ -506,3 +431,4 @@ if __name__ == "__main__":
     #vla_star_1.run()
     b=PathPlanner_VLAStar_Factory.create(True, True)
     b.run("go to Well Island, then Bear Island")
+"""

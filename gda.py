@@ -18,6 +18,7 @@ from multiprocessing import Process
 
 class DemoedLanguageModel:
     def __init__(self, goal: str = "Pass the proper args to your functions."):
+        self.name = "Default"
         self.applicable = True # actions always have effects
         self.goal = goal
         self.status_history = []

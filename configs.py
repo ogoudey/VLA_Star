@@ -15,7 +15,7 @@ class AgencyType(Enum):
     PASS_THROUGH = "pass_through"
 
 class MonitorType(Enum):
-    CONDUCT_RECORDING = "conduct_recording"\
+    CONDUCT_RECORDING = "conduct_recording"
     
 class VLAType(Enum):
     ACTUATION = "actuation"

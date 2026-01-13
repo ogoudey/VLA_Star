@@ -57,7 +57,7 @@ def instantiate_the_vla_star():
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.TEXT,
-            agency_type = AgencyType.FIXED,
+            agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
         ),
@@ -67,11 +67,11 @@ def instantiate_the_vla_star():
 
     factory.produce_vla_star()
 
-    print(factory.get_vla_star())
+    return factory.get_vla_star()
 
 if __name__ == "__main__":
-    instantiate_the_vla_star()
-
+    v = instantiate_the_vla_star()
+    v.run()
 
 
 """
