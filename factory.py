@@ -58,6 +58,107 @@ class FactoryException(Exception):
 class Morphology:
     pass
 
+from configs import RobotConfig, AgencyConfig, VLAComplexConfig
+from configs import RobotType, AgencyType, MonitorType, VLAType
+
+#########################
+#
+#       Factory
+#
+#
+#################33
+
+robot = None
+agency = None
+vla_complexes = []
+_vla_star = None
+
+def produce_robot(cfg: RobotConfig):
+    global robot
+    match cfg.robot_type:
+        case RobotType.KINOVA:
+            robot = "This is a Kinova "
+        case RobotType.NONE:
+            robot = "This is a non-robot "
+        case _:
+            raise ValueError(f"Unsupported robot type: {cfg.robot_type}")
+    return robot
+
+def produce_agency(cfg: AgencyConfig):
+    global agency
+    match cfg.agency_type:
+        case AgencyType.FIXED:
+            agency = "with fixed (no) agency, "
+        case AgencyType.DEMOED:
+            agency = "with demonstrated agency, "    
+        case _:
+            raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
+    return agency
+
+def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
+    global vla_complexes
+    complexes = []
+    for cfg in cfgs:
+        vla_complex = "a "
+        if cfg.monitor_types:
+            for monitor_type in cfg.monitor_types:
+                match monitor_type:
+                    case MonitorType.CONDUCT_RECORDING:
+                        vla_complex += "conducted and "
+                    case _:
+                        raise ValueError(f"Unsupported monitor type: {monitor_type}")
+        match cfg.agency_type:
+            case AgencyType.ARM_VR_DEMO:
+                vla_complex += "demoed with vr "
+            case AgencyType.PASS_THROUGH:
+                vla_complex += "default "
+            case AgencyType.FIXED:
+                vla_complex += "default "
+            case _:
+                raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
+        match cfg.vla_type:
+            case VLAType.TEXT:
+                vla_complex += "chat interface"
+            case VLAType.ACTUATION:
+                vla_complex += "arm"
+            case _:
+                raise ValueError(f"Unsupported VLA type: {cfg.vla_type}")
+        
+        
+        if cfg.recorded:
+            vla_complex += " while being recorded"
+        complexes.append(vla_complex)
+    vla_complexes = complexes
+    return vla_complexes
+
+def produce_vla_star():
+    global robot
+    global agency
+    global vla_complexes
+    global _vla_star
+    try:
+        _vla_star = robot + agency + "and " + str(vla_complexes)
+        return _vla_star
+    except Exception as e:
+        raise Exception(f"Cannot produce VLA*. Must produce {e}.")
+
+def get_vla_star():
+    try:
+        return _vla_star
+    except Exception as e:
+        raise Exception(f"Cannot return VLA*. Missing call to factory.produce_vla_star()")
+
+class Robot:
+    pass
+
+class Kinova(Robot):
+    pass
+
+
+
+
+
+
 class BlindLeader(Factory):
     pass
     @staticmethod
