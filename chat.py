@@ -8,10 +8,19 @@ def respond_loop(inbound_q, send_q, stop_event):
     try:
         while not stop_event.is_set():
             msg = inbound_q.get()
-            reply = input(f"Robot: {msg}\nReply: ")
+            print(f"\nRobot: {msg}\nReply: ")
+            # do not send anything - sending is independent once again
+    except Exception as e:
+        print(f"Error in respond loop!: {e}")
+
+def reply_loop(send_q, stop_event):
+    try:
+        while not stop_event.is_set():
+            reply = input("\nReply: ")
             send_q.put(reply)
     except Exception as e:
         print(f"Error in respond loop!: {e}")
+    
 
 def run_client():
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -39,7 +48,14 @@ def run_client():
         daemon=True
     ).start()
     
-    inbound_q.put("")
+    threading.Thread(
+        target=reply_loop,
+        args=(send_q, stop_event),
+        daemon=True
+    ).start()
+    
+
+    
     try:
         while not stop_event.is_set():
             time.sleep(1)

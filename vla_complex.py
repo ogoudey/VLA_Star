@@ -129,6 +129,7 @@ class Chat(VLA_Complex):
         return f"Chat"
     
     async def execute(self, text: str):
+        print(f"In Chat execute()...")
         if not self.listening:
             self.run_server()
 
@@ -219,6 +220,7 @@ class Chat(VLA_Complex):
             self.send_q.put(input(f"User: {user_input}\nReply: "))
 
     async def start(self, rerun_function: Callable):
+        print(f"In Chat start()...")
         global runner
         if runner is None:
             runner = rerun_function
