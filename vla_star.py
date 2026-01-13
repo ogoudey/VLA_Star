@@ -29,14 +29,18 @@ class VLA_Star:
                 
     async def start_with_vlac(self, vlac: VLA_Complex):
         # start the "scheduler"
-        tm = ThinkingMachine(self.prototype_agent)
+        if type(self.prototype_agent) == GDA:
+            print("Starting GDA")
+            tm = ThinkingMachine(self.prototype_agent)
+            rerun_function = tm.rerun
+            asyncio.create_task(tm.start())
+            
+        else:
+            print("Not starting GDA")
+            rerun_function = self.prototype_agent.run_identity
 
-
-        asyncio.create_task(tm.start())
-
-        # other async work if needed
-
-        await vlac.start(tm.rerun)
+        await asyncio.sleep(1)
+        await vlac.start(rerun_function)
 
         # keep main loop alive
         while True:

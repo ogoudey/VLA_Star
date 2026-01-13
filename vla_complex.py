@@ -10,8 +10,11 @@ import os
 from datetime import datetime
 import threading
 import asyncio
-
+import socket
 from displays import log, timestamp, update_activity
+import queue
+
+from chat_utils import recv_line, recv_loop, send_loop
 
 RAW_EXECUTE = False
 EXECUTE = True
@@ -110,18 +113,14 @@ class Chat(VLA_Complex):
     parent: GDA
     
     def __init__(self):
-        super().__init__(self.respond, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
+        super().__init__(self.reply, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
         
         ### State ###
-        self.long_term_memory = None
-        self.session = None
+        self.long_term_memory = []
+        self.session = []
 
         ### Threads ###
-        self.listener = threading.Thread(target=self.listen, daemon=True)
         self.listening = False
-
-        # Signal like
-        self.user_input = ""
 
     def _repr__(self):
         return f"Chat repr"
@@ -130,25 +129,98 @@ class Chat(VLA_Complex):
         return f"Chat"
     
     async def execute(self, text: str):
-        await super().execute(text)
-
-        log(f"\tCalling vla {self.vla.__name__}...", self)
-        self.vla(text=text)
-
-        
-        if self.long_term_memory is None:
-            self.long_term_memory = []
-        if self.session is None:
-            self.session = []
+        print(f"In Chat execute()...")
         if not self.listening:
-            self.listening = True
-            self.listener.start()
+            self.run_server()
+
+        await super().execute(text)
+         
+        log(f"\tCalling vla {self.vla.__name__}...", self)
+        self.vla(text)
 
         self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
         
         log("\tExecute process done", self)
 
+    def run_server(self):
+        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server.bind(("127.0.0.1", 5001))
+        server.listen()
+        self.listening = True
+        print("Server beginning to listen...")
+        update_activity("Beginning to listen...", __name__)
+        while self.listening:
+            client_sock, addr = server.accept()
+            print("Client connected:", addr)
+            threading.Thread(
+                target=self.handle_client,
+                args=(client_sock,),
+                daemon=True
+            ).start()
+
+    def handle_client(self, sock):
+        stop_event = threading.Event()
+        self.send_q = queue.Queue()
+        self.inbound_q = queue.Queue()
+
+        threading.Thread(
+            target=recv_loop,
+            args=(sock, self.inbound_q, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=send_loop,
+            args=(sock, self.send_q, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=self.respond_loop,
+            args=(stop_event,),
+            daemon=True
+        ).start()
+
+        update_activity("Listening...", __name__)
+        try:
+            while not stop_event.is_set():
+                update_activity(list(self.send_q.queue), "send_Q")
+                update_activity(list(self.inbound_q.queue), "inbound_q")
+                time.sleep(1)
+        finally:
+            update_activity("Stopping listening...")
+            stop_event.set()
+            sock.close()
+
+    def respond_loop(self, stop_event):
+        while not stop_event.is_set():
+            msg = self.inbound_q.get()
+            self.respond(f"{msg}")
+            
+
+    def respond(self, user_input):
+        
+        rerun_input = {
+                "Long term memory": self.long_term_memory,
+                "Session information": self.session.copy()
+            }
+        
+        if user_input == "":
+            log(f"{self.tool_name} >>> LLM: ...no new signal...", self)
+        else:
+            rerun_input["Current user message"] = user_input
+            log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+            self.session.append({f"{timestamp()} User":f"{user_input}"})
+
+        global runner
+        if runner:
+            runner(rerun_input, str(self))
+        else:
+            self.send_q.put(input(f"User: {user_input}\nReply: "))
+
     async def start(self, rerun_function: Callable):
+        print(f"In Chat start()...")
         global runner
         if runner is None:
             runner = rerun_function
@@ -158,34 +230,14 @@ class Chat(VLA_Complex):
             print(f"\nSystem shutting down...")
             raise Shutdown()
 
-    def listen(self):
-        try:
-            while self.listening:
-                update_activity("Listening...", self)
-                self.user_input = input("V\tV\tV Give prompt: V\tV\tV\n")
-                print("\t\t________________\n")
-                rerun_input = {
-                        "Long term memory": self.long_term_memory,
-                        "Session information": self.session.copy()
-                    }
-                if self.user_input == "":
-                    log(f"{self.tool_name} >>> LLM: ...no new signal...", self)
-                else:
-                    rerun_input["Current user message"] = self.user_input
-                    log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-                    self.session.append({f"{timestamp()} User":f"{self.user_input}"})
-                
-                global runner
-                runner(rerun_input, str(self))
-        except Shutdown:
-            print("Shutdown at listen")
-            print(f"\t\tClosing.")
-            raise Shutdown("Shutting down.")
+    
+    def reply(self, message: str):
+        self.send_q.put(message)
 
-    def respond(self, text: str):
-        log("\t\tExecute process done", self)
-        print(f"\nRobot: {text}")
 
+    
+
+    
 
 class EpisodicRecorder(VLA_Complex):
     """

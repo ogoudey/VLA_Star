@@ -18,30 +18,37 @@ from multiprocessing import Process
 
 class DemoedLanguageModel:
     def __init__(self, goal: str = "Pass the proper args to your functions."):
+<<<<<<< HEAD
         self.name = "Default"
+=======
+        self.name = "Dev"
+>>>>>>> e39405c9293defbd3e54e0dd5495fbbeae650107
         self.applicable = True # actions always have effects
         self.goal = goal
         self.status_history = []
         self.context = {}
 
-    async def run(self, prompt="You got this..."):
-        
+    def run_identity(self, rerun_input, source):
+        print(f"Tools: {self.tools}")
         # assume one tool (the recorder)
         if len(self.tools) == 0:
             task_name = ""
             while task_name == "":
-                task_name = input(f"Goal: {self.goal}\nPrompt: {prompt}\nTask label: ")
-            await self.tools[0].execute(task_name)
+                task_name = input(f"\"{rerun_input}\" from {source}")
+            self.use_tool(self.tools[0], task_name)
             return task_name
         else:
             while True:
+                print(f"\"{rerun_input}\" from {source}")
                 for tool in self.tools:
-                    task_name = input(f"\n___Modality name: {tool.tool_name}___\nGoal: {self.goal}\nDocstring: {tool.execute.__func__.__doc__}\nPrompt: {prompt}\nInput ([enter] to bypass): ")
+                    task_name = input(f"{tool.tool_name}: ")
                     if not task_name == "":
-                        await tool.execute(task_name)
+                        self.use_tool(tool, task_name)
                         return task_name
                 print(f"Back to the top...")
 
+    def use_tool(self, tool, instruction):
+        asyncio.run(tool.execute(instruction))
         """
         for vlac in self.tools:
             inp = input(f"({vlac.tool_name}) {vlac.capability_desc}: ")
@@ -77,13 +84,6 @@ import asyncio
 
 pending_agents = []
 
-async def agent_scheduler():
-    while True:
-        if pending_agents:
-            agent, prompt = pending_agents.pop(0)
-            asyncio.create_task(Runner.run(agent, prompt))
-        await asyncio.sleep(0.1)  # throttle loop
-
 class GDA:
     def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []
@@ -100,8 +100,6 @@ class GDA:
         self.last_status = None
         self._applicable = True
         self.running = False
-
-
 
         self.total_session_t0 = time.time()
         self.agent_identities = 0
@@ -153,44 +151,7 @@ class GDA:
             result = "Max turns exceeded."
         return result
 
-    async def spin_off_async(self, agent, prompt):
-        try:
-            log(f"\tI am started.", self)
-            result = await Runner.run(agent, json.dumps(prompt))
-            log(f"\tI am finished.", self)
-        except Exception as e:
-            print(f"!!Failed to run {agent.name}!!\nError:\n\t{e}")
-
-    async def run(self, context=None):
-        """ Context includes prompt. """
-        self.applicable = True # output will be carried out
-        
-        agent = Agent(
-            name=self.name + str(self.agent_identities),
-            instructions=self.system_to_instructions(), # Yet to modify system instructions significantly
-            tools=self.tools, # The tool-ified VLA Complexes
-            model="o3-mini"
-        )
-        self.agent_identities += 1
-
-        log(f"\tContext/prompt:\n{json.dumps(context)}", self)
-        asyncio.create_task(self.spin_off_async(agent, context))
-        try:
-            while self.applicable:
-                await asyncio.sleep(1) # should then wait until its done?
-        except KeyboardInterrupt:
-            print("KI from LLM run")
-            raise Shutdown()
-
-    async def check(self, rerun_input, signature="Anon"):
-        """ A request to check an input from a VLA Complex ."""
-        try: # Wrapped in a try
-            log(f"{signature} >>> Rerun input: {rerun_input}", self)
-            self.context_from(rerun_input, signature) # Create context
-            await self.run(self.context)
-            return RERUN # return should be useful to VLA Complex
-        except Exception as e:
-            print(f"Error: {e}")
+    
 
     def clean_context(self):
         #print(f"Cleaning {self.context}")
