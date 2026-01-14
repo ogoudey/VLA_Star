@@ -24,6 +24,7 @@ class ThinkingMachine:
         self.reruns.put((rerun_input, signature))
     
     async def start(self):
+        print("Thinking Machine starting...")
         loop = asyncio.get_running_loop()
         while True:
             if not self.updated:
