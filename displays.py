@@ -7,7 +7,7 @@ import json
 total_activity = dict()
 
 def timestamp():
-    return f"[{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}]"
+    return f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
 
 if os.path.exists("logs"):
     for filename in os.listdir("logs"):

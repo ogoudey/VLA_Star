@@ -28,7 +28,7 @@ def instantiate_vla_kinova_training():
             monitor_types = [
                 MonitorType.CONDUCT_RECORDING
             ],
-            recorded = True
+            recorded = False
         ),
     ]
 
@@ -36,7 +36,7 @@ def instantiate_vla_kinova_training():
 
     factory.produce_vla_star()
     
-    print(factory.get_vla_star())
+    return factory.get_vla_star()
 
 def instantiate_chatting_bot():
     """
@@ -70,7 +70,7 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_chatting_bot()
+    v = instantiate_vla_kinova_training()
     v.start()
 
 

@@ -165,7 +165,7 @@ class PathFollow(VLA):
     def plan(self):
         while True:
             if self.planning:
-                log(f"Pathing to {self.running_state["goal"]}", self)
+                log(f"Pathing to {self.running_state['goal']}", self)
 
                 try:
                     self.unity_environment = self.init_env()

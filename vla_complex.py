@@ -258,34 +258,32 @@ class EpisodicRecorder(VLA_Complex):
     """
 
 
-    def __init__(self, dataset_recorder_caller, tool_name):
-        self.record = dataset_recorder_caller
-        super().__init__(signal, "Task", tool_name)
+    def __init__(self, interaction_runner, tool_name):
+        self.interaction_runner = interaction_runner
+        super().__init__(None, "does a thing", tool_name)
+        self.running = False
+        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"episodicrecorderstaskname"}
+        # signal at first blocks episode loop, waiting for "go" from teleop
 
     async def execute(self, instruction):
         await super().execute(instruction)
-        check, task_name = "CONTINUE", instruction
+        if not self.running:
+            self.start_runner()
         
-        while check == "CONTINUE":
-            try:
-                self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
-                while True:
-                    pass
-            except KeyboardInterrupt:
-                self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": False, "task": ""})
-                try:
-                    check, new_task_name = self.parent.check("EXIT_E")
-                    if new_task_name == "":
-                        continue
-                    else:
-                        task_name = new_task_name
-                        self.vla(signal={"RUNNING_LOOP": True, "RUNNING_E": True, "task": task_name})
-                except KeyboardInterrupt:
-                    self.vla(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "task": ""})
-                    check, dataset_name = self.parent.check("EXIT_LOOP")
-                    self.vla(signal={"RUNNING_LOOP": False, "RUNNING_E": False, "dataset_name": dataset_name})
-            break
-                
+    def start_runner(self):
+        threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
+
+    async def start(self, rerun_function: Callable):
+        print(f"In EpisodicRecorder start()...")
+        global runner
+        if runner is None:
+            runner = rerun_function
+        try:
+            await self.execute("Default Task please")
+        except Shutdown:
+            print(f"\nSystem shutting down...")
+            raise Shutdown()
+
 class Single_VLA_w_Watcher(VLA_Complex):
     """
     Checking signal:
@@ -400,7 +398,7 @@ class Navigator(VLA_Complex):
             if destination == self.last_instruction:
                 return f"Try again. You're either already pathing there (no need to call this tool), or you've already arrived."
             if self.signal["flag"] == DONE:
-                rerun_input = self.get_rerun_input(f"Arrived at {self.signal["goal"]}.")
+                rerun_input = self.get_rerun_input(f"Arrived at {self.signal['goal']}.")
                 check = await self.parent.check(rerun_input)
                 if check == "RERUN":
                     return f"Successfully arrived at {destination}. Return immediately with no output."

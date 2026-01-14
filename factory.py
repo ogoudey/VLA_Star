@@ -50,7 +50,7 @@ def produce_agency(cfg: AgencyConfig):
         case AgencyType.AUTO:
             agency = make_agent()
         case AgencyType.FIXED:
-            agency = "with fixed (no) agency, "
+            agency = make_demoed_agent()   
         case AgencyType.DEMOED:
             agency = make_demoed_agent()   
         case _:
@@ -66,27 +66,38 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             for monitor_type in cfg.monitor_types:
                 match monitor_type:
                     case MonitorType.CONDUCT_RECORDING:
-                        vla_complex = "conducted and "
+                        pass # instantiated in case ARM_VR_DEMO
                     case _:
                         raise ValueError(f"Unsupported monitor type: {monitor_type}")
         match cfg.agency_type:
             case AgencyType.ARM_VR_DEMO:
-                vla_complex = "demoed with vr "
+                vla_interface = import_helper("vla_interface")
+                if cfg.recorded:
+                    r = vla_interface.create_teleop_recording_kinova_interaction()
+                else:
+                    ra = vla_interface.get_kinova_setup_cameras()
+                    r = vla_interface.create_teleop_unrecorded_interaction(ra)
+                
+
+                ### Initialize VLA Complex ###
+                from vla_complex import EpisodicRecorder
+
+                vla_complex = EpisodicRecorder(r, "record_conductor")
             case AgencyType.PASS_THROUGH:
-                vla_complex = None
+                pass
             case AgencyType.FIXED:
-                vla_complex = None
+                pass
             case _:
                 raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
         match cfg.vla_type:
             case VLAType.TEXT:
                 vla_complex = Chat()
             case VLAType.ACTUATION:
-                vla_complex = "arm"
+                pass
             case _:
                 raise ValueError(f"Unsupported VLA type: {cfg.vla_type}")
-        if cfg.recorded:
-            vla_complex += " while being recorded"
+
+        
         complexes.append(vla_complex)
     vla_complexes = complexes
     return vla_complexes
@@ -122,6 +133,20 @@ def make_agent() -> GDA:
 def make_demoed_agent():
     return DemoedLanguageModel()
 
+def import_helper(module_name: str):
+    match module_name:
+        case "vla_interface":
+            custom_brains = Path(os.environ.get("LEROBOT", "/home/mulip-guest/LeRobot/lerobot/custom_brains"))#import editable lerobot for VLA
+            sys.path.append(custom_brains.as_posix())
+            if not custom_brains.exists():
+                print("No SmolVLA")
+                raise FileNotFoundError(f"Could not add {custom_brains} to sys.path")
+            try:
+                import vla_interface
+            except Exception as e:
+                print(e)
+                raise FileNotFoundError("Failed to import LeRobot etc.")
+    return vla_interface
 """
 def get_real_vision(override_values=[]):
     try:
