@@ -16,10 +16,12 @@ from vla_complex import VLA_Complex
 
 from vla import VLA
 from gda import GDA, DemoedLanguageModel
-from vla_complex import Logger, Chat, DrawOnBlackboard
+import vla_complex
 
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType
+
+
 
 #########################
 #
@@ -61,7 +63,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
     global vla_complexes
     complexes = []
     for cfg in cfgs:
-        vla_complex = None
+        complex = None
         if cfg.monitor_types:
             for monitor_type in cfg.monitor_types:
                 match monitor_type:
@@ -73,16 +75,20 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             case AgencyType.ARM_VR_DEMO:
                 vla_interface = import_helper("vla_interface")
                 if cfg.recorded:
-                    r = vla_interface.create_teleop_recording_kinova_interaction()
+                    runner = vla_interface.create_teleop_recording_kinova_interaction()
+                    # Assumed is camera reader assignments - that a "Kinova" is the Kinova in the lab rn with those cameras.
                 else:
-                    ra = vla_interface.get_kinova_setup_cameras()
-                    r = vla_interface.create_teleop_unrecorded_interaction(ra)
-                
-
-                ### Initialize VLA Complex ###
-                from vla_complex import EpisodicRecorder
-
-                vla_complex = EpisodicRecorder(r, "record_conductor")
+                    runner = vla_interface.create_teleop_unrecorded_interaction()                
+                complex = vla_complex.EpisodicRecorder(runner, "record_conductor")
+            case AgencyType.KEYBOARD_DEMO:
+                raise ValueError(f"Keyboard demo not yet supported: {cfg.agency_type}")
+                vla_interface = import_helper("vla_interface")
+                if cfg.recorded:
+                    runner = vla_interface.create_teleop_recording_so101_interaction()
+                    # Assumed is camera reader assignments - that a "Kinova" is the Kinova in the lab rn with those cameras.
+                else:
+                    runner = vla_interface.create_teleop_unrecorded_interaction() #but for so101?                
+                complex = None
             case AgencyType.PASS_THROUGH:
                 pass
             case AgencyType.FIXED:
@@ -91,14 +97,14 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
         match cfg.vla_type:
             case VLAType.TEXT:
-                vla_complex = Chat()
+                complex = vla_complex.Chat()
             case VLAType.ACTUATION:
                 pass
             case _:
                 raise ValueError(f"Unsupported VLA type: {cfg.vla_type}")
 
         
-        complexes.append(vla_complex)
+        complexes.append(complex)
     vla_complexes = complexes
     return vla_complexes
 

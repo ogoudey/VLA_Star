@@ -9,7 +9,8 @@ class RobotType(Enum):
 
 class AgencyType(Enum):
     DEMOED = "demoed"
-    ARM_VR_DEMO = "vr_demo"
+    ARM_VR_DEMO = "arm_vr_demo"
+    KEYBOARD_DEMO = "keyboard_demo"
     AUTO = "auto"
     FIXED = "fixed"
     PASS_THROUGH = "pass_through"

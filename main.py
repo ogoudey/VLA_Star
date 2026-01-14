@@ -3,7 +3,38 @@ import factory
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType
 
+def instantiate_vla_so101_training():
+    """
+    This is a SO101 with fixed (no) agency, and ['a conducted and demoed with vr arm while being recorded']
+    """
+    robot_cfg = RobotConfig(
+        robot_type = RobotType.SO101
+    )
+    factory.produce_robot(robot_cfg)
 
+    agency_cfg = AgencyConfig(
+        agency_type = AgencyType.FIXED,
+        recorded = False
+    )
+
+    factory.produce_agency(agency_cfg)
+
+    vla_complex_cfgs = [
+        VLAComplexConfig(
+            vla_type = VLAType.ACTUATION,
+            agency_type = AgencyType.KEYBOARD_DEMO,
+            monitor_types = [
+                MonitorType.CONDUCT_RECORDING
+            ],
+            recorded = True
+        ),
+    ]
+
+    factory.produce_vla_complexes(vla_complex_cfgs)
+
+    factory.produce_vla_star()
+    
+    return factory.get_vla_star()
 
 def instantiate_vla_kinova_training():
     """
@@ -28,7 +59,7 @@ def instantiate_vla_kinova_training():
             monitor_types = [
                 MonitorType.CONDUCT_RECORDING
             ],
-            recorded = False
+            recorded = True
         ),
     ]
 

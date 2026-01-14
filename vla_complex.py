@@ -136,7 +136,8 @@ class Chat(VLA_Complex):
 
     async def execute(self, text: str):
         if not self.listening:
-            self.start_server()
+            ### Starts runner (thread)
+            threading.Thread(target=self.run_server, daemon=True).start()
 
         await super().execute(text)
          
@@ -163,10 +164,6 @@ class Chat(VLA_Complex):
                 args=(client_sock,),
                 daemon=True
             ).start()
-
-    def start_server(self):
-        """Starts the server loop in a background thread."""
-        threading.Thread(target=self.run_server, daemon=True).start()
 
     def handle_client(self, sock):
         stop_event = threading.Event()
@@ -247,14 +244,7 @@ class Chat(VLA_Complex):
 
 class EpisodicRecorder(VLA_Complex):
     """
-    Input:
-        Terminal IO and ^C
-    Checking signal:
-        CONTINUE, DONE
-    Running signal:behavior tree
-        RUNNING_LOOP: bool
-        RUNNING_E: bool
-        task: str
+j
     """
 
 
@@ -262,16 +252,16 @@ class EpisodicRecorder(VLA_Complex):
         self.interaction_runner = interaction_runner
         super().__init__(None, "does a thing", tool_name)
         self.running = False
+
+        # instantiates signal to coordinate monitors with runner (both are in the runner)
         self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"episodicrecorderstaskname"}
         # signal at first blocks episode loop, waiting for "go" from teleop
 
     async def execute(self, instruction):
         await super().execute(instruction)
         if not self.running:
-            self.start_runner()
-        
-    def start_runner(self):
-        threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
+            threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
+                
 
     async def start(self, rerun_function: Callable):
         print(f"In EpisodicRecorder start()...")
