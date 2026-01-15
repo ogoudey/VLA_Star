@@ -254,7 +254,7 @@ j
         self.running = False
 
         # instantiates signal to coordinate monitors with runner (both are in the runner)
-        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"episodicrecorderstaskname"}
+        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"Put the cube in the first aid kit"}
         # signal at first blocks episode loop, waiting for "go" from teleop
 
     async def execute(self, instruction):

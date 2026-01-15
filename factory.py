@@ -75,7 +75,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             case AgencyType.ARM_VR_DEMO:
                 vla_interface = import_helper("vla_interface")
                 if cfg.recorded:
-                    runner = vla_interface.create_teleop_recording_kinova_interaction()
+                    runner = vla_interface.create_teleop_recorded_interaction()
                     # Assumed is camera reader assignments - that a "Kinova" is the Kinova in the lab rn with those cameras.
                 else:
                     runner = vla_interface.create_teleop_unrecorded_interaction()                
