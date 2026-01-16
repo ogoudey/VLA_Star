@@ -262,7 +262,6 @@ j
         if not self.running:
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
                 
-
     async def start(self, rerun_function: Callable):
         print(f"In EpisodicRecorder start()...")
         global runner
@@ -338,6 +337,8 @@ class Single_VLA_w_Watcher(VLA_Complex):
             if check == RERUN:
                 return "Done."
             # Status = OK, Check = CONTINUE
+
+
 
 class Navigator(VLA_Complex):
     """
@@ -416,7 +417,31 @@ class Navigator(VLA_Complex):
         print(f"Input to rerun: {rerun_input}")
         return rerun_input
 
+class Navigator2(VLA_Complex):
+    """
+    If ONGOING, has at least one thread.
+    If ONGOING, may pass a signal to the thread.
+    """
+    def __init__(self, vla: Any, capability_desc: str, tool_name: str):
+        super().__init__(vla, capability_desc, tool_name)
 
+        self.runner = None
+        self.running_signal = None
+
+    async def execute(self, instruction):
+        """
+        Called by agents. Must be non-blocking.
+        OPTIONALLY called by start()
+        This docstring will be modified.
+        """
+        await super().execute(instruction)
+
+        any_reason_for_new_navigate, any_reason_to_not_do_new_navigate = True, False
+        # e.g. its time to get off the elevator (timed)
+        if any_reason_for_new_navigate and not any_reason_to_not_do_new_navigate: # really an unless
+            # modify self.runner
+            # modify self.running_signal
+            pass
 
 
 

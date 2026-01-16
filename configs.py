@@ -5,6 +5,7 @@ from typing import List, Optional
 class RobotType(Enum):
     KINOVA = "kinova"
     SO101 = "so101"
+    AVA1 = "ava1"
     NONE = None
 
 class AgencyType(Enum):

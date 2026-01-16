@@ -40,6 +40,10 @@ def produce_robot(cfg: RobotConfig):
     match cfg.robot_type:
         case RobotType.KINOVA:
             robot = "This is a Kinova "
+        case RobotType.SO101:
+            robot = "This is a SO101 "
+        case RobotType.AVA1:
+            robot = "This is an Ava1 "   
         case RobotType.NONE:
             robot = None
         case _:

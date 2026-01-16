@@ -26,7 +26,7 @@ def instantiate_vla_kinova_training():
             monitor_types = [
                 MonitorType.CONDUCT_RECORDING
             ],
-            recorded = False
+            recorded = True
         ),
     ]
 
