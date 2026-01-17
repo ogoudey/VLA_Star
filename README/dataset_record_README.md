@@ -15,10 +15,10 @@
 1. Press Play (^P) on Unity
 2. `python3 main.py` on Ubuntu
 
-### Note
+#### Note
 - If running `KinovaVLA` on a new machine, run `hostname -I` and provide the correct IP address to the Unity computer.
 - If running Unity on a new machine (unlikely), run `ipconfig` and provide the IP to `KinovaVLA/lerobot/src/lerobot/teleoperators/unity/unity.py`'s "VR Computer"
-#### Controls
+### Controls
 - **D-pad**: (big circle on the controller) Quit/No
 - **Select**: (the button above the D-pad) Go/Yes
 - The status display on the Unity GUI walks the demonstrator through the process.
