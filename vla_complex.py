@@ -273,6 +273,110 @@ j
             print(f"\nSystem shutting down...")
             raise Shutdown()
 
+class UnityNavigation(VLA_Complex):
+    def __init__(self, capability_desc: str, tool_name: str):
+        super().__init__(self.send_api_call, capability_desc, tool_name)
+        self.listening = False
+        self.unity_messages = queue.Queue()
+        self.out_messages = queue.Queue()
+        ### State ###
+        self.long_term_memory = []
+        self.session = []
+
+
+    async def execute(self, callable, arg):
+        if not self.listening:
+            self.start_listener()
+        
+        self.vla(callable, arg)
+
+    def start_listener(self):
+        threading.Thread(target=self.run_listener, daemon=True)
+
+    def run_listener(self):
+        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 5001))
+        listener.listen()
+        self.listening = True
+        print("Unity listener waiting...")
+        update_activity("Unity listener waiting...", self.tool_name)
+        while self.listening:
+            client_sock, addr = listener.accept()
+            print("Client connected:", addr)
+            threading.Thread(
+                target=self.handle_client,
+                args=(client_sock,),
+                daemon=True
+            ).start()
+
+    def handle_client(self, sock):
+        stop_event = threading.Event()
+
+        threading.Thread(
+            target=recv_loop,
+            args=(sock, self.unity_messages, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=send_loop,
+            args=(sock, self.out_messages, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=self.react_loop,
+            args=(stop_event,),
+            daemon=True
+        ).start()
+
+        update_activity("Listening...", self.tool_name)
+        try:
+            while not stop_event.is_set():
+                time.sleep(1)
+        finally:
+            update_activity("Stopping listening...", self.tool_name)
+            stop_event.set()
+            sock.close()
+
+    def react_loop(self, stop_event):
+        while not stop_event.is_set():
+            msg = self.unity_messages.get()
+            self.react(f"{msg}")
+            
+
+    def react(self, unity_message):
+        
+        # Filter
+        # End filter
+
+        rerun_input = {
+                "Long term memory": self.long_term_memory,
+                "Session information": self.session.copy()
+            }
+        
+
+        rerun_input["Current status"] = unity_message
+        log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+        self.session.append({f"{timestamp()} Status":f"{unity_message}"})
+
+        global runner
+        if runner:
+            runner(rerun_input, str(self))
+        else:
+            raise Exception("Why is there no runner function?")  
+
+
+    def add_to_context(self):
+        pass
+
+
+    def act(self, unity_callable:str, arg: str):
+        message = f"{{{unity_callable}: {arg}}}"
+        self.out_messages.put(message)
+
+
 class Single_VLA_w_Watcher(VLA_Complex):
     """
     Checking signal:
