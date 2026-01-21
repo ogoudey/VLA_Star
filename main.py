@@ -3,6 +3,30 @@ import factory
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType
 
+def instantiate_unity_robot():
+    robot_cfg = RobotConfig(
+        robot_type = RobotType.UNITY
+    )
+    factory.produce_robot(robot_cfg)
+
+    agency_cfg = AgencyConfig(
+        agency_type = AgencyType.AUTO,
+        recorded = False
+    )
+
+    factory.produce_agency(agency_cfg)
+
+    vla_complex_cfgs = [
+        VLAComplexConfig(
+            vla_type = VLAType.ACTUATION,
+            agency_type = AgencyType.ARM_VR_DEMO,
+            monitor_types = [
+                MonitorType.CONDUCT_RECORDING
+            ],
+            recorded = True
+        ),
+    ]
+
 def instantiate_vla_kinova_training():
     """
     This is a Kinova with fixed (no) agency, and ['a conducted and demoed with vr arm while being recorded']
