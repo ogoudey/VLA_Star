@@ -282,6 +282,8 @@ class UnityNavigation(VLA_Complex):
         ### State ###
         self.long_term_memory = []
         self.session = []
+        
+        self.destinations
 
 
     async def execute(self, callable, arg):
@@ -296,7 +298,7 @@ class UnityNavigation(VLA_Complex):
     def run_listener(self):
         listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(("127.0.0.1", 5001))
+        listener.bind(("127.0.0.1", 5006))
         listener.listen()
         self.listening = True
         print("Unity listener waiting...")
@@ -351,15 +353,19 @@ class UnityNavigation(VLA_Complex):
         # Filter
         # End filter
 
+        # Special messages:
+        if "destinations" in unity_message:
+            self.destinations = unity_message["destinations"]
+
         rerun_input = {
                 "Long term memory": self.long_term_memory,
                 "Session information": self.session.copy()
             }
         
-
-        rerun_input["Current status"] = unity_message
+        unity_status = "No status"
+        rerun_input["Current status"] = unity_status
         log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-        self.session.append({f"{timestamp()} Status":f"{unity_message}"})
+        self.session.append({f"{timestamp()} Status":f"{unity_status}"})
 
         global runner
         if runner:
@@ -371,11 +377,36 @@ class UnityNavigation(VLA_Complex):
     def add_to_context(self):
         pass
 
-
+    # VLA
     def act(self, unity_callable:str, arg: str):
-        message = f"{{{unity_callable}: {arg}}}"
+        message = f"{{method: {unity_callable}, arg: {arg}}}"
         self.out_messages.put(message)
 
+
+
+    # #
+    # A. Unity -> Start -> UnityNavigation.start()
+    #   
+    # B. 
+    #   1. start() and in start(), wait for Unity
+    #   2. Unity -> Start
+    #   
+    # C.
+    #   1. 
+    #   2. Unity -> Start
+    #   3. start() -> Unity -> getDestinations/sendDestinations
+    #   4. react to destinations
+    #
+    async def start(self, rerun_function: Callable):
+        print(f"In UnityNavigation start()...")
+        global runner
+        if runner is None:
+            runner = rerun_function
+        try:
+            await self.execute("getDestinations", "")
+        except Shutdown:
+            print(f"\nSystem shutting down...")
+            raise Shutdown()
 
 class Single_VLA_w_Watcher(VLA_Complex):
     """
