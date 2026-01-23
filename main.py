@@ -25,6 +25,12 @@ def instantiate_unity_robot():
             ],
             recorded = False
         ),
+        VLAComplexConfig(
+            vla_type = VLAType.TEXT,
+            agency_type = AgencyType.PASS_THROUGH,
+            monitor_types = [],
+            recorded = False
+        )
     ]
 
     factory.produce_vla_complexes(vla_complex_cfgs)

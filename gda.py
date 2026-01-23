@@ -31,7 +31,7 @@ class DemoedLanguageModel:
             task_name = ""
             while task_name == "":
                 
-                task_name = input(f"\"{rerun_input}\" from {source}").split(",")
+                task_name = input(f"\"{rerun_input}\" from {source}")
             self.use_tool(self.tools[0], task_name)
             return task_name
         else:
@@ -39,9 +39,10 @@ class DemoedLanguageModel:
                 print(f"\"{rerun_input}\" from {source}")
                 for tool in self.tools:
                     print(f"{inspect.signature(tool.execute)}")
-                    task_name = input(f"{tool.tool_name}: ").split(",")
+                    task_name = input(f"{tool.tool_name}: ")
                     print(f"{task_name}")
                     if not task_name == "":
+                        task_name = task_name.split(",")
                         self.use_tool(tool, *task_name)
                         return task_name
                 print(f"Back to the top...")

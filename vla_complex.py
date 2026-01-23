@@ -284,7 +284,8 @@ class UnityAction(VLA_Complex):
         self.long_term_memory = []
         self.session = []
         
-        self.destinations = []
+        self.destinations = None
+        self.unity_functions = None
 
 
     async def execute(self, callable: str, arg: str):
@@ -370,15 +371,25 @@ class UnityAction(VLA_Complex):
         print(f"Matching {type}:")
         match type:
             case "destinations":
-                self.destinations = content      
-                rerun_input = {"Here are the destinations": self.destinations}
+                self.destinations = content
+                if not self.enough_context_for_first_rerun():
+                    return 
+                rerun_input = {
+                    "Here are the destinations": self.destinations,
+                    "Here are the functions to call": self.unity_functions
+                    }
                 log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
                 print(f"Calling {runner}")
                 if runner:
                     runner(rerun_input, str(self))
                 else:
-                    raise Exception("Why is there no runner function?")  
+                    raise Exception("Why is there no runner function?")
+            case "functions":
+                self.unity_functions = content
+                return
             case "status":
+                if not self.enough_context_for_first_rerun():
+                    return 
                 rerun_input = {
                         "Long term memory": self.long_term_memory,
                         "Session information": self.session.copy()
@@ -393,6 +404,8 @@ class UnityAction(VLA_Complex):
                 else:
                     raise Exception("Why is there no runner function?")  
 
+    def enough_context_for_first_rerun(self):
+        return self.destinations and self.unity_functions
 
     def add_to_context(self):
         pass
@@ -424,7 +437,8 @@ class UnityAction(VLA_Complex):
         if runner is None:
             runner = rerun_function
         try:
-            await self.execute("getDestinations", "null")
+            await self.execute("GetFunctions", "null")
+            await self.execute("GetDestinations", "null")
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()
