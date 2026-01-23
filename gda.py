@@ -8,7 +8,7 @@ from typing import List
 from itertools import groupby
 import json
 import random
-
+import inspect
 from exceptions import Shutdown
 
 from displays import log, show_context, timestamp
@@ -30,21 +30,24 @@ class DemoedLanguageModel:
         if len(self.tools) == 0:
             task_name = ""
             while task_name == "":
-                task_name = input(f"\"{rerun_input}\" from {source}")
+                
+                task_name = input(f"\"{rerun_input}\" from {source}").split(",")
             self.use_tool(self.tools[0], task_name)
             return task_name
         else:
             while True:
                 print(f"\"{rerun_input}\" from {source}")
                 for tool in self.tools:
-                    task_name = input(f"{tool.tool_name}: ")
+                    print(f"{inspect.signature(tool.execute)}")
+                    task_name = input(f"{tool.tool_name}: ").split(",")
+                    print(f"{task_name}")
                     if not task_name == "":
-                        self.use_tool(tool, task_name)
+                        self.use_tool(tool, *task_name)
                         return task_name
                 print(f"Back to the top...")
 
-    def use_tool(self, tool, instruction):
-        asyncio.run(tool.execute(instruction))
+    def use_tool(self, tool, *instruction):
+        asyncio.run(tool.execute(*instruction))
         """
         for vlac in self.tools:
             inp = input(f"({vlac.tool_name}) {vlac.capability_desc}: ")

@@ -40,6 +40,8 @@ def produce_robot(cfg: RobotConfig):
     match cfg.robot_type:
         case RobotType.KINOVA:
             robot = "This is a Kinova "
+        case RobotType.UNITY:
+            robot = "This is some kind of robot simulated in Unity "
         case RobotType.SO101:
             robot = "This is a SO101 "
         case RobotType.AVA1:
@@ -93,6 +95,8 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 else:
                     runner = vla_interface.create_teleop_unrecorded_interaction() #but for so101?                
                 complex = None
+            case AgencyType.PASS_TO_UNITY:
+                complex = vla_complex.UnityAction("act")
             case AgencyType.PASS_THROUGH:
                 pass
             case AgencyType.FIXED:

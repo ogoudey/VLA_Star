@@ -42,6 +42,7 @@ class ThinkingMachine:
     
 
     async def run_agent(self, rerun_input, source):
+        print(f"In run_agent()")
         context = self.prototype.context_from(rerun_input, source)
         update_activity("Processing user input...", f"{source} interpretation")
         await self.prototype.run_identity(context) # could be neater

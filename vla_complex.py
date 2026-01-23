@@ -273,9 +273,10 @@ j
             print(f"\nSystem shutting down...")
             raise Shutdown()
 
-class UnityNavigation(VLA_Complex):
-    def __init__(self, capability_desc: str, tool_name: str):
-        super().__init__(self.send_api_call, capability_desc, tool_name)
+class UnityAction(VLA_Complex):
+    def __init__(self, tool_name: str):
+        capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of."
+        super().__init__(self.act, capability_desc, tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
@@ -283,36 +284,33 @@ class UnityNavigation(VLA_Complex):
         self.long_term_memory = []
         self.session = []
         
-        self.destinations
+        self.destinations = []
 
 
-    async def execute(self, callable, arg):
+    async def execute(self, callable: str, arg: str):
+        print("UnityAction called.")
+        await super().execute(callable)
         if not self.listening:
             self.start_listener()
         
         self.vla(callable, arg)
 
     def start_listener(self):
-        threading.Thread(target=self.run_listener, daemon=True)
+        threading.Thread(target=self.run_client, daemon=True).start()
 
-    def run_listener(self):
-        listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        listener.bind(("127.0.0.1", 5006))
-        listener.listen()
+    def run_client(self):
+        print("Listener running")
+        #listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        #listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #listener.bind(("127.0.0.1", 5006))
+        #listener.listen()
+        print("Connecting to Unity...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(("127.0.0.1", 5006))
         self.listening = True
-        print("Unity listener waiting...")
-        update_activity("Unity listener waiting...", self.tool_name)
-        while self.listening:
-            client_sock, addr = listener.accept()
-            print("Client connected:", addr)
-            threading.Thread(
-                target=self.handle_client,
-                args=(client_sock,),
-                daemon=True
-            ).start()
-
-    def handle_client(self, sock):
+        print("Connected to Unity...")
+        update_activity("Connected to Unity...", self.tool_name)
+        
         stop_event = threading.Event()
 
         threading.Thread(
@@ -335,7 +333,7 @@ class UnityNavigation(VLA_Complex):
 
         update_activity("Listening...", self.tool_name)
         try:
-            while not stop_event.is_set():
+            while self.listening and not stop_event.is_set():
                 time.sleep(1)
         finally:
             update_activity("Stopping listening...", self.tool_name)
@@ -349,29 +347,51 @@ class UnityNavigation(VLA_Complex):
             
 
     def react(self, unity_message):
-        
+        global runner
         # Filter
         # End filter
 
         # Special messages:
-        if "destinations" in unity_message:
-            self.destinations = unity_message["destinations"]
 
-        rerun_input = {
-                "Long term memory": self.long_term_memory,
-                "Session information": self.session.copy()
-            }
-        
-        unity_status = "No status"
-        rerun_input["Current status"] = unity_status
-        log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-        self.session.append({f"{timestamp()} Status":f"{unity_status}"})
+        # HARVEST MESSAGE - ITS A STRING
+        print(f"Loading {unity_message}!")
+        unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
+        try:
+            structure = json.loads(unity_message)
+        except Exception as e:
+            print(f"Failed to load {unity_message}... {e}")
+            return
+        try:
+            type, content = structure["type"], structure["content"]
+        except Exception as e:
+            print(f"Failed to find type or content in {structure}... {e}")
+            return
+        print(f"Got structure: {structure}")
+        print(f"Matching {type}:")
+        match type:
+            case "destinations":
+                self.destinations = content      
+                rerun_input = {"Here are the destinations": self.destinations}
+                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+                print(f"Calling {runner}")
+                if runner:
+                    runner(rerun_input, str(self))
+                else:
+                    raise Exception("Why is there no runner function?")  
+            case "status":
+                rerun_input = {
+                        "Long term memory": self.long_term_memory,
+                        "Session information": self.session.copy()
+                    }        
+                unity_status = content
+                rerun_input["Current status"] = unity_status
+                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+                self.session.append({f"{timestamp()} Status":f"{unity_status}"})
 
-        global runner
-        if runner:
-            runner(rerun_input, str(self))
-        else:
-            raise Exception("Why is there no runner function?")  
+                if runner:
+                    runner(rerun_input, str(self))
+                else:
+                    raise Exception("Why is there no runner function?")  
 
 
     def add_to_context(self):
@@ -379,8 +399,9 @@ class UnityNavigation(VLA_Complex):
 
     # VLA
     def act(self, unity_callable:str, arg: str):
-        message = f"{{method: {unity_callable}, arg: {arg}}}"
-        self.out_messages.put(message)
+        
+        structure = {"method": unity_callable, "arg":arg}
+        self.out_messages.put(json.dumps(structure))
 
 
 
@@ -403,7 +424,7 @@ class UnityNavigation(VLA_Complex):
         if runner is None:
             runner = rerun_function
         try:
-            await self.execute("getDestinations", "")
+            await self.execute("getDestinations", "null")
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()

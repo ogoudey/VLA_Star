@@ -10,7 +10,7 @@ def instantiate_unity_robot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.AUTO,
+        agency_type = AgencyType.DEMOED,
         recorded = False
     )
 
@@ -19,13 +19,19 @@ def instantiate_unity_robot():
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.ACTUATION,
-            agency_type = AgencyType.ARM_VR_DEMO,
+            agency_type = AgencyType.PASS_TO_UNITY,
             monitor_types = [
                 MonitorType.CONDUCT_RECORDING
             ],
-            recorded = True
+            recorded = False
         ),
     ]
+
+    factory.produce_vla_complexes(vla_complex_cfgs)
+
+    factory.produce_vla_star()
+    
+    return factory.get_vla_star()
 
 def instantiate_vla_kinova_training():
     """
@@ -92,7 +98,7 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_vla_kinova_training()
+    v = instantiate_unity_robot()
     v.start()
 
 
