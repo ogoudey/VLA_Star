@@ -121,6 +121,8 @@ def produce_vla_star():
     global agency
     global vla_complexes
     global _vla_star
+    # Set LLM system prompt from vla_complexes
+
     try:
         _vla_star = VLA_Star(agency, vla_complexes)
         return _vla_star
@@ -142,7 +144,8 @@ def make_agent() -> GDA:
     "After calling a SINGLE tool, stop all further reasoning.\n"\
     "Do not produce natural-language final output. "\
     "Return immediately after the ONE tool call.\n"\
-    "Use the blackboard to do any and all planning, like a 'behavior tree' might, but still, as for every tool call, return immediately after.\n")
+    "You are in a Unity world. Make autonomous decisions as if you lived in the world.")
+    #$"Use the blackboard to do any and all planning, like a 'behavior tree' might, but still, as for every tool call, return immediately after.\n")
 
 def make_demoed_agent():
     return DemoedLanguageModel()

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Callable
 import asyncio
 
 from gda import GDA, DemoedLanguageModel
@@ -18,17 +18,34 @@ class VLA_Star:
         self.prototype_agent.set_tools(vla_complexes)
 
     def start(self, prompt: str | None = None):
+        vlacs_to_start = []
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
-                print(f"Starting {vlac.tool_name}")
-                try:
-                    asyncio.run(self.start_with_vlac(vlac))
-                except Shutdown:
-                    print(f"Safely shut down {vlac.tool_name}.")
+                vlacs_to_start.append(vlac)
+                print(f"Will start {vlac.tool_name}")
+
+        asyncio.run(self.joint_start(vlacs_to_start))
         print(f"After for loop of all starting with a VLA Complex.")
-                
-    async def start_with_vlac(self, vlac: VLA_Complex):
+
+    async def joint_start(self, vlacs: List[VLA_Complex]):
+        for vlac in vlacs:
+            print(f"Starting {vlac.tool_name}...")
+            rerun_function = self.get_runner()
+            await vlac.start(rerun_function)
+        while True:
+            await asyncio.sleep(60)
+            
+    async def start_vlac(self, vlac: VLA_Complex):
         # start the "scheduler"
+        
+        rerun_function = self.get_runner()
+        await vlac.start(rerun_function)
+
+        # keep main loop alive
+        while True:
+            await asyncio.sleep(60)
+    
+    def get_runner(self) -> Callable:
         if type(self.prototype_agent) == GDA:
             print("Starting GDA")
             tm = ThinkingMachine(self.prototype_agent)
@@ -39,12 +56,7 @@ class VLA_Star:
         else:
             print("Not starting GDA")
             rerun_function = self.prototype_agent.run_identity
-
-        await vlac.start(rerun_function)
-
-        # keep main loop alive
-        while True:
-            await asyncio.sleep(60)
+        return rerun_function
 """
 ### Demos ###
 def street_and_crosswalks():

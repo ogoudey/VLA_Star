@@ -14,7 +14,6 @@ def recv_loop(sock: socket.socket, inbound_q: queue.Queue, stop_event):
     try:
         while not stop_event.is_set():
             msg = recv_line(sock)
-            print(f"Received {msg}")
             if msg is None:
                 break
             inbound_q.put(msg)
@@ -29,7 +28,6 @@ def send_loop(sock: socket.socket, send_q: queue.Queue, stop_event):
         while not stop_event.is_set():
             msg = send_q.get()
             sock.sendall((msg + "\n").encode())
-            print(f"Sent {msg}")
     except (BrokenPipeError, ConnectionResetError, OSError):
         pass
     finally:

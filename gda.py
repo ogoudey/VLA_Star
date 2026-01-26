@@ -151,7 +151,13 @@ class GDA:
             result = "Max turns exceeded."
         return result
 
-    
+    def assemble_context(self, context: dict, from_source_signature: str):
+        for vlac in self.vla_complexes:
+            if not vlac.tool_name == from_source_signature:
+                if hasattr(vlac, "add_to_context"):
+                    context[vlac.tool_name] = vlac.add_to_context()
+        return context
+
 
     def clean_context(self):
         #print(f"Cleaning {self.context}")

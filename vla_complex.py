@@ -30,7 +30,8 @@ class VLA_Complex:
     tool_name: str
     def __init__(self, vla: Any, capability_desc: str, tool_name: str, on_start=False):
         self.vla = vla
-        self.execute.__func__.__doc__ = capability_desc
+        self.capability_desc = capability_desc
+        self.update_docstring(capability_desc)
         self.parent = None
         
         self.last_instruction = None
@@ -38,6 +39,9 @@ class VLA_Complex:
         self.tool_name = tool_name
         self.on_start = on_start
         self.use_frequency = 0.0
+
+    def update_docstring(self, new_capability_desc: str):
+        self.execute.__func__.__doc__ = new_capability_desc
 
     async def execute(self, instruction: str):
         """___________________________"""
@@ -275,7 +279,7 @@ j
 
 class UnityAction(VLA_Complex):
     def __init__(self, tool_name: str):
-        capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of."
+        capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity."
         super().__init__(self.act, capability_desc, tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
@@ -371,9 +375,11 @@ class UnityAction(VLA_Complex):
         print(f"Matching {type}:")
         match type:
             case "destinations":
-                self.destinations = content
-                if not self.enough_context_for_first_rerun():
-                    return 
+                
+                if not self.enough_context_for_first_rerun(): # if this is the first time its called
+                    self.destinations = content
+                    self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.destinations}))
+                    return
                 rerun_input = {
                     "Here are the destinations": self.destinations,
                     "Here are the functions to call": self.unity_functions
@@ -408,7 +414,10 @@ class UnityAction(VLA_Complex):
         return self.destinations and self.unity_functions
 
     def add_to_context(self):
-        pass
+        return {
+            "Known functions": self.unity_functions,
+            "Known destinations": self.destinations,
+        }
 
     # VLA
     def act(self, unity_callable:str, arg: str):

@@ -44,6 +44,7 @@ class ThinkingMachine:
     async def run_agent(self, rerun_input, source):
         print(f"In run_agent()")
         context = self.prototype.context_from(rerun_input, source)
+        context = self.prototype.assemble_context(context, source)
         update_activity("Processing user input...", f"{source} interpretation")
         await self.prototype.run_identity(context) # could be neater
         update_activity("Done processing user input...", f"{source} interpretation", exit=True)
