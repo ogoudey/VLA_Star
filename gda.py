@@ -36,7 +36,7 @@ class DemoedLanguageModel:
             return task_name
         else:
             while True:
-                print(f"\"{rerun_input}\" from {source}")
+                print(f"{source} ==> \"{rerun_input}\"")
                 for tool in self.tools:
                     print(f"{inspect.signature(tool.execute)}")
                     task_name = input(f"{tool.tool_name}: ")

@@ -104,8 +104,10 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             case _:
                 raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
         match cfg.vla_type:
-            case VLAType.TEXT:
-                complex = vla_complex.Chat()
+            case VLAType.TEXT_USER:
+                complex = vla_complex.Chat("chat_with_player", chat_port=5001)
+            case VLAType.TEXT_USER2:
+                complex = vla_complex.Chat("chat_with_helpful_agent", "Say something directly to a helpful support agent. Do NOT use this for planning, only for help and guidance.", chat_port=5002)
             case VLAType.ACTUATION:
                 pass
             case _:

@@ -22,9 +22,10 @@ def reply_loop(send_q, stop_event):
         print(f"Error in respond loop!: {e}")
     
 
-def run_client():
+def run_client(chat_port=5001):
+    print(f"Opened chat client on {chat_port}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(("127.0.0.1", 5001))
+    sock.connect(("127.0.0.1", chat_port))
 
     stop_event = threading.Event()
     inbound_q = queue.Queue()
@@ -68,6 +69,10 @@ def run_client():
 
 if __name__ == "__main__":
     try:
-        run_client()
+        import sys
+        if len(sys.argv) > 1:
+            run_client(int(sys.argv[1]))
+        else:
+            run_client()
     except OSError:
         print("Failed to run client. Make sure a Chat is beginning to listen/listening.")

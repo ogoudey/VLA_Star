@@ -23,8 +23,8 @@ class MonitorType(Enum):
     
 class VLAType(Enum):
     ACTUATION = "actuation"
-    TEXT = "text"
-
+    TEXT_USER = "text_user"
+    TEXT_USER2 = "text_user2"
 @dataclass
 class RobotConfig:
     robot_type: RobotType
@@ -33,6 +33,7 @@ class RobotConfig:
 class AgencyConfig:
     agency_type: AgencyType
     recorded: bool
+    # long_term_memory: bool = False
 
 @dataclass
 class VLAComplexConfig:

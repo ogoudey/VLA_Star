@@ -10,7 +10,7 @@ def instantiate_unity_robot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.AUTO,
+        agency_type = AgencyType.DEMOED,
         recorded = False
     )
 
@@ -26,7 +26,13 @@ def instantiate_unity_robot():
             recorded = False
         ),
         VLAComplexConfig(
-            vla_type = VLAType.TEXT,
+            vla_type = VLAType.TEXT_USER,
+            agency_type = AgencyType.PASS_THROUGH,
+            monitor_types = [],
+            recorded = False
+        ),
+        VLAComplexConfig(
+            vla_type = VLAType.TEXT_USER2,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False

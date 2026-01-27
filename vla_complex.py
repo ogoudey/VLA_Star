@@ -116,9 +116,12 @@ class Logger(VLA_Complex):
 class Chat(VLA_Complex):
     parent: GDA
     
-    def __init__(self):
-        super().__init__(self.reply, "Say something directly to user. Do NOT use this for planning, only for informal conversation.", "chat", True)
-        
+    def __init__(self, tool_name="chat", tool_description="Say something directly to user. Do NOT use this for planning, only for informal conversation.", chat_port=5001):
+        super().__init__(self.reply, tool_description, tool_name, True)
+        print(f"Created {tool_name} port on {chat_port}")
+        self.chat_port = chat_port
+
+
         ### State ###
         self.long_term_memory = []
         self.session = []
@@ -133,10 +136,7 @@ class Chat(VLA_Complex):
         return f"Chat repr"
 
     def __str__(self):
-        return f"Chat"
-    
-
-    
+        return f"{self.tool_name}"
 
     async def execute(self, text: str):
         if not self.listening:
@@ -155,7 +155,7 @@ class Chat(VLA_Complex):
     def run_server(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(("127.0.0.1", 5001))
+        server.bind(("127.0.0.1", self.chat_port))
         server.listen()
         self.listening = True
         print("Chat server waiting...")
@@ -216,9 +216,9 @@ class Chat(VLA_Complex):
         if user_input == "":
             log(f"{self.tool_name} >>> LLM: ...no new signal...", self)
         else:
-            rerun_input["Current user message"] = user_input
+            rerun_input["Current message"] = user_input
             log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-            self.session.append({f"{timestamp()} User":f"{user_input}"})
+            self.session.append({f"{timestamp()} Message":f"{user_input}"})
 
         global runner
         if runner:
@@ -232,7 +232,7 @@ class Chat(VLA_Complex):
         if runner is None:
             runner = rerun_function
         try:
-            await self.execute("Hello?")
+            await self.execute("...")
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()
