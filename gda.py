@@ -38,6 +38,8 @@ class DemoedLanguageModel:
             while True:
                 print(f"{source} ==> \"{rerun_input}\"")
                 for tool in self.tools:
+                    if hasattr(tool, "add_to_context"):
+                        print(f"Tool's context: {json.dumps(tool.add_to_context(), indent=2)}")
                     print(f"{inspect.signature(tool.execute)}")
                     task_name = input(f"{tool.tool_name}: ")
                     print(f"{task_name}")
@@ -45,6 +47,8 @@ class DemoedLanguageModel:
                         task_name = task_name.split(",")
                         self.use_tool(tool, *task_name)
                         return task_name
+                    else:
+                        print(f"_______")
                 print(f"Back to the top...")
 
     def use_tool(self, tool, *instruction):

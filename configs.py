@@ -13,6 +13,7 @@ class AgencyType(Enum):
     DEMOED = "demoed"
     ARM_VR_DEMO = "arm_vr_demo"
     KEYBOARD_DEMO = "keyboard_demo"
+    PASS_TO_AVA = "pass_to_ava"
     AUTO = "auto"
     FIXED = "fixed"
     PASS_THROUGH = "pass_through"
@@ -25,6 +26,8 @@ class VLAType(Enum):
     ACTUATION = "actuation"
     TEXT_USER = "text_user"
     TEXT_USER2 = "text_user2"
+    AVA_DRIVE = "ava_drive"
+    AVA_TAGGING = "ava_tagging"
 @dataclass
 class RobotConfig:
     robot_type: RobotType

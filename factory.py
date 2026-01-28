@@ -97,6 +97,9 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 complex = None
             case AgencyType.PASS_TO_UNITY:
                 complex = vla_complex.UnityAction("act")
+            case AgencyType.PASS_TO_AVA:
+                ava_base = import_helper("ava_base")
+                
             case AgencyType.PASS_THROUGH:
                 pass
             case AgencyType.FIXED:
@@ -104,6 +107,10 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             case _:
                 raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
         match cfg.vla_type:
+            case VLAType.AVA_DRIVE:
+                complex = vla_complex.AvaDrive(ava_base, "drive")
+            case VLAType.AVA_TAGGING:
+                complex = vla_complex.AvaCreateTag(ava_base, "create_tag")
             case VLAType.TEXT_USER:
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
             case VLAType.TEXT_USER2:
@@ -161,11 +168,24 @@ def import_helper(module_name: str):
                 print("No SmolVLA")
                 raise FileNotFoundError(f"Could not add {custom_brains} to sys.path")
             try:
-                import vla_interface
+                import vla_interface as module
             except Exception as e:
                 print(e)
                 raise FileNotFoundError("Failed to import LeRobot etc.")
-    return vla_interface
+        case "ava_base":
+            py_ava_tools = Path(os.environ.get("AVA_BASE", "/home/olin/Robotics/Projects/Ava/py_ava_tools"))
+            sys.path.append(py_ava_tools.as_posix())
+            if not py_ava_tools.exists():
+                print("No Ava Base!")
+                raise FileNotFoundError(f"Could not add {py_ava_tools} to sys.path.\n{sys.path}\n_______________")
+            try:
+                from ava_base import ava as module
+            except Exception as e:
+                print(e)
+                raise FileNotFoundError("Failed to import ava_base etc.")
+        case _:
+            raise ValueError(f"{module_name} has not been implemented in the import_helper!")
+    return module
 """
 def get_real_vision(override_values=[]):
     try:

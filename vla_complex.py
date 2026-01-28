@@ -277,6 +277,121 @@ j
             print(f"\nSystem shutting down...")
             raise Shutdown()
 
+class AvaCreateTag(VLA_Complex):
+    def __init__(self, base, tool_name: str):
+        self.base = base
+        self.default_map = 5
+
+        super().__init__(self.create_tag, "Create a new location with the given name at the given coordinates.", tool_name)
+
+    async def execute(self, name: str, x: float, y: float, theta: float):
+        await super().execute(name)
+        self.vla(name, x, y, theta)
+
+    def add_to_context(self):
+        data = self.base.get_position()["data"]
+        return {
+            "Current position": {
+                "x": data["x"],
+                "y": data["y"],
+                "theta": data["theta"],
+            },
+            "A point 0.5 meters forward": [
+                self.base.get_point_forward_d(0.5)
+            ],
+            "Note": "+theta is counterclockwise from above"
+            
+        }
+
+    def create_tag(self, name, x, y, theta):
+        self.base.create_tag(self.default_map, name, x, y, theta)
+
+class AvaDrive(VLA_Complex):
+    # A VLA Complex
+
+    # is initialized in the factory
+    def __init__(self, base, tool_name: str):
+        self.base = base
+        self.default_map = 5
+        
+
+        super().__init__(self.drive, "Drive to a location in the real world. Location must be one of the ones given, or STOP to stop moving.", tool_name)
+        self.drive_updates_on = False
+        self.driving = False
+
+        ### State ###
+        self.long_term_memory = []
+        self.session = []
+        
+        self.locations_to_tagIds = dict()
+        self.refresh_locations()
+
+    # has a primary "act" method
+    def drive(self, location: str):
+        if location == "Dock":
+            self.base.smart_dock()
+        elif location == "STOP":
+            self.base.stop_robot()
+        else:
+            try:
+                self.base.drive_to_tag(self.default_map, self.locations_to_tagIds[location])
+            except KeyError:
+                return (f"Failed to drive to the location. Make sure {location} is one from {list(self.locations_to_tagIds.keys())}, or Dock or STOP")
+
+    # adds to uniform context
+    def add_to_context(self):
+        self.refresh_locations()
+        return {
+            "Known locations": list(self.locations_to_tagIds.keys())
+        }
+    
+    # often has ongoing threads
+    def run_drive_updates_client(self):
+
+        while True:
+            while self.driving:
+                drive_updates = self.base.drive_updates()["data"]["status"] # good for now
+                if "COMPLETE" in drive_updates.values():
+                    self.rerun("Destination reached.")
+                    self.driving = False
+            time.sleep(1)
+
+    # is called by an agent, with args. (This call must be non-blocking)
+    async def execute(self, location: str):
+        print("Ava Drive called.")
+        await super().execute(location)
+        if not self.drive_updates_on:
+            threading.Thread(target=self.run_drive_updates_client).start()
+        self.vla(location)
+        self.driving = True
+
+    # reruns the agent
+    def rerun(self, raison):
+        rerun_input = {
+                "Long term stats": self.long_term_memory,
+                "Session information": self.session.copy()
+            }        
+        rerun_input["Current drive status"] = raison
+        log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+        self.session.append({f"{timestamp()} Status":f"{raison}"})
+
+        if runner:
+            runner(rerun_input, str(self))
+
+    def refresh_locations(self):
+        tags_info = self.base.list_tags(self.default_map)["data"]["tags"]
+        for id, tag_info in tags_info.items():
+            if not "tag" in tag_info["name"]: # arbitrary - but it can't be all the tags...
+
+                self.locations_to_tagIds[tag_info["name"]] = tag_info["id"]
+"""
+Conclusion:
+    Out --> drive_to_tag, list_tags()
+                              V
+    In  <-- drive_updates, list_tags
+
+"""
+
 class UnityAction(VLA_Complex):
     def __init__(self, tool_name: str):
         capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity."
