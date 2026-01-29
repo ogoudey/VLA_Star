@@ -24,6 +24,11 @@ from exceptions import Shutdown
 global runner
 runner: Callable = None
 
+any_applicable = True
+class ExecuteLocked(Exception):
+    pass
+
+
 class VLA_Complex:
     # Everything that's treated the same by a GDA
     # [TODO] Need to provide dictionary for multiple different VLAs.
@@ -45,6 +50,8 @@ class VLA_Complex:
 
     async def execute(self, instruction: str):
         """___________________________"""
+        if not any_applicable:
+            raise ExecuteLocked("Not applicable!")
         self.use_frequency += 1
         if not self.parent:
             raise Exception(f"{self.tool_name} has not properly been linked to an agent.")
@@ -145,12 +152,10 @@ class Chat(VLA_Complex):
 
         await super().execute(text)
          
-        log(f"\tCalling vla {self.vla.__name__}...", self)
         self.vla(text)
 
         self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
         
-        log("\tExecute process done", self)
 
     def run_server(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -406,9 +411,10 @@ class UnityAction(VLA_Complex):
         self.destinations = None
         self.unity_functions = None
 
+    def __str__(self):
+        return self.tool_name
 
     async def execute(self, callable: str, arg: str):
-        print("UnityAction called.")
         await super().execute(callable)
         if not self.listening:
             self.start_listener()
@@ -474,20 +480,19 @@ class UnityAction(VLA_Complex):
         # Special messages:
 
         # HARVEST MESSAGE - ITS A STRING
-        print(f"Loading {unity_message}!")
+        #print(f"Loading {unity_message}!")
         unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
         try:
             structure = json.loads(unity_message)
         except Exception as e:
-            print(f"Failed to load {unity_message}... {e}")
+            #print(f"Failed to load {unity_message}... {e}")
             return
         try:
             type, content = structure["type"], structure["content"]
         except Exception as e:
-            print(f"Failed to find type or content in {structure}... {e}")
             return
-        print(f"Got structure: {structure}")
-        print(f"Matching {type}:")
+        #print(f"Got structure: {structure}")
+        #print(f"Matching {type}:")
         match type:
             case "destinations":
                 
@@ -500,7 +505,6 @@ class UnityAction(VLA_Complex):
                     "Here are the functions to call": self.unity_functions
                     }
                 log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-                print(f"Calling {runner}")
                 if runner:
                     runner(rerun_input, str(self))
                 else:
@@ -509,21 +513,28 @@ class UnityAction(VLA_Complex):
                 self.unity_functions = content
                 return
             case "status":
+                unity_status = content[0]
                 if not self.enough_context_for_first_rerun():
                     return 
-                rerun_input = {
+                if "goal set" in unity_status:
+                    self.session.append({f"{timestamp()} Status":f"{unity_status}"})
+                    return
+                else:
+                    rerun_input = {
                         "Long term memory": self.long_term_memory,
                         "Session information": self.session.copy()
-                    }        
-                unity_status = content
-                rerun_input["Current status"] = unity_status
-                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-                self.session.append({f"{timestamp()} Status":f"{unity_status}"})
+                    }
+                    log(f"{self.tool_name} >>> LLM: {rerun_input}. Important? {not "goal set" in unity_status}. Content: {unity_status}", self)    
+                    
+                    rerun_input["Current status"] = unity_status
+                    
 
-                if runner:
-                    runner(rerun_input, str(self))
-                else:
-                    raise Exception("Why is there no runner function?")  
+                    if runner:
+                        runner(rerun_input, self.tool_name)
+                    else:
+                        raise Exception("Why is there no runner function?")  
+                    
+                
 
     def enough_context_for_first_rerun(self):
         return self.destinations and self.unity_functions

@@ -1,7 +1,7 @@
 import factory
 
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
-from configs import RobotType, AgencyType, MonitorType, VLAType
+from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
 def instantiate_ava():
     robot_cfg = RobotConfig(
@@ -73,7 +73,8 @@ def instantiate_unity_robot():
 
     agency_cfg = AgencyConfig(
         agency_type = AgencyType.AUTO,
-        recorded = False
+        recorded = False,
+        motive_type = MotiveType.TO_HELP_USER
     )
 
     factory.produce_agency(agency_cfg)
@@ -89,12 +90,6 @@ def instantiate_unity_robot():
         ),
         VLAComplexConfig(
             vla_type = VLAType.TEXT_USER,
-            agency_type = AgencyType.PASS_THROUGH,
-            monitor_types = [],
-            recorded = False
-        ),
-        VLAComplexConfig(
-            vla_type = VLAType.TEXT_USER2,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
@@ -158,7 +153,7 @@ def instantiate_chatting_bot():
 
     vla_complex_cfgs = [
         VLAComplexConfig(
-            vla_type = VLAType.TEXT,
+            vla_type = VLAType.TEXT_USER,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
@@ -172,7 +167,7 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_ava()
+    v = instantiate_unity_robot()
     v.start()
 
 

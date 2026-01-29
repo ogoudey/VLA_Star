@@ -94,12 +94,12 @@ class GDA:
         self.vla_complexes = []
         self.context = {}
 
-        self.system = {"Instructions": instructions, "Status":OK}
-
+        self.instructions = instructions
+        self.goal = goal
+        self.model = "o3-mini"
         self.name = name
         self.goal = goal
 
-        self.overhead_prompt = self.goal
         self.memory_lim_before_recompute = 4
         self.last_status = None
         self._applicable = True
@@ -108,6 +108,8 @@ class GDA:
         self.total_session_t0 = time.time()
         self.agent_identities = 0
         
+        self.identities_running = 0
+
     def __str__(self):
         return f"LLM {self.name}"
 
@@ -132,13 +134,23 @@ class GDA:
         ))
         vlac.parent = self # The complex's check will go to this Agent
     
+    def instance_system_prompt(self):
+        system_prompt = self.instructions
+        if self.goal:
+            system_prompt += self.goal
+        return system_prompt
+
     async def run_identity(self, context):
-        
+        if self.identities_running > 0:
+            print(f"(Identity running... waiting)")
+            while self.identities_running < 0:
+                time.sleep(0.1)
+
         identity = Agent(
             name=self.name + str(self.agent_identities),
-            instructions=self.system_to_instructions(), # Yet to modify system instructions significantly
+            instructions=self.instance_system_prompt(),
             tools=self.tools, # The tool-ified VLA Complexes
-            model="o3-mini",
+            model=self.model,
         )
         self.agent_identities += 1
 
@@ -149,10 +161,14 @@ class GDA:
 
         self.clean_context()
         try:
+            print(f"\t{identity.name} started.")
+            self.identities_running += 1
             result = await Runner.run(identity, prompt, max_turns=2)
         except Exception as e:
-            print(f"Max turns exceeded so just leaving it...")
+            print(f"\tMax turns exceeded so just leaving it...")
             result = "Max turns exceeded."
+        print(f"Hopefully {identity.name} is done.")
+        self.identities_running -= 1
         return result
 
     def assemble_context(self, context: dict, from_source_signature: str):
@@ -189,7 +205,7 @@ class GDA:
         return self.context 
 
     def system_to_instructions(self):
-        return json.dumps(self.system["Instructions"])
+        return json.dumps(self.instructions)
 
 def merge_past(lst):
     """

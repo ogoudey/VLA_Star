@@ -25,9 +25,13 @@ class MonitorType(Enum):
 class VLAType(Enum):
     ACTUATION = "actuation"
     TEXT_USER = "text_user"
-    TEXT_USER2 = "text_user2"
     AVA_DRIVE = "ava_drive"
     AVA_TAGGING = "ava_tagging"
+
+class MotiveType(Enum):
+    TO_HELP_USER = "to_help_user" # symbiosis via utility-trust
+    TO_SABBOTAGE_USER = "to_sabbotage_user" # "bad guy" character
+
 @dataclass
 class RobotConfig:
     robot_type: RobotType
@@ -36,6 +40,7 @@ class RobotConfig:
 class AgencyConfig:
     agency_type: AgencyType
     recorded: bool
+    motive_type: Optional[MotiveType] = None
     # long_term_memory: bool = False
 
 @dataclass
