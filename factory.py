@@ -87,13 +87,9 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                     runner = vla_interface.create_teleop_unrecorded_interaction()                
                 complex = vla_complex.EpisodicRecorder(runner, "record_conductor")
             case AgencyType.KEYBOARD_DEMO:
-                raise ValueError(f"Keyboard demo not yet supported: {cfg.agency_type}")
                 vla_interface = import_helper("vla_interface")
-                if cfg.recorded:
-                    runner = vla_interface.create_teleop_recording_so101_interaction()
-                    # Assumed is camera reader assignments - that a "Kinova" is the Kinova in the lab rn with those cameras.
-                else:
-                    runner = vla_interface.create_teleop_unrecorded_interaction() #but for so101?                
+                runner = vla_interface.factory_function(cfg)
+                        
                 complex = None
             case AgencyType.PASS_TO_UNITY:
                 complex = vla_complex.UnityAction("act")

@@ -1,6 +1,7 @@
 from enum import Enum
 from dataclasses import dataclass, field
 from typing import List, Optional
+from pathlib import Path
 
 class RobotType(Enum):
     KINOVA = "kinova"
@@ -28,6 +29,7 @@ class VLAType(Enum):
     AVA_DRIVE = "ava_drive"
     AVA_TAGGING = "ava_tagging"
 
+
 class MotiveType(Enum):
     TO_HELP_USER = "to_help_user" # symbiosis via utility-trust
     TO_SABBOTAGE_USER = "to_sabbotage_user" # "bad guy" character
@@ -39,7 +41,7 @@ class RobotConfig:
 @dataclass
 class AgencyConfig:
     agency_type: AgencyType
-    recorded: bool
+    recorded: bool=False
     motive_type: Optional[MotiveType] = None
     # long_term_memory: bool = False
 
@@ -48,4 +50,6 @@ class VLAComplexConfig:
     vla_type: VLAType
     agency_type: AgencyType
     monitor_types: Optional[List[MonitorType]]
-    recorded: bool
+    robot_type: Optional[RobotType]=None
+    policy_path: Optional[Path] = None
+    recorded: bool=False
