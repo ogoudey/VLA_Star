@@ -80,17 +80,18 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
         match cfg.agency_type:
             case AgencyType.ARM_VR_DEMO:
                 vla_interface = import_helper("vla_interface")
-                if cfg.recorded:
-                    runner = vla_interface.create_teleop_recorded_interaction()
-                    # Assumed is camera reader assignments - that a "Kinova" is the Kinova in the lab rn with those cameras.
-                else:
-                    runner = vla_interface.create_teleop_unrecorded_interaction()                
+                runner = vla_interface.factory_function(cfg)
                 complex = vla_complex.EpisodicRecorder(runner, "record_conductor")
             case AgencyType.KEYBOARD_DEMO:
                 vla_interface = import_helper("vla_interface")
                 runner = vla_interface.factory_function(cfg)
-                        
-                complex = None
+                complex = vla_complex.EpisodicRecorder(runner, "record_conductor")
+            case AgencyType.AUTO:
+                vla_interface = import_helper("vla_interface")
+                runner = vla_interface.factory_function(cfg)
+                # cfg needs a robot type
+                complex = vla_complex.VLA_Wrapper(runner, "record_conductor") # or something - maybe just an EpisodicRecorder
+            
             case AgencyType.PASS_TO_UNITY:
                 complex = vla_complex.UnityAction("act")
             case AgencyType.PASS_TO_AVA:
