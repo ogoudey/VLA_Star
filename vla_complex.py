@@ -386,8 +386,7 @@ class AvaDrive(VLA_Complex):
     def refresh_locations(self):
         tags_info = self.base.list_tags(self.default_map)["data"]["tags"]
         for id, tag_info in tags_info.items():
-            if not "tag" in tag_info["name"]: # arbitrary - but it can't be all the tags...
-
+            if "tracs" in tag_info["attributes"]:
                 self.locations_to_tagIds[tag_info["name"]] = tag_info["id"]
 """
 Conclusion:
