@@ -24,7 +24,7 @@ class DemoedLanguageModel:
         self.status_history = []
         self.context = {}
 
-    def run_identity(self, rerun_input, source):
+    def run_identity(self, rerun_input, source: str = "Anon"):
         print(f"Tools: {self.tools}")
         # assume one tool (the recorder)
         if len(self.tools) == 0:
@@ -52,6 +52,7 @@ class DemoedLanguageModel:
                 print(f"Back to the top...")
 
     def use_tool(self, tool, *instruction):
+        print("Using asyncio.run!")
         asyncio.run(tool.execute(*instruction))
         """
         for vlac in self.tools:

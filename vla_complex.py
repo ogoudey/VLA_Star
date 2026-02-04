@@ -15,6 +15,7 @@ from displays import log, timestamp, update_activity
 import queue
 
 from chat_utils import recv_line, recv_loop, send_loop
+import scheduler 
 
 RAW_EXECUTE = False
 EXECUTE = True
@@ -62,7 +63,31 @@ class VLA_Complex:
             log(f"{self.parent.name} call is inapplicable ", self)
             return f"Inapplicable call. Please finish execution (no final response needed)."  
         log(f"LLM >>> {self.tool_name}(\"{instruction_print}\")", self)
+
+class Scheduler(VLA_Complex):
+    def __init__(self):
+        super().__init__(self.make_schedule, "Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time.\nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.", "make_schedule")
+        self.on_schedule = False
+
+
+    async def execute(self, input: str):
+        global runner
+        if self.on_schedule:
+            return "You're on schedule..."
+            
+        else:
+            print(f"Setting {scheduler.notify} to {runner}")
+            scheduler.notify = runner
+            # the following shouldn't be blocking but it is.
+            await self.vla(input)
+
+    async def make_schedule(self, input):
         
+        await scheduler.make_schedule(input)
+        print(f"Back from making schedule. Running... {scheduler.schedule_blocks}")
+        threading.Thread(target=scheduler.run_schedule, daemon=True).start()
+        print(f"Done starting schedule!")
+
 import json
 class DrawOnBlackboard(VLA_Complex):
     def __init__(self):
@@ -249,7 +274,25 @@ class Chat(VLA_Complex):
 
     
 
-    
+class VLA_Tester(VLA_Complex):
+    def __init__(self, interaction_runner, tool_name):
+        self.interaction_runner = interaction_runner
+        super().__init__(None, "does a thing", tool_name)
+        self.running = False
+
+        # instantiates signal to coordinate monitors with runner (both are in the runner)
+        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"Put the cube in the first aid kit"}
+        # signal at first blocks episode loop, waiting for "go" from teleop
+
+    async def execute(self, instruction: str):
+        await super().execute(instruction)
+        if not self.running:
+            threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
+        if instruction == "STOP":
+            self.signal["RUNNING_E"] = False
+        else:
+            self.signal["task"] = instruction
+
 
 class EpisodicRecorder(VLA_Complex):
     """
@@ -266,7 +309,7 @@ j
         self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"Put the cube in the first aid kit"}
         # signal at first blocks episode loop, waiting for "go" from teleop
 
-    async def execute(self, instruction):
+    async def execute(self, instruction: str):
         await super().execute(instruction)
         if not self.running:
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
@@ -285,7 +328,7 @@ j
 class AvaCreateTag(VLA_Complex):
     def __init__(self, base, tool_name: str):
         self.base = base
-        self.default_map = 5
+        self.default_map = 1
 
         super().__init__(self.create_tag, "Create a new location with the given name at the given coordinates.", tool_name)
 
@@ -317,7 +360,7 @@ class AvaDrive(VLA_Complex):
     # is initialized in the factory
     def __init__(self, base, tool_name: str):
         self.base = base
-        self.default_map = 5
+        self.default_map = 1
         
 
         super().__init__(self.drive, "Drive to a location in the real world. Location must be one of the ones given, or STOP to stop moving.", tool_name)
@@ -333,14 +376,16 @@ class AvaDrive(VLA_Complex):
 
     # has a primary "act" method
     def drive(self, location: str):
+        print(f"Drive on {location}")
         if location == "Dock":
             self.base.smart_dock()
         elif location == "STOP":
             self.base.stop_robot()
         else:
             try:
+                print(f"Driving to {self.locations_to_tagIds[location]} on map {self.default_map}")
                 self.base.drive_to_tag(self.default_map, self.locations_to_tagIds[location])
-            except KeyError:
+            except Exception:
                 return (f"Failed to drive to the location. Make sure {location} is one from {list(self.locations_to_tagIds.keys())}, or Dock or STOP")
 
     # adds to uniform context
@@ -384,7 +429,10 @@ class AvaDrive(VLA_Complex):
             runner(rerun_input, str(self))
 
     def refresh_locations(self):
-        tags_info = self.base.list_tags(self.default_map)["data"]["tags"]
+        tags_data = self.base.list_tags(self.default_map)["data"]
+        self.base.pp(tags_data)
+        tags_info = tags_data["tags"]
+
         for id, tag_info in tags_info.items():
             if "tracs" in tag_info["attributes"]:
                 self.locations_to_tagIds[tag_info["name"]] = tag_info["id"]
@@ -523,7 +571,7 @@ class UnityAction(VLA_Complex):
                         "Long term memory": self.long_term_memory,
                         "Session information": self.session.copy()
                     }
-                    log(f"{self.tool_name} >>> LLM: {rerun_input}. Important? {not "goal set" in unity_status}. Content: {unity_status}", self)    
+                    log(f"{self.tool_name} >>> LLM: {rerun_input}. Important? {not 'goal set' in unity_status}. Content: {unity_status}", self)    
                     
                     rerun_input["Current status"] = unity_status
                     

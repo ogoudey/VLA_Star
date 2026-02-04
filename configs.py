@@ -19,6 +19,7 @@ class AgencyType(Enum):
     FIXED = "fixed"
     PASS_THROUGH = "pass_through"
     PASS_TO_UNITY = "pass_to_unity"
+    SCHEDULER = "scheduler"
 
 class MonitorType(Enum):
     CONDUCT_RECORDING = "conduct_recording"
@@ -28,6 +29,7 @@ class VLAType(Enum):
     TEXT_USER = "text_user"
     AVA_DRIVE = "ava_drive"
     AVA_TAGGING = "ava_tagging"
+    PROCESS = "process"
 
 
 class MotiveType(Enum):
