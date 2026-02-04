@@ -464,7 +464,154 @@ Conclusion:
 
 """
 
-class UnityAction(VLA_Complex):
+class UnityArm(VLA_Complex):
+    def __init__(self):
+        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>", "arm")
+        self.listening = False
+        self.unity_messages = queue.Queue()
+        self.out_messages = queue.Queue()
+        ### State ###
+        self.long_term_memory = []
+        self.session = []
+        
+        self.available_objects = []
+        self.carrying = None
+
+    def __str__(self):
+        return self.tool_name
+
+    async def execute(self, pickup_or_drop: str, object_name: str):
+        await super().execute(pickup_or_drop)
+        if not self.listening:
+            self.start_listener()
+        
+        if pickup_or_drop == "PICKUP":
+            self.vla("PickUp", object_name)
+        elif pickup_or_drop == "DROP":
+            self.vla("Drop", None)
+        else:
+            return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
+
+
+    def start_listener(self):
+        threading.Thread(target=self.run_client, daemon=True).start()
+
+    def run_client(self):
+        print("Listener running")
+        print("Connecting to Unity...")
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect(("127.0.0.1", 5007))
+        self.listening = True
+        print("Connected to Unity...")
+        update_activity("Connected to Unity...", self.tool_name)
+        
+        stop_event = threading.Event()
+
+        threading.Thread(
+            target=recv_loop,
+            args=(sock, self.unity_messages, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=send_loop,
+            args=(sock, self.out_messages, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=self.react_loop,
+            args=(stop_event,),
+            daemon=True
+        ).start()
+
+        update_activity("Listening...", self.tool_name)
+        try:
+            while self.listening and not stop_event.is_set():
+                time.sleep(1)
+        finally:
+            update_activity("Stopping listening...", self.tool_name)
+            stop_event.set()
+            sock.close()
+
+    def react_loop(self, stop_event):
+        while not stop_event.is_set():
+            msg = self.unity_messages.get()
+            self.react(f"{msg}")
+            
+
+    def react(self, unity_message):
+        global runner
+        # Filter
+        # End filter
+
+        # Special messages:
+
+        # HARVEST MESSAGE - ITS A STRING
+        unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
+        try:
+            structure = json.loads(unity_message)
+        except Exception as e:
+            return
+        try:
+            type, content = structure["type"], structure["content"]
+        except Exception as e:
+            return
+        match type:
+            case "available_objects":
+                
+                if not self.enough_context_for_first_rerun(): # if this is the first time its called
+                    self.available_objects = content
+                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.available_objects}))
+                    return
+                rerun_input = {
+                    "Here are the available objects": self.available_objects,
+                }
+                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
+                if runner:
+                    runner(rerun_input, str(self))
+                else:
+                    raise Exception("Why is there no runner function?")
+            case "status":
+                unity_status = content[0]
+                if not self.enough_context_for_first_rerun():
+                    return 
+                if "picked up" in unity_status:
+                    self.session.append({f"{timestamp()} Status":f"{unity_status}"})
+                    return
+                else:
+                    rerun_input = {
+                        "Long term memory": self.long_term_memory,
+                        "Session information": self.session.copy()
+                    }
+                    log(f"{self.tool_name} >>> LLM: {rerun_input}. Important? {not 'goal set' in unity_status}. Content: {unity_status}", self)    
+                    
+                    rerun_input["Current status"] = unity_status
+                    
+
+                    if runner:
+                        runner(rerun_input, self.tool_name)
+                    else:
+                        raise Exception("Why is there no runner function?")  
+#   (no past)/ TS:[-failed to pick up], picked up x, dropped x, failed to pick up y
+#                                                   ^          ^        
+#                                                 moved      moved
+    def enough_context_for_first_rerun(self):
+        return self.destinations and self.unity_functions
+
+    def add_to_context(self):
+        return {
+            "Known functions": self.unity_functions,
+            "Known destinations": self.destinations,
+        }
+
+    # VLA
+    def act(self, unity_callable:str, arg: str):
+        
+        structure = {"method": unity_callable, "arg":arg}
+        self.out_messages.put(json.dumps(structure))
+
+class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
         capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity."
         super().__init__(self.act, capability_desc, tool_name)
@@ -481,22 +628,18 @@ class UnityAction(VLA_Complex):
     def __str__(self):
         return self.tool_name
 
-    async def execute(self, callable: str, arg: str):
-        await super().execute(callable)
+    async def execute(self, destination: str):
+        await super().execute(destination)
         if not self.listening:
             self.start_listener()
         
-        self.vla(callable, arg)
+        self.vla("SetGoalTo", destination)
 
     def start_listener(self):
         threading.Thread(target=self.run_client, daemon=True).start()
 
     def run_client(self):
         print("Listener running")
-        #listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #listener.bind(("127.0.0.1", 5006))
-        #listener.listen()
         print("Connecting to Unity...")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect(("127.0.0.1", 5006))
@@ -639,8 +782,8 @@ class UnityAction(VLA_Complex):
         if runner is None:
             runner = rerun_function
         try:
-            await self.execute("GetFunctions", "null")
-            await self.execute("GetDestinations", "null")
+            self.act("GetFunctions", "null")
+            self.act("GetDestinations", "null")
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()
