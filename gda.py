@@ -1,5 +1,5 @@
 import sys
-from agents import Agent, Runner, function_tool
+from agents import Agent, Runner, function_tool, RunConfig
 import asyncio
 from signals import OK, CONTINUE, RERUN
 import time
@@ -158,6 +158,10 @@ class GDA:
             instructions=self.instance_system_prompt(),
             tools=self.tools, # The tool-ified VLA Complexes
             model=self.model,
+            run_config=RunConfig(
+                seed=42,
+                temperature=0
+            )
         )
         self.agent_identities += 1
 
