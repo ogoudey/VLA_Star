@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional
 import re
-from agents import Runner, Agent
+from agents import Runner, Agent, RunConfig
 
 notify: Optional[Callable] = None
 
@@ -19,6 +19,10 @@ async def make_schedule(input):
 
         """,
         model="o4-mini",
+        run_config=RunConfig(
+            seed=42,
+            temperature=0
+        )
         
     )
     print("Scheduler making schedule")

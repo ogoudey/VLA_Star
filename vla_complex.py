@@ -237,7 +237,24 @@ class Chat(VLA_Complex):
         while not stop_event.is_set():
             msg = self.inbound_q.get()
             self.respond(f"{msg}")
-            
+            self.recede()
+
+    def recede(self):
+        """
+        Shoudl address any changes needed after rerun-request
+        """       
+
+    def get_state(self):
+        state = {
+            "Long term memory": self.long_term_memory,
+            "Session information": self.session.copy()
+        }
+        self.restore() # 
+
+    def restore(self):
+        """
+        Should address the change in state after sending a context
+        """
 
     def respond(self, user_input):
         
