@@ -110,7 +110,8 @@ class GDA:
         self.agent_identities = 0
         
         self.identities_running = 0
-
+        self.waiting_to_run = False
+        self.has_new_thought = False
     def __str__(self):
         return f"LLM {self.name}"
 
@@ -142,11 +143,16 @@ class GDA:
         return system_prompt
 
     async def run_identity(self, context):
+        if self.waiting_to_run:
+            self.has_new_thought = True
+            time.sleep(0.11)
         if self.identities_running > 0:
-            print(f"(Identity running... waiting)")
-            while self.identities_running < 0:
+            self.waiting_to_run = True
+            
+            while self.identities_running > 0 and not self.has_new_thought:
                 time.sleep(0.1)
-
+                
+        self.waiting_to_run = False
         identity = Agent(
             name=self.name + str(self.agent_identities),
             instructions=self.instance_system_prompt(),
@@ -162,15 +168,17 @@ class GDA:
 
         self.clean_context()
         try:
-            print(f"\t{identity.name} started.")
+            
             self.identities_running += 1
+            print(f"\t{identity.name} started. identities_running = {self.identities_running}")
             result = await Runner.run(identity, prompt, max_turns=2)
+            print(f"Hopefully {identity.name} is done.")
+            self.identities_running -= 1
+            return result
         except Exception as e:
-            print(f"\tMax turns exceeded so just leaving it...")
-            result = "Max turns exceeded."
-        print(f"Hopefully {identity.name} is done.")
-        self.identities_running -= 1
-        return result
+            print(f"Wish I could cancel: {e}")
+            return "This task is trash"
+        
 
     def assemble_context(self, context: dict, from_source_signature: str):
         for vlac in self.vla_complexes:
@@ -188,16 +196,16 @@ class GDA:
                 del self.context["Chat"]["Current user message"]
 
     def context_from(self, rerun_input: dict, signature: str):
+        if type(rerun_input) == str:
+            rerun_input = {"Notification": rerun_input}
         if not signature in self.context:
             self.context[signature] = {}
         for k, v in rerun_input.items():
-            if not rerun_input[k] is None:
+            if rerun_input[k]:
                 if len(rerun_input[k]) > 0:
                     self.context[signature][k] = v
 
-        for vlac in self.vla_complexes:
-            
-            
+        for vlac in self.vla_complexes:  
             if not vlac.tool_name in self.context:
                 self.context[vlac.tool_name] = {}
                 pass

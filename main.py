@@ -127,6 +127,11 @@ def instantiate_unity_robot():
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
+        ),
+        VLAComplexConfig(
+            vla_type = VLAType.PROCESS,
+            agency_type = AgencyType.SCHEDULER,
+            monitor_types = [],
         )
     ]
 
@@ -206,7 +211,7 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_chatting_bot()
+    v = instantiate_unity_robot()
     v.start()
 
 

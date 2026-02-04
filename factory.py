@@ -169,7 +169,7 @@ Do not produce natural language output.
 Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
 """
     gda = None
-    match cfg.experimental_type:
+    match cfg.motive_type:
         case MotiveType.TO_HELP_USER:
             goal2 = """
 Your goal is to help the user to accomplish their pronounced goals.

@@ -66,20 +66,23 @@ class VLA_Complex:
 
 class Scheduler(VLA_Complex):
     def __init__(self):
-        super().__init__(self.make_schedule, "Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time.\nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.", "make_schedule")
+        super().__init__(self.make_schedule, "Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time. If you already have a schedule, calling this will show your schedule. \nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.", "make_schedule")
         self.on_schedule = False
 
 
     async def execute(self, input: str):
         global runner
         if self.on_schedule:
-            return "You're on schedule..."
+
+            return f"The schedule you automatically follow:\n{scheduler.schedule_blocks}"
             
         else:
-            print(f"Setting {scheduler.notify} to {runner}")
+            print(f"\nSetting {scheduler.notify} to {runner.__name__}")
             scheduler.notify = runner
             # the following shouldn't be blocking but it is.
             await self.vla(input)
+            self.on_schedule = True
+            return "You are on schedule. Return immediately (no further action required)."
 
     async def make_schedule(self, input):
         

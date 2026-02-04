@@ -19,7 +19,7 @@ class ThinkingMachine:
     def __str__(self):
         return f"ThinkingMachine"
 
-    def rerun(self, rerun_input, signature):
+    def rerun(self, rerun_input, signature: str = "A schedule has been created."):
         print(f"Rerun request from {signature}")
         self.reruns.put((rerun_input, signature))
     
