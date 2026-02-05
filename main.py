@@ -106,7 +106,7 @@ def instantiate_unity_robot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.AUTO,
+        agency_type = AgencyType.DEMOED,
         recorded = False,
         motive_type = MotiveType.TO_HELP_USER
     )
@@ -115,7 +115,15 @@ def instantiate_unity_robot():
 
     vla_complex_cfgs = [
         VLAComplexConfig(
-            vla_type = VLAType.ACTUATION,
+            vla_type = VLAType.NAVIGATION,
+            agency_type = AgencyType.PASS_TO_UNITY,
+            monitor_types = [
+                MonitorType.CONDUCT_RECORDING
+            ],
+            recorded = False
+        ),
+        VLAComplexConfig(
+            vla_type = VLAType.MANIPULATION,
             agency_type = AgencyType.PASS_TO_UNITY,
             monitor_types = [
                 MonitorType.CONDUCT_RECORDING

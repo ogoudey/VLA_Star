@@ -25,7 +25,8 @@ class MonitorType(Enum):
     CONDUCT_RECORDING = "conduct_recording"
     
 class VLAType(Enum):
-    ACTUATION = "actuation"
+    NAVIGATION = "navigation"
+    MANIPULATION = "manipulation"
     TEXT_USER = "text_user"
     AVA_DRIVE = "ava_drive"
     AVA_TAGGING = "ava_tagging"

@@ -29,7 +29,7 @@ any_applicable = True
 class ExecuteLocked(Exception):
     pass
 
-
+import vla_complex_state
 class VLA_Complex:
     # Everything that's treated the same by a GDA
     # [TODO] Need to provide dictionary for multiple different VLAs.
@@ -68,7 +68,7 @@ class Scheduler(VLA_Complex):
     def __init__(self):
         super().__init__(self.make_schedule, "Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time. If you already have a schedule, calling this will show your schedule. \nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.", "make_schedule")
         self.on_schedule = False
-
+        self.state = vla_complex_state.State()
 
     async def execute(self, input: str):
         global runner
@@ -83,12 +83,32 @@ class Scheduler(VLA_Complex):
             await self.vla(input)
             self.on_schedule = True
             return "You are on schedule. Return immediately (no further action required)."
+    
+    def recede(self):
+        """
+        Shoudl address any changes needed after rerun-request
+        """  
+        pass     
+
+    def pull_state(self):
+        state = {
+            "Schedule (python code that runs prompts you)": self.state.impression.copy()
+        }
+        self.restore() # 
+        return state
+
+    def restore(self):
+        """
+        Should address the change in state after sending a context
+        """
+        pass
 
     async def make_schedule(self, input):
         
         await scheduler.make_schedule(input)
         print(f"Back from making schedule. Running... {scheduler.schedule_blocks}")
         threading.Thread(target=scheduler.run_schedule, daemon=True).start()
+        self.state.impression = scheduler.schedule_blocks
         print(f"Done starting schedule!")
 
 import json
@@ -158,8 +178,7 @@ class Chat(VLA_Complex):
 
 
         ### State ###
-        self.long_term_memory = []
-        self.session = []
+        self.state = vla_complex_state.State(session=[])
 
         ### Threads ###
         self.listening = False
@@ -182,7 +201,7 @@ class Chat(VLA_Complex):
          
         self.vla(text)
 
-        self.session.append({f"{timestamp()} Me (robot)": f"{text}"})
+        self.state.add_to_session({f"{timestamp()} Me (robot)": f"{text}"})
         
 
     def run_server(self):
@@ -242,19 +261,21 @@ class Chat(VLA_Complex):
     def recede(self):
         """
         Shoudl address any changes needed after rerun-request
-        """       
+        """  
+        pass     
 
-    def get_state(self):
+    def pull_state(self):
         state = {
-            "Long term memory": self.long_term_memory,
-            "Session information": self.session.copy()
+            "Session": self.state.session.copy()
         }
         self.restore() # 
+        return state
 
     def restore(self):
         """
         Should address the change in state after sending a context
         """
+        pass
 
     def respond(self, user_input):
         
@@ -465,17 +486,19 @@ Conclusion:
 """
 
 class UnityArm(VLA_Complex):
-    def __init__(self):
-        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>", "arm")
+    def __init__(self, tool_name):
+        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>", tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
+        self.stop_event = threading.Event()
         ### State ###
-        self.long_term_memory = []
-        self.session = []
+        self.state = vla_complex_state.State(session=[], impression=[])
         
         self.available_objects = []
         self.carrying = None
+
+        self.cycling = False
 
     def __str__(self):
         return self.tool_name
@@ -487,58 +510,84 @@ class UnityArm(VLA_Complex):
         
         if pickup_or_drop == "PICKUP":
             self.vla("PickUp", object_name)
+            self.act("GetAvailableObjects", "null")
         elif pickup_or_drop == "DROP":
             self.vla("Drop", None)
+            self.act("GetAvailableObjects", "null")
         else:
             return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
 
+    def start_cycling(self):
+        threading.Thread(target=self.run_cycle, daemon=True).start()
+    
+    def run_cycle(self):
+        while not self.stop_event.is_set():
+            time.sleep(1)
+            self.act("GetAvailableObjects", "null")
 
     def start_listener(self):
         threading.Thread(target=self.run_client, daemon=True).start()
 
+    def recede(self):
+        """
+        Shoudl address any changes needed after rerun-request
+        """  
+        pass     
+
+    def pull_state(self):
+        state = {
+            "Schedule (python code that runs prompts you)": self.state.impression.copy()
+        }
+        self.restore() # 
+        return state
+
+    def restore(self):
+        """
+        Should address the change in state after sending a context
+        """
+        pass
+
     def run_client(self):
-        print("Listener running")
-        print("Connecting to Unity...")
+        print("Arm listener running")
+        print("Arm connecting to Unity...")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect(("127.0.0.1", 5007))
         self.listening = True
-        print("Connected to Unity...")
+        print("Arm connected to Unity...")
         update_activity("Connected to Unity...", self.tool_name)
-        
-        stop_event = threading.Event()
+
 
         threading.Thread(
             target=recv_loop,
-            args=(sock, self.unity_messages, stop_event),
+            args=(sock, self.unity_messages, self.stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
             target=send_loop,
-            args=(sock, self.out_messages, stop_event),
+            args=(sock, self.out_messages, self.stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
             target=self.react_loop,
-            args=(stop_event,),
+            args=(self.stop_event,),
             daemon=True
         ).start()
 
         update_activity("Listening...", self.tool_name)
         try:
-            while self.listening and not stop_event.is_set():
+            while self.listening and not self.stop_event.is_set():
                 time.sleep(1)
         finally:
             update_activity("Stopping listening...", self.tool_name)
-            stop_event.set()
+            self.stop_event.set()
             sock.close()
 
     def react_loop(self, stop_event):
         while not stop_event.is_set():
             msg = self.unity_messages.get()
             self.react(f"{msg}")
-            
 
     def react(self, unity_message):
         global runner
@@ -559,30 +608,17 @@ class UnityArm(VLA_Complex):
             return
         match type:
             case "available_objects":
-                
-                if not self.enough_context_for_first_rerun(): # if this is the first time its called
-                    self.available_objects = content
-                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.available_objects}))
-                    return
-                rerun_input = {
-                    "Here are the available objects": self.available_objects,
-                }
-                log(f"{self.tool_name} >>> LLM: {rerun_input}", self)
-                if runner:
-                    runner(rerun_input, str(self))
-                else:
-                    raise Exception("Why is there no runner function?")
+                self.available_objects = content
+                self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.available_objects}))
+                self.state.impression = self.available_objects
             case "status":
                 unity_status = content[0]
+                print(f"Status returned {unity_status}")
                 if not self.enough_context_for_first_rerun():
                     return 
                 if "picked up" in unity_status:
-                    self.session.append({f"{timestamp()} Status":f"{unity_status}"})
-                    return
-                else:
                     rerun_input = {
-                        "Long term memory": self.long_term_memory,
-                        "Session information": self.session.copy()
+                        "Session information": self.state.session.copy()
                     }
                     log(f"{self.tool_name} >>> LLM: {rerun_input}. Important? {not 'goal set' in unity_status}. Content: {unity_status}", self)    
                     
@@ -593,16 +629,20 @@ class UnityArm(VLA_Complex):
                         runner(rerun_input, self.tool_name)
                     else:
                         raise Exception("Why is there no runner function?")  
+                    
+                else:
+                    self.state.add_to_session({f"{timestamp()} Status":f"{unity_status}"})
+                    return
+
 #   (no past)/ TS:[-failed to pick up], picked up x, dropped x, failed to pick up y
 #                                                   ^          ^        
 #                                                 moved      moved
     def enough_context_for_first_rerun(self):
-        return self.destinations and self.unity_functions
+        return self.available_objects
 
     def add_to_context(self):
         return {
-            "Known functions": self.unity_functions,
-            "Known destinations": self.destinations,
+            "Available objects": self.available_objects,
         }
 
     # VLA
@@ -611,6 +651,21 @@ class UnityArm(VLA_Complex):
         structure = {"method": unity_callable, "arg":arg}
         self.out_messages.put(json.dumps(structure))
 
+    async def start(self, rerun_function: Callable):
+        print(f"In UnityArm start()...")
+        if not self.listening:
+            self.start_listener()
+        if not self.cycling:
+            self.start_cycling()
+        global runner
+        if runner is None:
+            runner = rerun_function
+        try:
+            self.act("GetAvailableObjects", "null")
+        except Shutdown:
+            print(f"\nSystem shutting down...")
+            raise Shutdown()
+        
 class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
         capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity."
@@ -751,7 +806,6 @@ class UnityDrive(VLA_Complex):
 
     def add_to_context(self):
         return {
-            "Known functions": self.unity_functions,
             "Known destinations": self.destinations,
         }
 
@@ -778,6 +832,8 @@ class UnityDrive(VLA_Complex):
     #
     async def start(self, rerun_function: Callable):
         print(f"In UnityNavigation start()...")
+        if not self.listening:
+            self.start_listener()
         global runner
         if runner is None:
             runner = rerun_function

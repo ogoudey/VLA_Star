@@ -68,6 +68,7 @@ def produce_agency(cfg: AgencyConfig):
 def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
     global vla_complexes
     complexes = []
+
     for cfg in cfgs:
         complex = None
         if cfg.monitor_types:
@@ -77,6 +78,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                         pass # instantiated in case ARM_VR_DEMO
                     case _:
                         raise ValueError(f"Unsupported monitor type: {monitor_type}")
+        in_unity = False
         match cfg.agency_type:
             case AgencyType.ARM_VR_DEMO:
                 vla_interface = import_helper("vla_interface")
@@ -91,7 +93,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 runner = vla_interface.factory_function(cfg)
                 complex = vla_complex.VLA_Tester(runner, "test_conductor") # or something - maybe just an EpisodicRecorder
             case AgencyType.PASS_TO_UNITY:
-                complex = vla_complex.UnityAction("act")
+                in_unity = True
             case AgencyType.PASS_TO_AVA:
                 ava_base = import_helper("ava_base") # to be used later...
             case AgencyType.SCHEDULER:
@@ -110,8 +112,12 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 complex = vla_complex.AvaCreateTag(ava_base, "create_tag")
             case VLAType.TEXT_USER:
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
-            case VLAType.ACTUATION:
-                pass
+            case VLAType.NAVIGATION:
+                if in_unity:
+                    complex = vla_complex.UnityDrive("drive")
+            case VLAType.MANIPULATION:
+                if in_unity:
+                    complex = vla_complex.UnityArm("arm")        
             case VLAType.PROCESS:
                 pass
             case _:

@@ -86,7 +86,7 @@ class DemoedLanguageModel:
 
     
 import asyncio
-
+import context_utils as cu
 pending_agents = []
 
 class GDA:
@@ -142,6 +142,19 @@ class GDA:
             system_prompt += self.goal
         return system_prompt
 
+    def assemble_context(self, context: dict, from_source_signature: str):
+        context = {}
+        sessions_list = []
+        for vlac in self.vla_complexes:
+            state = vlac.pull_state()
+            if "Session" in state:
+                sessions_list.append(state["Session"])
+        
+        ordered_session = cu.order_in_time(sessions_list)
+
+        context["Events"] = ordered_session
+        return context
+
     async def run_identity(self, context):
         if self.waiting_to_run:
             self.has_new_thought = True
@@ -184,12 +197,7 @@ class GDA:
             return "This task is trash"
         
 
-    def assemble_context(self, context: dict, from_source_signature: str):
-        for vlac in self.vla_complexes:
-            if not vlac.tool_name == from_source_signature:
-                if hasattr(vlac, "add_to_context"):
-                    context[vlac.tool_name] = vlac.add_to_context()
-        return context
+    
 
 
     def clean_context(self):

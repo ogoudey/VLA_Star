@@ -42,7 +42,9 @@ class ThinkingMachine:
     
 
     async def run_agent(self, rerun_input, source):
-        print(f"In run_agent()")
+        """
+        This is just for artificial thinkers
+        """
         context = self.prototype.context_from(rerun_input, source)
         context = self.prototype.assemble_context(context, source)
         update_activity("Processing user input...", f"{source} interpretation")
