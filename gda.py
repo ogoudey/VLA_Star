@@ -1,10 +1,10 @@
 import sys
-from agents import Agent, Runner, function_tool, RunConfig
+from agents import Agent, Runner, function_tool, RunConfig, FunctionTool
 import asyncio
 from signals import OK, CONTINUE, RERUN
 import time
 from threading import Thread
-from typing import List
+from typing import List, Any, Optional
 from itertools import groupby
 import json
 import random
@@ -63,21 +63,6 @@ class DemoedLanguageModel:
             tool(instruction)
         """
 
-    async def check(self, rerun_input, signature, mode=None):
-        # Break context signal into contextual prompt
-        
-        
-
-        return await self.run(json.loads(rerun_input))
-        
-        if mode == "EXIT_E":
-            task_name = input("New task name? (^C to exit, [enter] to use same task name): ")
-            return "CONTINUE", task_name
-        
-        if mode == "EXIT_LOOP":
-            dataset_name = input("Dataset name ([enter] to delete dataset): ")
-            return "CONTINUE", dataset_name
-        return "RERUN"
 
     def set_tools(self, vlacs):
         for vlac in vlacs:
@@ -87,9 +72,94 @@ class DemoedLanguageModel:
     
 import asyncio
 import context_utils as cu
-pending_agents = []
 
-class GDA:
+"""
+                                                -> DemoedLanguage
+Stimulus -> Event -> AssembleContext -> Ordered -> RunAgentLock
+internal      a           pull
+   to       rerun        states
+ VLA_C     request
+"""
+
+class PrototypeAgent:
+    name: str
+    tools: List[FunctionTool]
+    vla_complexes: List
+    agent_identities: int
+
+    goal: Optional[str]
+    
+
+    
+
+class ContextualAgent(PrototypeAgent):
+    context: dict
+
+    def run_identity(self):
+
+    def pull_states(self):
+
+class OrderedContextAgent(ContextualAgent):
+    def assemble_context(self, context: dict, from_source_signature: str):
+        context = {}
+        sessions_list = []
+        for vlac in self.vla_complexes:
+            state = vlac.pull_state()
+            if "Session" in state:
+                sessions_list.append(state["Session"])
+        
+        ordered_session = cu.order_in_time(sessions_list)
+
+        context["Events"] = ordered_session
+        return context
+
+    def clean_context(self):
+        #print(f"Cleaning {self.context}")
+        if "Chat" in self.context:
+            if "Current user message" in self.context["Chat"]:
+                #print(f"Deleting {self.context["Chat"]["Current user message"]}")
+                del self.context["Chat"]["Current user message"]
+
+class OrderedContextLLMAgent(OrderedContextAgent):
+    def request(self, input):
+        identity = Agent(
+            name=self.name + str(self.agent_identities),
+            instructions=self.instance_system_prompt(),
+            tools=self.tools, # The tool-ified VLA Complexes
+            model=self.model,
+            run_config=RunConfig(
+                seed=42,
+                temperature=0
+            )
+        )
+
+    def instance_system_prompt(self):
+        system_prompt = self.instructions
+        if self.goal:
+            system_prompt += self.goal
+        return system_prompt
+
+    async def run_identity(self, input: Any):
+        """
+        Generalized 
+        """
+        prompt = json.dumps(input)
+        show_context(input)
+
+        self.clean_context()
+        try:
+            
+            self.identities_running += 1
+            print(f"\t{identity.name} started. identities_running = {self.identities_running}")
+            result = await Runner.run(identity, prompt, max_turns=2)
+            print(f"Hopefully {identity.name} is done.")
+            self.identities_running -= 1
+            return result
+        except Exception as e:
+            print(f"Wish I could cancel: {e}")
+            return "This task is trash"
+
+class GDA(PrototypeAgent):
     def __init__(self, name: str, instructions: str, goal:str | None = None):
         self.tools = []
         self.vla_complexes = []
@@ -112,6 +182,7 @@ class GDA:
         self.identities_running = 0
         self.waiting_to_run = False
         self.has_new_thought = False
+
     def __str__(self):
         return f"LLM {self.name}"
 
@@ -141,19 +212,6 @@ class GDA:
         if self.goal:
             system_prompt += self.goal
         return system_prompt
-
-    def assemble_context(self, context: dict, from_source_signature: str):
-        context = {}
-        sessions_list = []
-        for vlac in self.vla_complexes:
-            state = vlac.pull_state()
-            if "Session" in state:
-                sessions_list.append(state["Session"])
-        
-        ordered_session = cu.order_in_time(sessions_list)
-
-        context["Events"] = ordered_session
-        return context
 
     async def run_identity(self, context):
         if self.waiting_to_run:
@@ -195,17 +253,8 @@ class GDA:
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
-        
 
     
-
-
-    def clean_context(self):
-        #print(f"Cleaning {self.context}")
-        if "Chat" in self.context:
-            if "Current user message" in self.context["Chat"]:
-                #print(f"Deleting {self.context["Chat"]["Current user message"]}")
-                del self.context["Chat"]["Current user message"]
 
     def context_from(self, rerun_input: dict, signature: str):
         if type(rerun_input) == str:
