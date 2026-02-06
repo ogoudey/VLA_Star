@@ -46,6 +46,9 @@ class VLA_Complex:
         self.on_start = on_start
         self.use_frequency = 0.0
 
+        self.name_in_session = tool_name
+        self.name_in_impresssion = tool_name
+
     def update_docstring(self, new_capability_desc: str):
         self.execute.__func__.__doc__ = new_capability_desc
 

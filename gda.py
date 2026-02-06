@@ -72,6 +72,7 @@ class DemoedLanguageModel:
     
 import asyncio
 import context_utils as cu
+from context_utils import Context, OrderedContext
 
 """
                                                 -> DemoedLanguage
@@ -88,41 +89,38 @@ class PrototypeAgent:
     agent_identities: int
 
     goal: Optional[str]
-    
-
-    
 
 class ContextualAgent(PrototypeAgent):
-    context: dict
+    context: Context
 
-    def run_identity(self):
-
-    def pull_states(self):
+    def context_init(self):
+        self.context = Context(self.vla_complexes) # make context from vla_complexes
 
 class OrderedContextAgent(ContextualAgent):
-    def assemble_context(self, context: dict, from_source_signature: str):
-        context = {}
-        sessions_list = []
-        for vlac in self.vla_complexes:
-            state = vlac.pull_state()
-            if "Session" in state:
-                sessions_list.append(state["Session"])
-        
-        ordered_session = cu.order_in_time(sessions_list)
+    ordered_context: OrderedContext
 
-        context["Events"] = ordered_session
-        return context
-
-    def clean_context(self):
-        #print(f"Cleaning {self.context}")
-        if "Chat" in self.context:
-            if "Current user message" in self.context["Chat"]:
-                #print(f"Deleting {self.context["Chat"]["Current user message"]}")
-                del self.context["Chat"]["Current user message"]
+    def order_context(self):
+        self.ordered_context = OrderedContext(self.context)
 
 class OrderedContextLLMAgent(OrderedContextAgent):
-    def request(self, input):
-        identity = Agent(
+    instructions: str
+    model: str
+    identity: Agent
+    def __init__(self):
+        
+
+    def request(self):
+        self.context_init()
+        self.order_context()
+        with one_identity_at_a_time_lock:
+            self.run_identity()
+    
+    def run_identity(self):
+        self.create_identity()
+        self.run_the_identity()
+        
+    def create_identity(self):
+        self.identity = Agent(
             name=self.name + str(self.agent_identities),
             instructions=self.instance_system_prompt(),
             tools=self.tools, # The tool-ified VLA Complexes
@@ -132,32 +130,20 @@ class OrderedContextLLMAgent(OrderedContextAgent):
                 temperature=0
             )
         )
-
+        
+    def run_the_identity(self):
+        try:
+            result = await Runner.run(identity, prompt, max_turns=2)
+        except Exception as e:
+            print(f"Wish I could cancel: {e}")
+            return "This task is trash"
+        
     def instance_system_prompt(self):
         system_prompt = self.instructions
         if self.goal:
             system_prompt += self.goal
         return system_prompt
-
-    async def run_identity(self, input: Any):
-        """
-        Generalized 
-        """
-        prompt = json.dumps(input)
-        show_context(input)
-
-        self.clean_context()
-        try:
-            
-            self.identities_running += 1
-            print(f"\t{identity.name} started. identities_running = {self.identities_running}")
-            result = await Runner.run(identity, prompt, max_turns=2)
-            print(f"Hopefully {identity.name} is done.")
-            self.identities_running -= 1
-            return result
-        except Exception as e:
-            print(f"Wish I could cancel: {e}")
-            return "This task is trash"
+        
 
 class GDA(PrototypeAgent):
     def __init__(self, name: str, instructions: str, goal:str | None = None):
