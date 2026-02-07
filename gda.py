@@ -24,9 +24,7 @@ class DemoedLanguageModel:
         self.status_history = []
         self.context = {}
 
-    def run_identity(self, rerun_input, source: str = "Anon"):
-        print(f"Tools: {self.tools}")
-        # assume one tool (the recorder)
+    def run_identity(self, source: str = "Anon"):
         if len(self.tools) == 0:
             task_name = ""
             while task_name == "":
@@ -89,35 +87,89 @@ class PrototypeAgent:
     agent_identities: int
 
     goal: Optional[str]
+    def __init__(self, name):
+        self.name = name
+
+    
 
 class ContextualAgent(PrototypeAgent):
     context: Context
-
+    def __init__(self, name):
+        super().__init__(name)
     def context_init(self):
         self.context = Context(self.vla_complexes) # make context from vla_complexes
 
 class OrderedContextAgent(ContextualAgent):
     ordered_context: OrderedContext
-
+    def __init__(self, name):
+        super().__init__(name)
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
+
+from one_identity_at_a_time import SingleIdentityRunningLock
+
+class OrderedContextDemoed(OrderedContextAgent):
+    def __init__(self, name):
+        super().__init__(name)
+
+
+    def run_identity(self):
+        """
+        From where is this called? Time to look back at VLA_Complexes
+        """
+        if len(self.tools) == 0:
+            task_name = ""
+            while task_name == "":
+                
+                task_name = input(f"\"{rerun_input}\" from {source}")
+            self.use_tool(self.tools[0], task_name)
+            return task_name
+        else:
+            while True:
+                print(f"{source} ==> \"{rerun_input}\"")
+                for tool in self.tools:
+                    if hasattr(tool, "add_to_context"):
+                        print(f"Tool's context: {json.dumps(tool.add_to_context(), indent=2)}")
+                    print(f"{inspect.signature(tool.execute)}")
+                    task_name = input(f"{tool.tool_name}: ")
+                    print(f"{task_name}")
+                    if not task_name == "":
+                        task_name = task_name.split(",")
+                        self.use_tool(tool, *task_name)
+                        return task_name
+                    else:
+                        print(f"_______")
+                print(f"Back to the top...")
+
+    def use_tool(self, tool, *instruction):
+        print("Using asyncio.run!")
+        asyncio.run(tool.execute(*instruction))
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
     model: str
     identity: Agent
-    def __init__(self):
-        
+    identity_lock: SingleIdentityRunningLock
 
-    def request(self):
+    def __init__(self, name: str, instruction: str, goal: str):
+        super().__init__(name)
+        self.identity_lock = SingleIdentityRunningLock()
+
+    def assemble_context(self):
         self.context_init()
         self.order_context()
-        with one_identity_at_a_time_lock:
-            self.run_identity()
+
+    async def request(self):
+        self.assemble_context()
+        try:
+            with self.identity_lock:
+                await self.run_identity()
+        except RuntimeError:
+            print("Identity rejected...")
     
-    def run_identity(self):
+    async def run_identity(self):
         self.create_identity()
-        self.run_the_identity()
+        await self.run_the_identity()
         
     def create_identity(self):
         self.identity = Agent(
@@ -130,10 +182,10 @@ class OrderedContextLLMAgent(OrderedContextAgent):
                 temperature=0
             )
         )
-        
-    def run_the_identity(self):
+
+    async def run_the_identity(self):
         try:
-            result = await Runner.run(identity, prompt, max_turns=2)
+            result = await Runner.run(self.identity, self.ordered_context, max_turns=2)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
