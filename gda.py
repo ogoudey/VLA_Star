@@ -128,7 +128,26 @@ class ContextualAgent(PrototypeAgent):
         super().__init__(name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
-        
+    
+    def whether_to_summarize(self) -> bool:
+        if self.whether_to_always_summarize:
+            val = True
+        else:
+            if self.total_complex_event_cnt() > 10:
+                val = True
+            else:
+                val = False
+        verbose = "Summarizing..." if val else "Not summarizing."
+        print(verbose)
+        return val
+    
+    def total_complex_event_cnt(self):
+        cnt = 0
+        for vlac in self.vla_complexes:
+            if vlac.state.session:
+                cnt += len(vlac.state.session)
+        return cnt
+
 
     async def summarize_states(self):
         self.summarized_states = await self.summarizer.compress_all_states(self.vla_complexes)
@@ -158,9 +177,6 @@ class OrderedContextDemoed(OrderedContextAgent):
 
 
     def run_identity(self):
-        """
-        From where is this called? Time to look back at VLA_Complexes
-        """
         while True:
             for tool in self.tools:
                 print(f"{inspect.signature(tool.execute)}")
@@ -179,28 +195,31 @@ class OrderedContextDemoed(OrderedContextAgent):
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
+    goal: Optional[str]
     model: str
     identity: Agent
     identity_lock: SingleIdentityRunningLock
-    
 
-
-    def __init__(self, name: str, instruction: str, goal: str):
+    def __init__(self, name: str, instruction: str, goal: Optional[str] = None):
         super().__init__(name)
+        self.instructions = instruction
+        self.goal = goal
+
+        self.model="o4-mini"
         self.identity_lock = SingleIdentityRunningLock()
 
-    def assemble_context(self, summarize:bool=True):
+    def assemble_context(self):
         self.context_init() # may be summarized or not
         self.order_context()
-    
-
 
     async def request(self):
-        if self.whether_to_always_summarize:
-            await self.summarize_context()
-        self.assemble_context()
+        print(f"Agent requested...")
+        if self.whether_to_summarize():
+            ss = await self.summarize_states()
+            self.update_states_with_summarization(ss)
         try:
-            with self.identity_lock:
+            async with self.identity_lock:
+                self.assemble_context()
                 await self.run_identity()
         except RuntimeError:
             print("Identity rejected...")
@@ -214,16 +233,14 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             name=self.name + str(self.agent_identities),
             instructions=self.instance_system_prompt(),
             tools=self.tools, # The tool-ified VLA Complexes
-            model=self.model,
-            run_config=RunConfig(
-                seed=42,
-                temperature=0
-            )
+            model=self.model
         )
 
     async def run_the_identity(self):
         try:
-            result = await Runner.run(self.identity, self.ordered_context, max_turns=3)
+            prompt = str(self.ordered_context)
+            print(f"___Prompt__\n{prompt}")
+            result = await Runner.run(self.identity, prompt, max_turns=3)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"

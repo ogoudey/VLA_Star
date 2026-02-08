@@ -232,6 +232,7 @@ class Chat(VLA_Complex):
         pass
 
     def respond(self, user_input):
+        print(f"Message {user_input} received...")
         self.state.add_to_session("Message", user_input)
         self.state.impression = {"Current user message":f"{user_input}"}
         self.rerun_agent()
@@ -459,9 +460,11 @@ class UnityArm(VLA_Complex):
         if pickup_or_drop == "PICKUP":
             self.vla("PickUp", object_name)
             self.act("GetAvailableObjects", "null")
+            return f"Picking up {object_name}."
         elif pickup_or_drop == "DROP":
             self.vla("Drop", None)
             self.act("GetAvailableObjects", "null")
+            return f"Picking up."
         else:
             return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
 
@@ -542,8 +545,11 @@ class UnityArm(VLA_Complex):
             return
         match type:
             case "available_objects":
-                self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.available_objects}))
                 self.state.impression["available_objects"] = content
+                if self.state.impression["carrying"]:
+                    self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available_objects"]}))
+                else:
+                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.state.impression["available_objects"]}))
             case "status":
                 unity_status = content[0]
                 print(f"Status returned {unity_status}")

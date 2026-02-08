@@ -1,36 +1,38 @@
 import threading
-
+import asyncio
 
 class SingleIdentityRunningLock:
     def __init__(self, max_waiters=1):
-        self._lock = threading.Lock()
-        self._cond = threading.Condition(self._lock)
+        self._lock = asyncio.Lock()
+        self._cond = asyncio.Condition(self._lock)
         self._active = False
         self._waiting = 0
         self._max_waiters = max_waiters
 
-    def __enter__(self):
-        with self._lock:
-            # If someone is running
-            if self._active:
-                # Too many waiters → kill / reject
-                if self._waiting >= self._max_waiters:
-                    raise RuntimeError("Agent rejected: too many waiting")
+    async def __aenter__(self):
+        print("Outside lock")
+        async with self._lock:
+            print("Inside lock")
 
-                # Otherwise, wait
+            if self._active:
+                if self._waiting >= self._max_waiters:
+                    raise RuntimeError("New rerun rejected: too many waiting.")
+
                 self._waiting += 1
+                print("Waiting for identity to finish.")
                 try:
                     while self._active:
-                        self._cond.wait()
+                        await self._cond.wait()
                 finally:
                     self._waiting -= 1
+            else:
+                print("No current identity - ready to run.")
 
-            # Acquire execution
             self._active = True
 
         return self
 
-    def __exit__(self, exc_type, exc, tb):
-        with self._lock:
+    async def __aexit__(self, exc_type, exc, tb):
+        async with self._lock:
             self._active = False
-            self._cond.notify()  # wake exactly one waiter
+            self._cond.notify(1)

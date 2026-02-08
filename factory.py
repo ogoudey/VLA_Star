@@ -15,7 +15,7 @@ from vla_star import VLA_Star
 from vla_complex import VLA_Complex
 
 from vla import VLA
-from gda import GDA, DemoedLanguageModel, OrderedContextLLMAgent
+from gda import DemoedLanguageModel, OrderedContextLLMAgent
 import vla_complex
 
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig, MotiveType
@@ -169,7 +169,7 @@ Your task is to choose the single most appropriate action for the current moment
 
 You may select ANY one available action.
 You MUST select exactly ONE action.
-After selecting that action, stop immediately.
+After selecting that action, return immediately (return None/"" if you have to).
 Do not produce natural language output.
 
 Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.

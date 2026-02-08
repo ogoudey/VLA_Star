@@ -11,7 +11,7 @@ class Context:
     sessions: dict[str, List]
     impressions: dict[str, Any]
 
-    def __repr__(self):
+    def __str__(self):
         return json.dumps({
             "Sessions": self.sessions,
             "Impressions": self.impressions,
@@ -34,7 +34,7 @@ class OrderedContext:
     session: List
     impressions: dict[str, Any]
 
-    def __repr__(self):
+    def __str__(self):
         return json.dumps({
             "Session": self.session,
             "Impressions": self.impressions

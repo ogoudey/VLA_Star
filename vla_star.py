@@ -1,7 +1,7 @@
 from typing import List, Callable
 import asyncio
 
-from gda import GDA, DemoedLanguageModel
+from gda import OrderedContextLLMAgent, DemoedLanguageModel, PrototypeAgent
 from vla_complex import VLA_Complex
 
 from exceptions import Shutdown
@@ -9,13 +9,13 @@ from exceptions import Shutdown
 from llms.runner import ThinkingMachine
 
 class VLA_Star:
-    agent: GDA | DemoedLanguageModel
+    agent: OrderedContextLLMAgent | DemoedLanguageModel
     vla_complexes: List[VLA_Complex]
 
-    def __init__(self, prototype_agent: GDA | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
+    def __init__(self, prototype_agent: OrderedContextLLMAgent | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
         self.prototype_agent = prototype_agent
         self.vla_complexes = vla_complexes
-        self.prototype_agent.set_tools(vla_complexes)
+        self.prototype_agent.link_vla_complexes(vla_complexes)
 
     def start(self, prompt: str | None = None):
         vlacs_to_start = []
@@ -46,7 +46,7 @@ class VLA_Star:
             await asyncio.sleep(60)
     
     def get_runner(self) -> Callable:
-        if type(self.prototype_agent) == GDA:
+        if type(self.prototype_agent) == OrderedContextLLMAgent:
             print("Starting GDA")
             tm = ThinkingMachine(self.prototype_agent)
             rerun_function = tm.rerun

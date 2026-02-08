@@ -70,7 +70,6 @@ class Summarizer:
         )
 
     async def run_identity(self, prompt):
-        print(f"Summarizing...", end="\r")
         result = await Runner.run(self.identity, prompt)
         print(f"End summarizing.")
         return result.final_output
