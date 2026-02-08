@@ -130,12 +130,12 @@ class ContextualAgent(PrototypeAgent):
         self.summarizer = Summarizer()
         
 
-    async def summarize_context(self):
+    async def summarize_states(self):
         self.summarized_states = await self.summarizer.compress_all_states(self.vla_complexes)
         return self.summarized_states
     
-    def update_context_with_summarization(self, summarized_states):
-        self.summarizer.update_vla_complexes(self.vla_complexes, new_states)
+    def update_states_with_summarization(self, summarized_states):
+        self.summarizer.update_vla_complexes(self.vla_complexes, summarized_states)
 
     def context_init(self):
         if len(self.vla_complexes) == 0:

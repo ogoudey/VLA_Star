@@ -17,16 +17,17 @@ time.sleep(1)
 a.state.add_to_session("status", "picked up breakfast")
 time.sleep(1)
 c.state.add_to_session("message", "hello robot")
-
-sc = asyncio.run(l.summarize_context())
-l.update_context_with_summarization(sc)
 l.context_init()
 print(l.context)
-print("--------------------------------\n\n\n")
+
 l.order_context()
 print(l.ordered_context)
+print("--------------------------------\n\n\n")
+sc = asyncio.run(l.summarize_states())
+l.update_states_with_summarization(sc)
+l.context_init()
+print(l.context)
 
-from summarizer_compressor import Summarizer
-s = Summarizer()
-
-s.compress_all_states()
+l.order_context()
+print(l.ordered_context)
+print("--------------------------------\n\n\n")
