@@ -436,7 +436,7 @@ Conclusion:
 
 class UnityArm(VLA_Complex):
     def __init__(self, tool_name):
-        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>", tool_name)
+        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object> or DROP <null>", tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
@@ -603,11 +603,11 @@ class UnityDrive(VLA_Complex):
         self.out_messages = queue.Queue()
         ### State ###
         self.state = vla_complex_state.State(session=[], impression={
-            "currently travelling": False
+            "currently travelling": False,
+            "current position": "Initial position",
+            "destinations": []
         })
-        self.long_term_memory = []
 
-        self.destinations = None
         self.unity_functions = None
 
     def __str__(self):
@@ -618,6 +618,7 @@ class UnityDrive(VLA_Complex):
         if not self.listening:
             self.start_listener()
         self.vla("SetGoalTo", destination)
+        return "Successfully set drive goal."
 
     def start_listener(self):
         threading.Thread(target=self.run_client, daemon=True).start()
@@ -680,8 +681,8 @@ class UnityDrive(VLA_Complex):
 
         match type:
             case "destinations":
-                self.destinations = content
-                self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.destinations}))
+                self.state.impression["destinations"] = content
+                self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["destinations"]}))
             case "functions":
                 self.unity_functions = content
                 return
@@ -689,10 +690,12 @@ class UnityDrive(VLA_Complex):
                 unity_status = content[0]
                 if "reached" in unity_status:
                     self.state.add_to_session("Status", unity_status)
+                    self.state.impression["current_position"] = unity_status.strip("reached ")
                     self.state.impression["currently_travelling"] = False
+                    self.rerun_agent()
                 if "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
-                    self.state.impression["currently_travelling"] = False
+                    self.state.impression["currently_travelling"] = True
                 else:
                     self.rerun_agent()
 
