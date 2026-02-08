@@ -3,14 +3,13 @@ import queue
 
 
 import asyncio
-from agents import Runner
 
-from gda import GDA
+from gda import OrderedContextLLMAgent
 from displays import log, timestamp, update_activity
 
 class ThinkingMachine:
     """ Convenience class """
-    def __init__(self, prototype: GDA):
+    def __init__(self, prototype: OrderedContextLLMAgent):
         self.reruns = queue.Queue()
         self.prototype = prototype
 
@@ -19,9 +18,8 @@ class ThinkingMachine:
     def __str__(self):
         return f"ThinkingMachine"
 
-    def rerun(self, rerun_input, signature: str = "A schedule has been created."):
-        print(f"Rerun request from {signature}")
-        self.reruns.put((rerun_input, signature))
+    def rerun(self, source):
+        self.reruns.put(source)
     
     async def start(self):
         print("Thinking Machine starting...")
@@ -30,23 +28,14 @@ class ThinkingMachine:
             if not self.updated:
                 update_activity("ThinkingMachine idle.", self)
             try:
-                rerun_input, source = self.reruns.get_nowait()
+                source = self.reruns.get_nowait()
                 update_activity("Thinking...", self) # Never gets here (good)
             except queue.Empty:
                 await asyncio.sleep(0.1)  # throttle
                 continue
-            print(f"Running agent!")
+            print(f"{source} runs agent!")
             # Fire-and-forget agent
-            asyncio.create_task(self.run_agent(rerun_input, source))
+            asyncio.create_task(self.prototype.request())
 
     
 
-    async def run_agent(self, rerun_input, source):
-        """
-        This is just for artificial thinkers
-        """
-        context = self.prototype.context_from(rerun_input, source)
-        context = self.prototype.assemble_context(context, source)
-        update_activity("Processing user input...", f"{source} interpretation")
-        await self.prototype.run_identity(context) # could be neater
-        update_activity("Done processing user input...", f"{source} interpretation", exit=True)

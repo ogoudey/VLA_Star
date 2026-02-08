@@ -1,10 +1,18 @@
 from typing import List, Optional, Any
 from dataclasses import dataclass
+from displays import log, timestamp, update_activity
 
-@dataclass
-class State:
-    session: Optional[List[dict[str, str]]]=None    # of f"{timestamp()} Name:
+from pydantic import BaseModel
+
+
+
+
+
+
+class State(BaseModel):
+    session: Optional[list[dict[str, str]]] = None
     impression: Optional[Any] = None
 
-    def add_to_session(self, session_event: dict[str, str]):
+    def add_to_session(self, event_label: str, event_data: str):
+        session_event = {f"{timestamp()} {event_label}": event_data}
         self.session.append(session_event)

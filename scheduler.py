@@ -8,7 +8,7 @@ prompt = """
 Using python schedule, write a block of code that calls notify(arg: str). Assume you have access to the function `notify`, and the arg should signify what to do.
 """
 
-
+raw_str = None
 schedule_blocks = None
 async def make_schedule(input):
     print("Making scheduler...")
@@ -27,10 +27,12 @@ async def make_schedule(input):
     )
     print("Scheduler making schedule")
     result = await Runner.run(scheduler, prompt + input, max_turns=2)
+
+    global raw_str
+    raw_str = result.final_output
+
     global schedule_blocks
-    print(f"{result.final_output}")
     schedule_blocks = extract_python_or_fallback(result.final_output)
-    print(f"{schedule_blocks}")
 
     
 
