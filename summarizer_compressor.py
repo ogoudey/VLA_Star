@@ -21,7 +21,7 @@ class SummarizedSessions(BaseModel):
 class Summarizer:
     def __init__(self):
         self.identities_cnt = 0
-        self.model = "o3-mini"
+        self.model = "o4-mini"
         self.identity = None
 
     async def compress_all_states(self, vla_complexes) -> dict[str, State]:
@@ -50,9 +50,6 @@ class Summarizer:
                 for event in session.events:
                     rephrased = {event.timestamp_label: event.data_or_summary}
                     vla_complex.state.session.append(rephrased)
-
-                
-
 
     def form_map_from_vlac_name_to_vlac_state(self, vlacs) -> dict[str, State]:
         d = dict()
@@ -88,5 +85,7 @@ Be perfectly rational and attentive to the timing of things. The events in the c
 If data is already readable, it's because its already summarized. Since the data moves through time, you should COMPRESS the information among events.
 
 All data must have a timestamp of the form f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]", e.g. [2026-02-07 11:41:54]. For periods of time, of course pick a reasonable moment - beginnings and ends need not be perfect, rather, this all must be intuitively understandable.
+
+Above all, output form must match the requested output type, a SummarizedSessions pydantic object.
 """
         return instructions1

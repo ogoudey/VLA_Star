@@ -136,7 +136,7 @@ class Logger(VLA_Complex):
 
 
 class Chat(VLA_Complex):    
-    def __init__(self, tool_name="chat", tool_description="Say something directly to user. Do NOT use this for planning, only for informal conversation.", chat_port=5001):
+    def __init__(self, tool_name="chat", tool_description="Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.", chat_port=5001):
         super().__init__(self.reply, tool_description, tool_name, True)
         print(f"Created {tool_name} port on {chat_port}")
         self.chat_port = chat_port

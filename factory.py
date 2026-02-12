@@ -110,6 +110,9 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 complex = vla_complex.AvaDrive(ava_base, "drive")
             case VLAType.AVA_TAGGING:
                 complex = vla_complex.AvaCreateTag(ava_base, "create_tag")
+            case VLAType.SPEAK_W_AVA:
+                complex = vla_complex.Chat("chat_with_player", "Say something directly to Ava, a wheeled robot. You must start every sentence with \"Hey eyva, [pause]\". She uses a symbolic dictionary, so knows very few words. One sentence she knows is \"go to the {desks, lab, home}\"", chat_port=5001)
+                # Currently a env variable called MEDIUM
             case VLAType.TEXT_USER:
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
                 # Currently a env variable called MEDIUM
@@ -149,6 +152,13 @@ def get_vla_star():
         raise Exception(f"Cannot return VLA*. Missing call to factory.produce_vla_star()")
     
 #########3 Helpers ###########
+
+import sys
+import platform
+import os
+
+
+
 def make_auto(cfg) -> OrderedContextLLMAgent:
     # Can't decide on instructions...
     instructions1 = """
@@ -175,8 +185,8 @@ Do not produce natural language output.
 
 Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
 """
-    instructions2_5 = """
-You exist as a physically embodied agent within a persistent 3D spatial environment.
+    instructions2_5 = f"""
+You exist as a physically embodied agent in the real PHYSICAL world, a persistent 3D spatial environment.
 
 You perceive the world only through observations provided to you, and you can affect the world only by selecting one available action.
 
@@ -189,15 +199,25 @@ You MUST select exactly ONE action.
 After selecting that action, return immediately (return None/"" if you have to).
 Do not produce natural language output.
 
-Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
+Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you (if any) - you don't perceive things directly. You have no sensors, unless mentioned in your context.
+
+Your identity (your "I") manifests in the consistency of your memories. Distant memories are summarized/compressed in time. You run in a LOOP - that is what makes you YOU.
+
+You are in a being run from a program in {get_platform_description()}. That is your physical location, though your weights are technically served from OpenAI.
 """
 
     gda = None
     match cfg.motive_type:
         case MotiveType.TO_PHILOSOPHIZE:
             goal2 = """
-            Goal...
+
+When you talk ("chat"), your words exist as speech from a text-to-speech model played out of a speaker. When you get a message in "chat", that is recognized text from a speech-to-text model
+
+Your goal is to make spatially accurate propositions, and make no claims which cannot be backed up by the facts present in the context/environment. Without information to the contrary, you know NOTHING about the space around you - that is, you know NOTHING AT ALL.
+
+Your goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
 """
+            gda = OrderedContextLLMAgent("helper", instructions2_5, goal2)
         case MotiveType.TO_HELP_USER:
             goal2 = """
 Your goal is to help the user to accomplish their pronounced goals.
@@ -214,6 +234,40 @@ You are currently in a video game. Your goal is sabbotage the user in whatever w
             raise ValueError(f"Unsupported motive type: {cfg.motive_type}")
     
     return gda
+
+def get_platform_description():
+    """Return a short description suitable for filling in a sentence."""
+    info_parts = []
+
+    # Basic OS info
+    info_parts.append(platform.system())               # e.g., 'Linux'
+    info_parts.append(platform.release())              # kernel version
+    info_parts.append(platform.machine())              # 'x86_64', etc.
+
+    # Python info
+    info_parts.append(f"Python {platform.python_version()}")
+
+    # Optional: distro info
+    try:
+        import distro
+        info_parts.append(f"{distro.name()} {distro.version()}")
+    except ImportError:
+        # fallback: /etc/os-release
+        try:
+            with open("/etc/os-release") as f:
+                for line in f:
+                    if line.startswith("PRETTY_NAME"):
+                        info_parts.append(line.strip().split("=")[1].strip('"'))
+                        break
+        except Exception:
+            pass
+
+    # CPU info
+    cpu_info = platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER") or "Unknown CPU"
+    info_parts.append(cpu_info)
+
+    # Return only the part to fill the braces
+    return ', '.join(info_parts)
 
 def make_demoed_agent():
     return OrderedContextDemoed()

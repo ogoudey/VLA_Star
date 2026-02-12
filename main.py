@@ -225,13 +225,14 @@ def instantiate_chatting_bot():
 
     agency_cfg = AgencyConfig(
         agency_type = AgencyType.AUTO,
+        motive_type=MotiveType.TO_PHILOSOPHIZE,
         recorded = False
     )
 
     factory.produce_agency(agency_cfg)
     vla_complex_cfgs = [
         VLAComplexConfig(
-            vla_type = VLAType.TEXT_USER,
+            vla_type = VLAType.SPEAK_W_AVA,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False

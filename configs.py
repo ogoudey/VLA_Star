@@ -28,6 +28,7 @@ class VLAType(Enum):
     NAVIGATION = "navigation"
     MANIPULATION = "manipulation"
     TEXT_USER = "text_user"
+    SPEAK_W_AVA = "speak_w_ava"
     AVA_DRIVE = "ava_drive"
     AVA_TAGGING = "ava_tagging"
     PROCESS = "process"

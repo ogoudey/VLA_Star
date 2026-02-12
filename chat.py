@@ -5,12 +5,15 @@ import time
 from chat_utils import recv_line, recv_loop, send_loop
 import os
 
-from audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
+
 
 microphone = None
 speaker = None
 
 MEDIUM = os.environ.get("MEDIUM", "TEXT")
+
+if MEDIUM == "AUDIO":
+    from audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
 
 def text_text(text):
     print(f"\nRobot: {text}\nReply: ")
