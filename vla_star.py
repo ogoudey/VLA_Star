@@ -57,6 +57,7 @@ class VLA_Star:
             print("Not starting GDA")
             rerun_function = self.prototype_agent.run_identity
         return rerun_function
+
 """
 ### Demos ###
 def street_and_crosswalks():

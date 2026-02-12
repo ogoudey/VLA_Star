@@ -236,6 +236,12 @@ def instantiate_chatting_bot():
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
+        ),
+        VLAComplexConfig(
+            vla_type = VLAType.MEMORY,
+            agency_type = AgencyType.PASS_THROUGH,
+            monitor_types = [],
+            recorded = False
         )
     ]
 

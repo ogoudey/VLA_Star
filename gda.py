@@ -10,7 +10,7 @@ import json
 import random
 import inspect
 from exceptions import Shutdown
-
+import os
 from displays import log, show_context, timestamp
 from vla_complex import VLA_Complex
 from multiprocessing import Process
@@ -59,10 +59,16 @@ class PrototypeAgent:
         self.vla_complexes = []
         self.tools = []
 
+
+        
+        
+
+
     def link_vla_complexes(self, vlacs):
         for vlac in vlacs:
             self.vla_complexes.append(vlac)
-            self.set_as_tool(vlac)  
+            if hasattr(vlac, "execute"):
+                self.set_as_tool(vlac)  
     
     def set_as_tool(self, vlac):
         print(f"{vlac.tool_name} linked to {self.name}")
@@ -84,6 +90,19 @@ class ContextualAgent(PrototypeAgent):
         super().__init__(name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
+
+        self.load_core_memory_if_exists()
+        
+    def load_core_memory_if_exists(self):
+        core_memory_filename = f"freeze_{self.name}"
+        if os.path.exists(core_memory_filename):
+            with open(core_memory_filename, "r") as file:
+                f = file.read()
+                x = json.loads(f)
+            self.update_states_with_summarization(x)
+        else:
+            print("New agent created...")
+
     
     def whether_to_summarize(self) -> bool:
         if self.whether_to_always_summarize:
@@ -139,8 +158,6 @@ class OrderedContextDemoed(OrderedContextAgent):
                 print(f"____{vla_complex.tool_name}____")
                 print(f"{inspect.signature(vla_complex.execute)}")
                 choice = input(f"(\"\" to skip): ")
-                
-                
                 if not choice == "":
                     args = []
                     for arg in list(inspect.signature(vla_complex.execute).parameters.keys()):
@@ -176,6 +193,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         self.context_init() # may be summarized or not
         self.order_context()
 
+
     async def request(self):
         print(f"Agent requested...")
         if self.whether_to_summarize():
@@ -202,13 +220,20 @@ class OrderedContextLLMAgent(OrderedContextAgent):
 
     async def run_the_identity(self):
         try:
-            prompt = str(self.ordered_context)
-            print(f"___Prompt__\n{prompt}")
-            result = await Runner.run(self.identity, prompt, max_turns=3)
+            context = str(self.ordered_context)
+            print(f"___Prompt__\n{context}")
+            self.write(context)
+            result = await Runner.run(self.identity, context, max_turns=3)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
-        
+
+    def write(self, context):
+        file_name = f"freeze_{self.name}"
+        with open(file_name, "w") as f:
+            f.write(context)
+        print(f"Saved core memory as {file_name}")
+
     def instance_system_prompt(self):
         system_prompt = self.instructions
         if self.goal:

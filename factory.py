@@ -116,6 +116,8 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
             case VLAType.TEXT_USER:
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
                 # Currently a env variable called MEDIUM
+            case VLAType.MEMORY:
+                complex = vla_complex.BlackBoard("memory tool")
             case VLAType.NAVIGATION:
                 if in_unity:
                     complex = vla_complex.UnityDrive("drive")

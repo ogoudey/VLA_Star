@@ -68,7 +68,7 @@ class Scheduler(VLA_Complex):
             await self.vla(input)
             self.state.impression = scheduler.raw_str
             self.on_schedule = True
-            return "You are on schedule. Return immediately (no further action required)."    
+            return "Schedule set. Return immediately."    
 
     def pull_state(self):
         return_ = {
@@ -84,41 +84,48 @@ class Scheduler(VLA_Complex):
         print(f"Done starting schedule!")
 
 import json
-class DrawOnBlackboard(VLA_Complex):
+class Blackboard(VLA_Complex):
     def __init__(self):
-        super().__init__(self.draw, "Write text to a blackboard. Use for making plans, and taking notes about the environment (calling only once). This is a mnemonic device. You can use it to make your thinking available to other versions of yourself at other times, or fore transparently sharing plans with the user. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", "draw_on_blackboard")
-        self.blackboard = {}
-        self.state = vla_complex_state.State(impression=None)
+        super().__init__(self.draw, "Write text to memory. Use for making plans, and taking notes about the environment. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", "take_note")
+        self.state = vla_complex_state.State(impression={})
+        self.rerunning_from_blackboard_update = False
+
     def __str__(self):
         return f"DrawOnBlackBoard"
     
     async def execute(self, str_dict: str=""):
         await super().execute(str_dict)
+        if not self.rerunning_from_blackboard_update:
+            threading.Thread(target=self.run_watch_blackboard, daemon=True).start()
         try:
             return self.vla(str_dict=str_dict)
         except Exception:
             log(f"Failed to start `draw` method.", self)
-        
+
+    def run_watch_blackboard(self):
+        while True:
+            last_blackboard = self.state.impression.copy()
+            time.sleep(1)
+            if not last_blackboard == self.state.impression:
+                self.rerun_agent()
 
     def draw(self, str_dict: str):
         global runner
         if str_dict == "":            
-            runner(str(self))
             return "Success. Return immediately."
         try:
             bb_dict = json.loads(str_dict)
-            self.blackboard.update(bb_dict)
+            self.state.impression.update(bb_dict)
         except Exception:
             dict_print = f"...{str_dict[-20:]}" if len(str_dict) > 20 else str_dict
             log(f"{dict_print} is not JSON-loadable...", self)
             try:   
-                self.blackboard["Blackboard"] = str_dict
+                self.state.impression["Blackboard"] = str_dict
             except Exception as e:
                 return f"Failed to modify blackboard: {e}."
-            self.blackboard["Timestamp"] = timestamp()
+            self.state.impression["Timestamp"] = timestamp()
             log(f"Blackboard updated to:\n{self.blackboard}", self)            
-            runner(str(self))
-            return "Added to blackboard. Return immediately."
+            return "Added to memory. Return immediately."
         
 class Logger(VLA_Complex):
     def __init__(self):
@@ -129,7 +136,7 @@ class Logger(VLA_Complex):
         await super().execute(text)
         self.vla(text=text)
         self.state.add_to_session("logged", text)
-        return "added to logs"
+        return "Success. Return immediately."
 
     def log(self, text: str):
         log(f"\"{text}\"", self)
@@ -161,6 +168,7 @@ class Chat(VLA_Complex):
         await super().execute(text)
         self.vla(text)
         self.state.add_to_session("self", text)
+        return "Message sent. Return immediately."
         
     def run_server(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -276,14 +284,13 @@ class VLA_Tester(VLA_Complex):
             self.signal["RUNNING_E"] = False
         else:
             self.signal["task"] = instruction
+        print("Action applied. Return immediately.")
 
 
 class EpisodicRecorder(VLA_Complex):
     """
 j
     """
-
-
     def __init__(self, interaction_runner, tool_name):
         self.interaction_runner = interaction_runner
         super().__init__(None, "does a thing", tool_name)
@@ -304,6 +311,7 @@ j
         if not self.running:
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
             self.running = True
+        print("Success. Return immediately.")
 
     """ # Not a starter...
     async def start(self, rerun_function: Callable):
@@ -329,6 +337,7 @@ class AvaCreateTag(VLA_Complex):
     async def execute(self, name: str, x: float, y: float, theta: float):
         await super().execute(name)
         self.vla(name, x, y, theta)
+        print("Created tag. Return immediately.")
 
     def add_to_context(self):
         data = self.base.get_position()["data"]
@@ -347,6 +356,19 @@ class AvaCreateTag(VLA_Complex):
 
     def create_tag(self, name, x, y, theta):
         self.base.create_tag(self.default_map, name, x, y, theta)
+
+class LoadReferences(VLA_Complex):
+    def __init__(self, tool_name):
+        super().__init__(self.get_junk, "Use to get the state of affairs in your environment.", tool_name)
+        self.state = vla_complex_state.State(impression=self.junk)
+        
+        self.junk = """
+Pretend this is useful information.
+"""
+
+    def get_junk(self):
+        return self.junk
+
 
 class AvaDrive(VLA_Complex):
     # A VLA Complex
@@ -386,12 +408,6 @@ class AvaDrive(VLA_Complex):
             "Session": self.state.session,
         }
         return state
-    # adds to uniform context
-    def add_to_context(self):
-        self.refresh_locations()
-        return {
-            "Known locations": list(self.locations_to_tagIds.keys())
-        }
     
     # often has ongoing threads
     def run_drive_updates_client(self):
@@ -412,6 +428,7 @@ class AvaDrive(VLA_Complex):
             threading.Thread(target=self.run_drive_updates_client).start()
         self.vla(location)
         self.driving = True
+        return "Success. Return Immediately."
 
     # reruns the agent
     def rerun(self, raison):
@@ -468,11 +485,11 @@ class UnityArm(VLA_Complex):
         if pickup_or_drop == "PICKUP":
             self.vla("PickUp", object_name)
             self.act("GetAvailableObjects", "null")
-            return f"Picking up {object_name}."
+            return f"Picking up {object_name}. Return immediately."
         elif pickup_or_drop == "DROP":
             self.vla("Drop", None)
             self.act("GetAvailableObjects", "null")
-            return f"Picking up."
+            return f"Dropping... Return immediately."
         else:
             return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
 
@@ -626,7 +643,7 @@ class UnityDrive(VLA_Complex):
         if not self.listening:
             self.start_listener()
         self.vla("SetGoalTo", destination)
-        return "Successfully set drive goal."
+        return "Successfully set drive goal. Return immediately."
 
     def start_listener(self):
         threading.Thread(target=self.run_client, daemon=True).start()
