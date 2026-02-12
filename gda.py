@@ -16,54 +16,7 @@ from vla_complex import VLA_Complex
 from multiprocessing import Process
 
 
-class DemoedLanguageModel:
-    def __init__(self, goal: str = "Pass the proper args to your functions."):
-        self.name = "Dev"
-        self.applicable = True # actions always have effects
-        self.goal = goal
-        self.status_history = []
-        self.context = {}
 
-    def run_identity(self, source: str = "Anon"):
-        if len(self.tools) == 0:
-            task_name = ""
-            while task_name == "":
-                
-                task_name = input(f"\"{rerun_input}\" from {source}")
-            self.use_tool(self.tools[0], task_name)
-            return task_name
-        else:
-            while True:
-                print(f"{source} ==> \"{rerun_input}\"")
-                for tool in self.tools:
-                    if hasattr(tool, "add_to_context"):
-                        print(f"Tool's context: {json.dumps(tool.add_to_context(), indent=2)}")
-                    print(f"{inspect.signature(tool.execute)}")
-                    task_name = input(f"{tool.tool_name}: ")
-                    print(f"{task_name}")
-                    if not task_name == "":
-                        task_name = task_name.split(",")
-                        self.use_tool(tool, *task_name)
-                        return task_name
-                    else:
-                        print(f"_______")
-                print(f"Back to the top...")
-
-    def use_tool(self, tool, *instruction):
-        print("Using asyncio.run!")
-        asyncio.run(tool.execute(*instruction))
-        """
-        for vlac in self.tools:
-            inp = input(f"({vlac.tool_name}) {vlac.capability_desc}: ")
-            if not inp == "":
-                tool_instructions[vlac]
-        for tool, instruction in tool_instructions.items():
-            tool(instruction)
-        """
-
-
-    def set_tools(self, vlacs):
-        self.tools = vlacs
 
     
 import asyncio
@@ -117,6 +70,9 @@ class PrototypeAgent:
             vlac.execute,
             name_override=vlac.tool_name
         ))
+
+
+
 from summarizer_compressor import Summarizer
 
 class ContextualAgent(PrototypeAgent):
@@ -169,29 +125,33 @@ class OrderedContextAgent(ContextualAgent):
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
 
-from one_identity_at_a_time import SingleIdentityRunningLock
 
 class OrderedContextDemoed(OrderedContextAgent):
-    def __init__(self, name):
-        super().__init__(name)
+    def __init__(self):
+        super().__init__("Dev")
 
-
-    def run_identity(self):
+    def run_identity(self, source: str = "Anon"):
         while True:
-            for tool in self.tools:
-                print(f"{inspect.signature(tool.execute)}")
-                task_name = input(f"{tool.tool_name}: ")
+            self.context_init()
+            self.order_context()
+            print(f"{self.ordered_context}")
+            for vla_complex in self.vla_complexes:
+                print(f"____{vla_complex.tool_name}____")
+                print(f"{inspect.signature(vla_complex.execute)}")
+                task_name = input(f"(\"\" to skip) args: ")
                 if not task_name == "":
                     task_name = task_name.split(",")
-                    self.use_tool(tool, *task_name)
+                    self.execute_vla_complex(vla_complex, *task_name)
                     return task_name
                 else:
                     print(f"_______")
-            print(f"Back to the top...")
+            print(f"\nV V V V V\n")
 
-    def use_tool(self, tool, *instruction):
-        print("Using asyncio.run!")
-        asyncio.run(tool.execute(*instruction))
+    def execute_vla_complex(self, vla_complex, *instruction):
+        asyncio.run(vla_complex.execute(*instruction))
+
+from one_identity_at_a_time import SingleIdentityRunningLock
+
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str

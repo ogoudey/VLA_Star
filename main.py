@@ -4,9 +4,41 @@ from pathlib import Path    # For adjustable policy paths
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
+
+
+def instantiate_so101_teleop():
+    robot_cfg = RobotConfig(
+        robot_type = RobotType.SO101
+    )
+    factory.produce_robot(robot_cfg)
+    agency_cfg = AgencyConfig(
+        agency_type = AgencyType.DEMOED,
+        recorded = False
+    )
+    factory.produce_agency(agency_cfg)
+    vla_complex_cfgs = [
+        VLAComplexConfig(
+            vla_type = VLAType.MANIPULATION,  # -- 
+            agency_type = AgencyType.KEYBOARD_DEMO, # _/
+            robot_type = RobotType.SO101,
+            dataset_name = "test0_dataset",
+            monitor_types = [],
+            recorded = True
+        ),
+        VLAComplexConfig(
+            vla_type = VLAType.TEXT_USER,
+            agency_type = AgencyType.PASS_THROUGH,
+            monitor_types = [],
+            recorded = False
+        ),
+    ]
+    factory.produce_vla_complexes(vla_complex_cfgs)
+    factory.produce_vla_star()
+    return factory.get_vla_star()
+
 def instantiate_so101_tester():
     robot_cfg = RobotConfig(
-        robot_type = RobotType.AVA1
+        robot_type = RobotType.SO101
     )
     factory.produce_robot(robot_cfg)
     agency_cfg = AgencyConfig(
@@ -16,7 +48,7 @@ def instantiate_so101_tester():
     factory.produce_agency(agency_cfg)
     vla_complex_cfgs = [
         VLAComplexConfig(
-            vla_type = VLAType.ACTUATION,  # -- 
+            vla_type = VLAType.MANIPULATION,  # -- 
             agency_type = AgencyType.AUTO, # _/
             robot_type = RobotType.SO101,
             policy_path = Path("path_to_testable_policy"),
@@ -204,11 +236,6 @@ def instantiate_chatting_bot():
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
-        ),
-        VLAComplexConfig(
-            vla_type = VLAType.PROCESS,
-            agency_type = AgencyType.SCHEDULER,
-            monitor_types = [],
         )
     ]
 
@@ -219,41 +246,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_unity_robot()
+    v = instantiate_so101_teleop()
     v.start()
-
-
-"""
-
-
-
-robot_cfg = RobotConfig(
-    robot_type = RobotType.KINOVA
-)
-factory.produce_robot(robot_cfg)
-
-agency_cfg = AgencyConfig(
-    agency_type = AgencyType.FIXED,
-    recorded = False
-)
-
-factory.produce_agency(agency_cfg)
-
-vla_complex_cfgs = [
-    VLAComplexConfig(
-        agency_type = AgencyType.ARM_VR_DEMO,
-        monitor_types = [
-            MonitorType.CONDUCT_RECORDING
-        ],
-        recorded = True
-    ),
-]
-
-factory.produce_vla_complexes(vla_complex_cfgs)
-
-x = factory.produce_vla_star()
-print(x)
-
-
-
-"""

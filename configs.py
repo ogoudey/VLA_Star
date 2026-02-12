@@ -55,4 +55,5 @@ class VLAComplexConfig:
     monitor_types: Optional[List[MonitorType]]
     robot_type: Optional[RobotType]=None
     policy_path: Optional[Path] = None
+    dataset_name: Optional[str] = None
     recorded: bool=False

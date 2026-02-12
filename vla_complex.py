@@ -264,7 +264,7 @@ class VLA_Tester(VLA_Complex):
         self.running = False
 
         # instantiates signal to coordinate monitors with runner (both are in the runner)
-        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"Put the cube in the first aid kit"}
+        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": True, "task":"Put the cube in the first aid kit"}
         # signal at first blocks episode loop, waiting for "go" from teleop
         self.state = vla_complex_state.State(session=[])
 
@@ -288,17 +288,24 @@ j
         self.interaction_runner = interaction_runner
         super().__init__(None, "does a thing", tool_name)
         self.running = False
-
+        self.conducting = False
         # instantiates signal to coordinate monitors with runner (both are in the runner)
-        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": False, "task":"Put the cube in the first aid kit"}
+        self.signal:dict={"RUNNING_LOOP":False, "RUNNING_E": True, "task":"Put the cube in the first aid kit"}
+        if interaction_runner.demoed:
+            self.signal["DECISION"] = None
         # signal at first blocks episode loop, waiting for "go" from teleop
         self.state = vla_complex_state.State(session=[])
 
     async def execute(self, instruction: str):
         await super().execute(instruction)
+        self.signal["task"] = instruction
+        self.signal["RUNNING_LOOP"] = True
+        print(f"Changed signal to {self.signal}")
         if not self.running:
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
-                
+            self.running = True
+
+    """ # Not a starter...
     async def start(self, rerun_function: Callable):
         print(f"In EpisodicRecorder start()...")
         global runner
@@ -309,6 +316,7 @@ j
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()
+    """
 
 class AvaCreateTag(VLA_Complex):
     def __init__(self, base, tool_name: str):

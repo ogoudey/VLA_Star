@@ -15,7 +15,7 @@ from vla_star import VLA_Star
 from vla_complex import VLA_Complex
 
 from vla import VLA
-from gda import DemoedLanguageModel, OrderedContextLLMAgent
+from gda import OrderedContextDemoed, OrderedContextLLMAgent
 import vla_complex
 
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig, MotiveType
@@ -194,7 +194,7 @@ You are currently in a video game. Your goal is sabbotage the user in whatever w
     return gda
 
 def make_demoed_agent():
-    return DemoedLanguageModel()
+    return OrderedContextDemoed()
 
 def import_helper(module_name: str):
     match module_name:
@@ -357,7 +357,7 @@ class PathPlanner_VLAStar_Factory(Factory):
             vla_complexes.append(Chat())
 
         if demo_language_model:
-            gda = DemoedLanguageModel(
+            gda = OrderedContextDemoed(
                 "To respond adequately."
             )
         else:
@@ -429,7 +429,7 @@ class SO101_Recorder_VLA_Star_Factory(Factory):
         
         ### Initialize GDA (LLM) ###
         input("Ready to demo the instructions?")
-        inputter = DemoedLanguageModel()
+        inputter = OrderedContextDemoed()
         
         vlm_like = None # pass - is demoed
 
@@ -453,7 +453,7 @@ class Mock_VLA_Star_Text(Factory):
 
         m = Morphology()
 
-        inputter = DemoedLanguageModel()
+        inputter = OrderedContextDemoed()
 
         inputter = make_agent()
         vla_complexes = [
@@ -502,7 +502,7 @@ class Mock_Recorder_VLA_Star_Factory(Factory):
         recorder_caller = vla.DatasetRecorderCaller(dr)
 
         ### Initialize GDA (LLM) ###
-        lm = DemoedLanguageModel()
+        lm = OrderedContextDemoed()
         
         vlm_like = None # pass - is demoed
 

@@ -1,7 +1,7 @@
 from typing import List, Callable
 import asyncio
 
-from gda import OrderedContextLLMAgent, DemoedLanguageModel, PrototypeAgent
+from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
 from vla_complex import VLA_Complex
 
 from exceptions import Shutdown
@@ -9,10 +9,10 @@ from exceptions import Shutdown
 from llms.runner import ThinkingMachine
 
 class VLA_Star:
-    agent: OrderedContextLLMAgent | DemoedLanguageModel
+    agent: OrderedContextLLMAgent | OrderedContextDemoed
     vla_complexes: List[VLA_Complex]
 
-    def __init__(self, prototype_agent: OrderedContextLLMAgent | DemoedLanguageModel, vla_complexes: List[VLA_Complex]):
+    def __init__(self, prototype_agent: OrderedContextLLMAgent | OrderedContextDemoed, vla_complexes: List[VLA_Complex]):
         self.prototype_agent = prototype_agent
         self.vla_complexes = vla_complexes
         self.prototype_agent.link_vla_complexes(vla_complexes)
