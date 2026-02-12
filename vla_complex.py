@@ -245,7 +245,7 @@ class Chat(VLA_Complex):
         if runner is None:
             runner = rerun_function
         try:
-            self.reply("...")
+            self.reply("")
         except Shutdown:
             print(f"\nSystem shutting down...")
             raise Shutdown()

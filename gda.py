@@ -138,11 +138,15 @@ class OrderedContextDemoed(OrderedContextAgent):
             for vla_complex in self.vla_complexes:
                 print(f"____{vla_complex.tool_name}____")
                 print(f"{inspect.signature(vla_complex.execute)}")
-                task_name = input(f"(\"\" to skip) args: ")
-                if not task_name == "":
-                    task_name = task_name.split(",")
-                    self.execute_vla_complex(vla_complex, *task_name)
-                    return task_name
+                choice = input(f"(\"\" to skip): ")
+                
+                
+                if not choice == "":
+                    args = []
+                    for arg in list(inspect.signature(vla_complex.execute).parameters.keys()):
+                        args.append(input(f"\t{arg}: ")) 
+                    self.execute_vla_complex(vla_complex, *args)
+                    return args
                 else:
                     print(f"_______")
             print(f"\nV V V V V\n")

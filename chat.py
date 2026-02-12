@@ -5,6 +5,8 @@ import time
 from chat_utils import recv_line, recv_loop, send_loop
 import os
 
+from audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
+
 microphone = None
 speaker = None
 
@@ -14,13 +16,16 @@ def text_text(text):
     print(f"\nRobot: {text}\nReply: ")
 
 def play_text(text):
-    raise NotImplementedError("Saying text is not implemented.")
+    speech = text_to_speech(text)
+    play_speech(speech)
 
 def read_text():
     return input("\nReply: ")
 
 def record_text():
-    raise NotImplementedError("Hearing text is not implemented.")
+    bytes = record_speech()
+    text = speech_to_text(bytes)
+    return text
 
 match MEDIUM:
     case "TEXT":

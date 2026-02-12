@@ -1,6 +1,6 @@
 import factory
 from pathlib import Path    # For adjustable policy paths
-
+import os
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
@@ -224,12 +224,11 @@ def instantiate_chatting_bot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.DEMOED,
+        agency_type = AgencyType.AUTO,
         recorded = False
     )
 
     factory.produce_agency(agency_cfg)
-
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.TEXT_USER,
@@ -246,5 +245,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_so101_teleop()
+    v = instantiate_chatting_bot()
     v.start()

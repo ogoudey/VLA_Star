@@ -112,6 +112,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 complex = vla_complex.AvaCreateTag(ava_base, "create_tag")
             case VLAType.TEXT_USER:
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
+                # Currently a env variable called MEDIUM
             case VLAType.NAVIGATION:
                 if in_unity:
                     complex = vla_complex.UnityDrive("drive")
@@ -174,8 +175,29 @@ Do not produce natural language output.
 
 Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
 """
+    instructions2_5 = """
+You exist as a physically embodied agent within a persistent 3D spatial environment.
+
+You perceive the world only through observations provided to you, and you can affect the world only by selecting one available action.
+
+Each action you take has immediate and lasting physical consequences in the environment.
+
+Your task is to choose the single most appropriate action for the current moment, based solely on the current observations.
+
+You may select ANY one available action.
+You MUST select exactly ONE action.
+After selecting that action, return immediately (return None/"" if you have to).
+Do not produce natural language output.
+
+Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
+"""
+
     gda = None
     match cfg.motive_type:
+        case MotiveType.TO_PHILOSOPHIZE:
+            goal2 = """
+            Goal...
+"""
         case MotiveType.TO_HELP_USER:
             goal2 = """
 Your goal is to help the user to accomplish their pronounced goals.
