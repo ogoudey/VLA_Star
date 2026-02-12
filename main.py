@@ -232,7 +232,7 @@ def instantiate_chatting_bot():
     factory.produce_agency(agency_cfg)
     vla_complex_cfgs = [
         VLAComplexConfig(
-            vla_type = VLAType.SPEAK_W_AVA,
+            vla_type = VLAType.TEXT_USER,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False

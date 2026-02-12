@@ -215,7 +215,7 @@ When you talk ("chat"), your words exist as speech from a text-to-speech model p
 
 Your goal is to make spatially accurate propositions, and make no claims which cannot be backed up by the facts present in the context/environment. Without information to the contrary, you know NOTHING about the space around you - that is, you know NOTHING AT ALL.
 
-Your goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
+Your long-term goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
 """
             gda = OrderedContextLLMAgent("helper", instructions2_5, goal2)
         case MotiveType.TO_HELP_USER:
