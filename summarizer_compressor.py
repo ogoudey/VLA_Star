@@ -25,15 +25,10 @@ class Summarizer:
         self.identity = None
 
     async def compress_all_states(self, vla_complexes) -> dict[str, State]:
-        states: dict[str, State] = self.form_map_from_vlac_name_to_vlac_state(vla_complexes)
-        edible = self.states_to_json(states)
+        states: dict[str, State] = State.form_map_from_vlac_name_to_vlac_state(vla_complexes)
+        edible = State.states_to_json(states)
         self.create_identity()
         return await self.run_identity(edible)
-
-    def states_to_json(self, obj: dict[str, State]) -> str:
-        return json.dumps(
-            {k: v.model_dump(mode="json") for k, v in obj.items()}
-        )
 
 
     def update_vla_complexes(self, vla_complexes, states: SummarizedSessions):
@@ -51,11 +46,7 @@ class Summarizer:
                     rephrased = {event.timestamp_label: event.data_or_summary}
                     vla_complex.state.session.append(rephrased)
 
-    def form_map_from_vlac_name_to_vlac_state(self, vlacs) -> dict[str, State]:
-        d = dict()
-        for vlac in vlacs:
-            d[vlac.tool_name] = vlac.state
-        return d
+    
     
     def create_identity(self):
         self.identities_cnt += 1

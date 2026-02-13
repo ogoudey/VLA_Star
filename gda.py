@@ -78,31 +78,41 @@ class PrototypeAgent:
         ))
 
 
-
+from pathlib import Path
 from summarizer_compressor import Summarizer
 
 class ContextualAgent(PrototypeAgent):
     context: Context
     summarizer: Summarizer
     whether_to_always_summarize: bool
+    frozen_memory_dir: Path
 
     def __init__(self, name, whether_to_always_summarize: bool = False):
         super().__init__(name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
-
-        self.load_core_memory_if_exists()
+        self.frozen_memory_dir = Path(f"frozen_{self.name}")
+        self.load_memory_dir_if_exists()
         
-    def load_core_memory_if_exists(self):
-        core_memory_filename = f"freeze_{self.name}"
-        if os.path.exists(core_memory_filename):
+    def load_memory_dir_if_exists(self):
+        
+        if self.frozen_memory_dir.exists():
+            core_memory_filename = self.frozen_memory_dir / "core.json"
             with open(core_memory_filename, "r") as file:
                 f = file.read()
                 x = json.loads(f)
-            self.update_states_with_summarization(x)
+            self.update_states_with_frozen_memory(x)
+            print("Loaded core memory.")
         else:
-            print("New agent created...")
+            print(f"New agent created... {self.name}")
 
+    def write(self):
+        states = State.form_map_from_vlac_name_to_vlac_state(self.vla_complexes)
+        states_json = State.states_to_json(states)
+        frozen_memory_filename = self.frozen_memory_dir / "core.json"
+        with open(frozen_memory_filename, "w") as f:
+            f.write(states_json)
+        print(f"Saved core memory as {frozen_memory_filename}")
     
     def whether_to_summarize(self) -> bool:
         if self.whether_to_always_summarize:
@@ -131,6 +141,16 @@ class ContextualAgent(PrototypeAgent):
     def update_states_with_summarization(self, summarized_states):
         self.summarizer.update_vla_complexes(self.vla_complexes, summarized_states)
 
+    def updates_states_with_frozen_memory(self, states_json):
+        print(states_json)
+        print("\n\n")
+        for vla_complex in self.vla_complexes:
+            print(vla_complex)
+            if vla_complex.state.session:
+                vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
+            if vla_complex.state.impression:
+                vla_complex.state.impression = states_json[vla_complex.tool_name]["impression"]
+
     def context_init(self):
         if len(self.vla_complexes) == 0:
             raise ValueError("Not linked to any vla_complexes. Use `link_vla_complexes`.")
@@ -154,6 +174,7 @@ class OrderedContextDemoed(OrderedContextAgent):
             self.context_init()
             self.order_context()
             print(f"{self.ordered_context}")
+            self.write(str(self.ordered_context))
             for vla_complex in self.vla_complexes:
                 print(f"____{vla_complex.tool_name}____")
                 print(f"{inspect.signature(vla_complex.execute)}")
@@ -193,7 +214,6 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         self.context_init() # may be summarized or not
         self.order_context()
 
-
     async def request(self):
         print(f"Agent requested...")
         if self.whether_to_summarize():
@@ -228,11 +248,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
 
-    def write(self, context):
-        file_name = f"freeze_{self.name}"
-        with open(file_name, "w") as f:
-            f.write(context)
-        print(f"Saved core memory as {file_name}")
+    
 
     def instance_system_prompt(self):
         system_prompt = self.instructions

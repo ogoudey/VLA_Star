@@ -84,9 +84,9 @@ class Scheduler(VLA_Complex):
         print(f"Done starting schedule!")
 
 import json
-class Blackboard(VLA_Complex):
-    def __init__(self):
-        super().__init__(self.draw, "Write text to memory. Use for making plans, and taking notes about the environment. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", "take_note")
+class BlackBoard(VLA_Complex):
+    def __init__(self, name):
+        super().__init__(self.draw, "Write text to memory. Use for making plans, and taking notes about the environment. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", name)
         self.state = vla_complex_state.State(impression={})
         self.rerunning_from_blackboard_update = False
 
