@@ -171,11 +171,15 @@ class Chat(VLA_Complex):
         return "Message sent. Return immediately."
         
     def run_server(self):
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server.bind(("127.0.0.1", self.chat_port))
-        server.listen()
-        self.listening = True
+        print("Opening socket...")
+        try:
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", self.chat_port))
+            server.listen()
+            self.listening = True
+        except Exception as e:
+            print(f"Failed to start chat server: {e}")
         print("Chat server waiting...")
         update_activity("Chat server waiting...", self.tool_name)
         while self.listening:
@@ -246,7 +250,7 @@ class Chat(VLA_Complex):
         self.rerun_agent()
 
     async def start(self, rerun_function: Callable):
-        print(f"In Chat start()...")
+        print(f"In Chat start(). Setting rerun_function to {rerun_function}")
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         global runner

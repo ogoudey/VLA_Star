@@ -56,6 +56,7 @@ class VLA_Star:
         else:
             print("Not starting GDA")
             rerun_function = self.prototype_agent.run_identity
+            print(f"Runner = {rerun_function}")
         return rerun_function
 
 """

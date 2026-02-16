@@ -12,8 +12,12 @@ speaker = None
 
 MEDIUM = os.environ.get("MEDIUM", "TEXT")
 
-if MEDIUM == "AUDIO":
-    from audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
+match MEDIUM:
+    case "AUDIO":
+        from audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
+    case "REALTIME":
+        from realtime_audio_chat import start_realtime_transcription
+        from audio_chat import text_to_speech, play_speech
 
 def text_text(text):
     print(f"\nRobot: {text}\nReply: ")
@@ -37,6 +41,9 @@ match MEDIUM:
     case "AUDIO":
         speech_function = play_text
         listen_function = record_text
+    case "REALTIME":
+        speech_function = play_text
+        listen_function = None
 
 def respond_loop(inbound_q, send_q, stop_event):
     try:
@@ -58,7 +65,7 @@ def run_client(chat_port=5001):
     print(f"Opened chat client on {chat_port}")
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.connect(("127.0.0.1", chat_port))
-
+    print(f"Connected")
     stop_event = threading.Event()
     inbound_q = queue.Queue()
     send_q = queue.Queue()
@@ -81,11 +88,14 @@ def run_client(chat_port=5001):
         daemon=True
     ).start()
     
-    threading.Thread(
-        target=reply_loop,
-        args=(send_q, stop_event),
-        daemon=True
-    ).start()
+    if MEDIUM == "REALTIME":
+        start_realtime_transcription(send_q)
+    else:
+        threading.Thread(
+            target=reply_loop,
+            args=(send_q, stop_event),
+            daemon=True
+        ).start()
 
     try:
         while not stop_event.is_set():

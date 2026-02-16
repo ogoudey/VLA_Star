@@ -252,5 +252,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_chatting_bot()
+    v = instantiate_so101_teleop()
     v.start()
