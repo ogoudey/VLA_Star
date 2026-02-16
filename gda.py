@@ -91,7 +91,7 @@ class ContextualAgent(PrototypeAgent):
         super().__init__(name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
-        self.frozen_memory_dir = Path(f"frozen_{self.name}")
+        self.frozen_memory_dir = Path("frozen") / self.name
         self.load_memory_dir_if_exists()
         
     def load_memory_dir_if_exists(self):
@@ -109,6 +109,9 @@ class ContextualAgent(PrototypeAgent):
     def write(self):
         states = State.form_map_from_vlac_name_to_vlac_state(self.vla_complexes)
         states_json = State.states_to_json(states)
+        if not self.frozen_memory_dir.exists():
+            self.frozen_memory_dir.mkdir()
+        
         frozen_memory_filename = self.frozen_memory_dir / "core.json"
         with open(frozen_memory_filename, "w") as f:
             f.write(states_json)
@@ -141,7 +144,7 @@ class ContextualAgent(PrototypeAgent):
     def update_states_with_summarization(self, summarized_states):
         self.summarizer.update_vla_complexes(self.vla_complexes, summarized_states)
 
-    def updates_states_with_frozen_memory(self, states_json):
+    def update_states_with_frozen_memory(self, states_json):
         print(states_json)
         print("\n\n")
         for vla_complex in self.vla_complexes:
@@ -178,7 +181,7 @@ class OrderedContextDemoed(OrderedContextAgent):
                 print(f"{self.ordered_context}")
                 self.write()
             except Exception as e:
-                print(f"Failed to form and write context")
+                print(f"Failed to form and write context: {e}")
             for vla_complex in self.vla_complexes:
                 print(f"____{vla_complex.tool_name}____")
                 print(f"{inspect.signature(vla_complex.execute)}")
@@ -246,7 +249,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         try:
             context = str(self.ordered_context)
             print(f"___Prompt__\n{context}")
-            self.write(context)
+            self.write()
             result = await Runner.run(self.identity, context, max_turns=3)
         except Exception as e:
             print(f"Wish I could cancel: {e}")

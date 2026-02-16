@@ -224,7 +224,7 @@ def instantiate_chatting_bot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.DEMOED,
+        agency_type = AgencyType.AUTO,
         motive_type=MotiveType.TO_PHILOSOPHIZE,
         recorded = False
     )
@@ -252,5 +252,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_so101_teleop()
+    v = instantiate_chatting_bot()
     v.start()

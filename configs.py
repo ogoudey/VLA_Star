@@ -46,9 +46,11 @@ class RobotConfig:
 
 @dataclass
 class AgencyConfig:
+    
     agency_type: AgencyType
     recorded: bool=False
     motive_type: Optional[MotiveType] = None
+    frozen_name: Optional[str] = None
     # long_term_memory: bool = False
 
 @dataclass
