@@ -48,6 +48,8 @@ def produce_robot(cfg: RobotConfig):
             robot = "This is an Ava1 "   
         case RobotType.NONE:
             robot = None
+        case RobotType.COMBINATION:
+            robot = "This is a amalgam of robots"
         case _:
             raise ValueError(f"Unsupported robot type: {cfg.robot_type}")
     return robot

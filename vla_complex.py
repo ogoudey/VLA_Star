@@ -234,9 +234,6 @@ class Chat(VLA_Complex):
         """  
         pass     
 
-    def pull_state(self): 
-        return self.state
-
     def restore(self):
         """
         Should address the change in state after sending a context
@@ -381,17 +378,22 @@ class AvaDrive(VLA_Complex):
     def __init__(self, base, tool_name: str):
         self.base = base
         self.default_map = 1
-        
 
         super().__init__(self.drive, "Drive to a location in the real world. Location must be one of the ones given, or STOP to stop moving.", tool_name)
         self.drive_updates_on = False
         self.driving = False
 
         ### State ###
-        self.state = vla_complex_state.State(session=[])
+        self.state = vla_complex_state.State(session=[], impression={"current position": "Unknown"})
         self.long_term_memory = []
 
         self.locations_to_tagIds = dict()
+        self.descriptions = {
+            "cafe": "there is a red block here",
+            "desks": "not much here",
+            "lab": "a Spot robot dog",
+            "home": "a person"
+        }
         self.refresh_locations()
 
     # has a primary "act" method
@@ -404,22 +406,34 @@ class AvaDrive(VLA_Complex):
         else:
             try:
                 print(f"Driving to {self.locations_to_tagIds[location]} on map {self.default_map}")
+                self.state.impression["current destination"] = location
+                self.state.impression["current position"] = f"On route to {location}"
+                self.update_description_of_local_position()
                 self.base.drive_to_tag(self.default_map, self.locations_to_tagIds[location])
             except Exception:
-                return (f"Failed to drive to the location. Make sure {location} is one from {list(self.locations_to_tagIds.keys())}, or Dock or STOP")
-    def pull_state(self):
-        state = {
-            "Session": self.state.session,
-        }
-        return state
+                return (f"Failed to drive to the location. Make sure {location} is one from {list(self.locations_to_tagIds.keys())}, or \"Dock\" or \"STOP\"")
     
+    # helper
+    def update_description_of_local_position(self):
+        if self.state.impression["current position"] in self.descriptions:
+            self.state.impression[f"known objects at {self.state.impression["current position"]}"] = self.descriptions[self.state.impression["current position"]]
+        else:
+            keys_to_del = []
+            for k, v in self.state.impression:
+                if "known objects" in k:
+                    keys_to_del.append(k)
+            for k in keys_to_del:
+                del self.state.impression[k] 
+
     # often has ongoing threads
     def run_drive_updates_client(self):
-
         while True:
             while self.driving:
                 drive_updates = self.base.drive_updates()["data"]["status"] # good for now
                 if "COMPLETE" in drive_updates.values():
+                    self.state.impression["current position"] = self.state.impression["current destination"]
+                    self.state.impression["current destination"] = None
+                    self.update_description_of_local_position()
                     self.rerun("Destination reached.")
                     self.driving = False
             time.sleep(1)
@@ -455,6 +469,7 @@ class AvaDrive(VLA_Complex):
         for id, tag_info in tags_info.items():
             if "tracs" in tag_info["attributes"]:
                 self.locations_to_tagIds[tag_info["name"]] = tag_info["id"]
+                
 """
 Conclusion:
     Out --> drive_to_tag, list_tags()

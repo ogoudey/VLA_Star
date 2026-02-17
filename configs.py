@@ -8,6 +8,7 @@ class RobotType(Enum):
     SO101 = "so101"
     UNITY = "unity"
     AVA1 = "ava1"
+    COMBINATION = "combination"
     NONE = None
 
 class AgencyType(Enum):
@@ -42,7 +43,7 @@ class MotiveType(Enum):
 
 @dataclass
 class RobotConfig:
-    robot_type: RobotType
+    robot_type: RobotType | List[RobotType]
 
 @dataclass
 class AgencyConfig:

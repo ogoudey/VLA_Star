@@ -6,9 +6,10 @@ from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
 
 
-def instantiate_so101_teleop():
+def instantiate_so101_ava():
     robot_cfg = RobotConfig(
-        robot_type = RobotType.SO101
+        robot_type = [RobotType.SO101,
+                      RobotType.AVA1]
     )
     factory.produce_robot(robot_cfg)
     agency_cfg = AgencyConfig(
@@ -21,9 +22,9 @@ def instantiate_so101_teleop():
             vla_type = VLAType.MANIPULATION,  # -- 
             agency_type = AgencyType.KEYBOARD_DEMO, # _/
             robot_type = RobotType.SO101,
-            dataset_name = "test0_dataset",
+            dataset_name = "test1_dataset",
             monitor_types = [],
-            recorded = True
+            recorded = False
         ),
         VLAComplexConfig(
             vla_type = VLAType.TEXT_USER,
@@ -31,6 +32,12 @@ def instantiate_so101_teleop():
             monitor_types = [],
             recorded = False
         ),
+        VLAComplexConfig(
+            vla_type = VLAType.AVA_DRIVE,
+            agency_type = AgencyType.PASS_TO_AVA,
+            monitor_types = [],
+            recorded = False
+        )
     ]
     factory.produce_vla_complexes(vla_complex_cfgs)
     factory.produce_vla_star()
@@ -252,5 +259,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_chatting_bot()
+    v = instantiate_so101_ava()
     v.start()
