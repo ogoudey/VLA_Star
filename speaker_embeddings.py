@@ -6,13 +6,6 @@ import uuid
 from resemblyzer import VoiceEncoder
 import numpy as np
 
-
-
-def embed_pcm(pcm: bytes) -> np.ndarray:
-    # Convert PCM bytes to float array [-1,1]
-    
-    return embedding 
-
 class SpeakerEmbedder:
     def __init__(self, chunk_size: int, sample_rate: int):
         self.chunk_size = chunk_size

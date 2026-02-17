@@ -110,7 +110,7 @@ class ContextualAgent(PrototypeAgent):
         states = State.form_map_from_vlac_name_to_vlac_state(self.vla_complexes)
         states_json = State.states_to_json(states)
         if not self.frozen_memory_dir.exists():
-            self.frozen_memory_dir.mkdir()
+            self.frozen_memory_dir.mkdir(parents=True, exist_ok=True)
         
         frozen_memory_filename = self.frozen_memory_dir / "core.json"
         with open(frozen_memory_filename, "w") as f:
