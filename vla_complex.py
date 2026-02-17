@@ -306,6 +306,8 @@ j
 
     async def execute(self, instruction: str):
         await super().execute(instruction)
+
+
         self.signal["task"] = instruction
         self.signal["RUNNING_LOOP"] = True
         print(f"Changed signal to {self.signal}")
