@@ -19,6 +19,13 @@ import threading
 import requests
 import json
 
+SPEAKER_ID = os.environ.get("SPEAKER_ID", None) # should be a modifier on chat VLA_Complex
+if SPEAKER_ID:
+    from speaker_embeddings import SpeakerEmbedder
+
+
+
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 ### AUDIO SAMPLING CONFIG
@@ -74,6 +81,11 @@ class RealtimeTranscriber:
         self.ws = None
         self.running = False
 
+        self.voice_on = False
+
+        if SPEAKER_ID:
+            self.embedder = SpeakerEmbedder(CHUNK_SIZE, SAMPLE_RATE)
+        self.current_speaker = None
     async def connect(self):
         headers = {
             "Authorization": f"Bearer {ephemeral_token}",
@@ -101,9 +113,12 @@ class RealtimeTranscriber:
         chunks_sent = 0
         while self.running:
             data = stream.read(CHUNK_SIZE, exception_on_overflow=False)
+            if self.voice_on and SPEAKER_ID: # If VAD and we're embedding speakers
+                # brief detour to embed voice
+                self.embedder.add_chunk(data)
             encoded = base64.b64encode(data).decode("utf-8")
             chunks_sent += 1
-            print(f"Chunks send: {chunks_sent}", end="\r")
+            print(f"Chunks sent: {chunks_sent}", end="\r")
             await self.ws.send(json.dumps({
                 "type": "input_audio_buffer.append",
                 "audio": encoded
@@ -125,14 +140,19 @@ class RealtimeTranscriber:
                     session = event.get("session", {})
                     print("[session created]", session["id"], "model:", session.get("input_audio_transcription", {}).get("model"))
                 case "input_audio_buffer.speech_started":
+                    self.voice_on = True
                     print(f"[speech_started] item {event.get('item_id')} at {event.get('audio_start_ms')}ms")
                 case "input_audio_buffer.speech_stopped":
+                    self.voice_off = False
+                    self.embedder.collect_buffer()
                     print(f"[speech_stopped] item {event.get('item_id')} at {event.get('audio_end_ms')}ms")
                 case "input_audio_buffer.committed":
                     print(f"[committed] item {event.get('item_id')}, previous: {event.get('previous_item_id')}")
                 case "conversation.item.created":
                     item = event.get("item", {})
                     print(f"[item created] {item['id']}, status: {item.get('status')}, transcript: {item['content'][0].get('transcript')}")
+                    self.current_speaker = self.embedder.speaker_conclusion()
+                    print(f"Calculated speaker! {self.current_speaker}")
                 case "conversation.item.input_audio_transcription.delta":
                     delta = event.get("delta")
                     print(f"[delta] {delta}", "item:", event.get("item_id"))
@@ -141,7 +161,6 @@ class RealtimeTranscriber:
                     if text:
                         print(f"[heard] {text}")
                         self.send_q.put(text)
-
     async def run(self):
         await self.connect()
         send_task = asyncio.create_task(self.send_audio()) 

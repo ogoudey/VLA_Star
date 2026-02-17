@@ -7,7 +7,7 @@ from pathlib import Path
 import pyaudio
 import queue
 import io
-import sounddevice as sd
+import os
 import numpy as np
 import scipy.io.wavfile
 from openai import OpenAI # for tts
@@ -18,6 +18,9 @@ from pydub import AudioSegment
 from pydub.playback import play
 from openai import AsyncOpenAI
 from openai.helpers import LocalAudioPlayer
+
+if os.environ.get("MEDIUM", "") == "AUDIO":
+    import sounddevice as sd
 
 def text_to_speech(text, voice: str = "coral") -> bytes:
     """
@@ -32,7 +35,7 @@ def text_to_speech(text, voice: str = "coral") -> bytes:
         model="gpt-4o-mini-tts",
         voice=voice,
         input=text,
-        speed=0.75,
+        speed=0.9,
     ) as response:
         return response.read()
 

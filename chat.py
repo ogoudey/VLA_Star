@@ -19,6 +19,7 @@ match MEDIUM:
         from realtime_audio_chat import start_realtime_transcription
         from audio_chat import text_to_speech, play_speech
 
+
 def text_text(text):
     print(f"\nRobot: {text}\nReply: ")
 
@@ -90,12 +91,14 @@ def run_client(chat_port=5001):
     
     if MEDIUM == "REALTIME":
         start_realtime_transcription(send_q)
+        
     else:
         threading.Thread(
             target=reply_loop,
             args=(send_q, stop_event),
             daemon=True
         ).start()
+    
 
     try:
         while not stop_event.is_set():
