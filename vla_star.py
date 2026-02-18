@@ -1,6 +1,6 @@
 from typing import List, Callable
 import asyncio
-
+import sys
 from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
 from vla_complex import VLA_Complex
 
@@ -16,6 +16,13 @@ class VLA_Star:
         self.prototype_agent = prototype_agent
         self.vla_complexes = vla_complexes
         self.prototype_agent.link_vla_complexes(vla_complexes)
+
+    def safe_start(self):
+        try:
+            self.start()
+        except KeyboardInterrupt as k:
+            sys.exit(0)
+
 
     def start(self, prompt: str | None = None):
         vlacs_to_start = []
