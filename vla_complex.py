@@ -422,7 +422,7 @@ class AvaDrive(VLA_Complex):
         else:
             keys_to_del = []
             for k, v in self.state.impression:
-                if "known objects" in k:
+                if "known objects" in k: # lazy
                     keys_to_del.append(k)
             for k in keys_to_del:
                 del self.state.impression[k] 

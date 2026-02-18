@@ -4,8 +4,6 @@ import os
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
-
-
 def instantiate_so101_ava():
     robot_cfg = RobotConfig(
         robot_type = [RobotType.SO101,
@@ -20,9 +18,9 @@ def instantiate_so101_ava():
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.MANIPULATION,  # -- 
-            agency_type = AgencyType.KEYBOARD_DEMO, # _/
+            agency_type = AgencyType.AUTO, # _/
             robot_type = RobotType.SO101,
-            dataset_name = "test1_dataset",
+            #dataset_name = "test1_dataset",
             monitor_types = [],
             recorded = False
         ),
