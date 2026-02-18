@@ -6,8 +6,7 @@ from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
 def instantiate_so101_ava():
     robot_cfg = RobotConfig(
-        robot_type = [RobotType.SO101,
-                      RobotType.AVA1]
+        robot_type = RobotType.COMBINATION
     )
     factory.produce_robot(robot_cfg)
     agency_cfg = AgencyConfig(
@@ -21,6 +20,7 @@ def instantiate_so101_ava():
             agency_type = AgencyType.AUTO, # _/
             robot_type = RobotType.SO101,
             #dataset_name = "test1_dataset",
+            policy_path = Path("/home/olin/Robotics/Projects/VLA_Star/021000/pretrained_model"),
             monitor_types = [],
             recorded = False
         ),

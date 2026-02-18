@@ -284,6 +284,8 @@ class VLA_Tester(VLA_Complex):
         if instruction == "STOP":
             self.signal["RUNNING_E"] = False
         else:
+            self.signal["RUNNING_LOOP"] = True
+            self.signal["RUNNING_E"] = True
             self.signal["task"] = instruction
         print("Action applied. Return immediately.")
 
@@ -417,15 +419,18 @@ class AvaDrive(VLA_Complex):
     
     # helper
     def update_description_of_local_position(self):
-        if self.state.impression["current position"] in self.descriptions:
-            self.state.impression[f"known objects at {self.state.impression["current position"]}"] = self.descriptions[self.state.impression["current position"]]
-        else:
-            keys_to_del = []
-            for k, v in self.state.impression:
-                if "known objects" in k: # lazy
-                    keys_to_del.append(k)
-            for k in keys_to_del:
-                del self.state.impression[k] 
+        try:
+            if self.state.impression["current position"] in self.descriptions:
+                self.state.impression[f"known objects at {self.state.impression['current position']}"] = self.descriptions[self.state.impression["current position"]]
+            else:
+                keys_to_del = []
+                for k, v in self.state.impression:
+                    if "known objects" in k: # lazy
+                        keys_to_del.append(k)
+                for k in keys_to_del:
+                    del self.state.impression[k]
+        except Exception as e:
+            print(f"Could not update description of local position: {e}")
 
     # often has ongoing threads
     def run_drive_updates_client(self):
@@ -464,13 +469,18 @@ class AvaDrive(VLA_Complex):
             runner(str(self))
 
     def refresh_locations(self):
-        tags_data = self.base.list_tags(self.default_map)["data"]
+        try:
+            tags_data = self.base.list_tags(self.default_map)["data"]
+        except Exception as e:
+            print(f"Could not fetch tags: {e}")
+            raise Exception(f"Probably a map error: {e}")
         self.base.pp(tags_data)
         tags_info = tags_data["tags"]
 
         for id, tag_info in tags_info.items():
             if "tracs" in tag_info["attributes"]:
                 self.locations_to_tagIds[tag_info["name"]] = tag_info["id"]
+        self.state.impression["locations"] = list(self.locations_to_tagIds.keys())
                 
 """
 Conclusion:

@@ -102,7 +102,7 @@ class ContextualAgent(PrototypeAgent):
                 f = file.read()
                 x = json.loads(f)
             self.update_states_with_frozen_memory(x)
-            print("Loaded core memory.")
+            print(f"Loaded core memory for {self.name}.")
         else:
             print(f"New agent created... {self.name}")
 
@@ -174,14 +174,15 @@ class OrderedContextDemoed(OrderedContextAgent):
 
     def run_identity(self, source: str = "Anon"):
         print(f"OrderedContextDemoed `run_identity()`")
+        try:
+            self.context_init()
+            self.order_context()
+            
+            self.write()
+        except Exception as e:
+            print(f"Failed to form and write context: {e}")
         while True:
-            try:
-                self.context_init()
-                self.order_context()
-                print(f"{self.ordered_context}")
-                self.write()
-            except Exception as e:
-                print(f"Failed to form and write context: {e}")
+            print(f"{self.ordered_context}")
             for vla_complex in self.vla_complexes:
                 print(f"____{vla_complex.tool_name}____")
                 print(f"{inspect.signature(vla_complex.execute)}")
@@ -262,7 +263,3 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         if self.goal:
             system_prompt += self.goal
         return system_prompt
-
-          
-
-    
