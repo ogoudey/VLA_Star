@@ -11,10 +11,6 @@ if __name__ == "__main__":
     participant = sys.argv[1]
 
     vla_star = shop.instantiate_chatting_bot()
-    vla_star.start()
+    vla_star.safe_start()
     
-    groundedness = input("Did A or B feel more grounded?")
-    log(__file__, {
-        "participant": participant,
-        "groundedness": groundedness
-    })
+

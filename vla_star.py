@@ -21,7 +21,7 @@ class VLA_Star:
         try:
             self.start()
         except KeyboardInterrupt as k:
-            sys.exit(0)
+            print("Exiting interaction.")
 
 
     def start(self, prompt: str | None = None):

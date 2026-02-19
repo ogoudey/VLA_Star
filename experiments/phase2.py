@@ -10,9 +10,6 @@ if __name__ == "__main__":
     """
     participant = sys.argv[1]
 
-    import os
-    os.environ["MEDIUM"] = "REALTIME"
-
     vla_star = shop.instantiate_chatting_bot()
     vla_star.safe_start()
     

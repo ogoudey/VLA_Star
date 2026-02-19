@@ -28,7 +28,7 @@ def play_text(text):
     play_speech(speech)
 
 def read_text():
-    return input("\nReply: ")
+    return input("Reply: ")
 
 def record_text():
     bytes = record_speech()
@@ -62,11 +62,19 @@ def reply_loop(send_q, stop_event):
     except Exception as e:
         print(f"Error in respond loop!: {e}")
 
+def connect(chat_port):
+    while True:
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect(("127.0.0.1", chat_port))
+            print("Connected")
+            return sock
+        except ConnectionRefusedError:
+            print("Waiting...", end="\r")
+            time.sleep(1)
+
 def run_client(chat_port=5001):
-    print(f"Opened chat client on {chat_port}")
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.connect(("127.0.0.1", chat_port))
-    print(f"Connected")
+    sock = connect(chat_port)
     stop_event = threading.Event()
     inbound_q = queue.Queue()
     send_q = queue.Queue()
