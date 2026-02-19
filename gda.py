@@ -169,8 +169,8 @@ class OrderedContextAgent(ContextualAgent):
 
 
 class OrderedContextDemoed(OrderedContextAgent):
-    def __init__(self):
-        super().__init__("Dev")
+    def __init__(self, name="Dev"):
+        super().__init__(name)
 
     def run_identity(self, source: str = "Anon"):
         print(f"OrderedContextDemoed `run_identity()`")

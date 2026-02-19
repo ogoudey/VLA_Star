@@ -67,7 +67,6 @@ def connect(chat_port):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(("127.0.0.1", chat_port))
-            print("Connected")
             return sock
         except ConnectionRefusedError:
             print("Waiting...", end="\r")
@@ -114,6 +113,7 @@ def run_client(chat_port=5001):
     except KeyboardInterrupt:
         pass
     finally:
+        print("Disconnected. You may close this chat terminal.")
         stop_event.set()
         sock.close()
 

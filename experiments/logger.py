@@ -16,4 +16,6 @@ def log(phase_file: str, data: dict[str, str]) -> None:
         f.write(f"\n[{timestamp}]\n")
         for key, value in data.items():
             f.write(f"{key}: {value}\n")
-        f.write("-" * 30 + "\n") 
+        f.write("-" * 30 + "\n")
+
+    

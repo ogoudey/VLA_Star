@@ -1,7 +1,7 @@
 
 #!/usr/bin/env bash
 
-trap 'echo "Python interrupted, continuing..."; return 0 2>/dev/null || true' INT
+trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 
 # =====================================
 # Configuration

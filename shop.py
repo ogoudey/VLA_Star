@@ -229,7 +229,7 @@ def instantiate_chatting_bot():
     factory.produce_robot(robot_cfg)
 
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.AUTO,
+        agency_type = AgencyType.DEMOED,
         motive_type=MotiveType.TO_PHILOSOPHIZE,
         recorded = False
     )

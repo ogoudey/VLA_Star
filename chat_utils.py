@@ -21,7 +21,6 @@ def recv_loop(sock: socket.socket, inbound_q: queue.Queue, stop_event):
         pass
     finally:
         stop_event.set()
-        print("Disconnected")
 
 def send_loop(sock: socket.socket, send_q: queue.Queue, stop_event):
     try:

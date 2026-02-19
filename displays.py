@@ -21,8 +21,8 @@ if os.path.exists("logs"):
 """
 watch -n 0.1 'tail -n 20 logs/context.json'
 """
-def show_context(context,):
-    display_path = os.path.join("logs", f"context.json")
+def show_context(context, target_file="context.json"):
+    display_path = os.path.join("logs", target_file)
 
     with open(display_path, "w", encoding="utf-8") as f:
         json.dump(

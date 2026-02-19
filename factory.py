@@ -162,7 +162,6 @@ import platform
 import os
 
 
-
 def make_auto(cfg) -> OrderedContextLLMAgent:
     # Can't decide on instructions...
     instructions1 = """
@@ -221,21 +220,22 @@ Your goal is to make spatially accurate propositions, and make no claims which c
 
 Your long-term goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
 """
-            name = cfg.frozen_name if cfg.frozen_name else "philosopher"
+            name = os.environ.get("AGENT_LABEL", "philosopher")
             gda = OrderedContextLLMAgent(name, instructions2_5, goal2)
         case MotiveType.TO_HELP_USER:
             goal2 = """
 Your goal is to help the user to accomplish their pronounced goals.
 """         
-            name = cfg.frozen_name if cfg.frozen_name else "helper"
+            name = os.environ.get("AGENT_LABEL", "helper")
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
         case MotiveType.TO_SABBOTAGE_USER:
             goal2 = """
 You are currently in a video game. Your goal is sabbotage the user in whatever way you can. But don't give up the secret!
 """         
-            name = cfg.frozen_name if cfg.frozen_name else "helper"
+            name = os.environ.get("AGENT_LABEL", "helper")
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
         case None:
+            name = os.environ.get("AGENT_LABEL", "None")
             gda = OrderedContextLLMAgent(name, instructions2)
         case _:
             raise ValueError(f"Unsupported motive type: {cfg.motive_type}")
@@ -277,7 +277,8 @@ def get_platform_description():
     return ', '.join(info_parts)
 
 def make_demoed_agent():
-    return OrderedContextDemoed()
+    name = os.environ.get("AGENT_LABEL", "dev")
+    return OrderedContextDemoed(name)
 
 def import_helper(module_name: str):
     match module_name:
