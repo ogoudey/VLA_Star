@@ -167,20 +167,123 @@ class OrderedContextAgent(ContextualAgent):
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
 
+import threading
+import socket
+from chat_utils import recv_loop, send_loop
+import queue
 
 class OrderedContextDemoed(OrderedContextAgent):
     def __init__(self, name="Dev"):
         super().__init__(name)
+        self.running_remote = False
+        self.remote_port_if_needed = 5010
+        self.send_q = queue.Queue()
+        self.inbound_q = queue.Queue()
 
     def run_identity(self, source: str = "Anon"):
-        print(f"OrderedContextDemoed `run_identity()`")
         try:
             self.context_init()
             self.order_context()
-            
             self.write()
         except Exception as e:
             print(f"Failed to form and write context: {e}")
+        if os.environ.get("DEMOED", None) == "REMOTE":
+            if not self.running_remote:
+                threading.Thread(target=self.run_server, daemon=True)
+            self.remote_choice_loop()
+        else:
+            return self.local_choice_loop()
+
+    def remote_choice_loop(self): 
+        self.ordered_context
+        self.send_q.put(self.ordered_context)
+
+    def run_server(self):
+        print("Opening input socket...")
+        try:
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", self.remote_port_if_needed))
+            server.listen()
+            self.running_remote = True
+        except Exception as e:
+            print(f"Failed to start chat server: {e}")
+        print("Input server waiting...")
+        while self.running_remote:
+            client_sock, addr = server.accept()
+            print("Input client connected:", addr)
+            threading.Thread(
+                target=self.handle_client,
+                args=(client_sock,),
+                daemon=True
+            ).start()
+                    
+    def handle_client(self, sock):
+        stop_event = threading.Event()
+
+        threading.Thread(
+            target=self.recv_loop,
+            args=(sock, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=self.send_loop,
+            args=(sock, stop_event),
+            daemon=True
+        ).start()
+
+        threading.Thread(
+            target=self.respond_loop,
+            args=(stop_event,),
+            daemon=True
+        ).start()
+        try:
+            while not stop_event.is_set():
+                time.sleep(1)
+        finally:
+            stop_event.set()
+            sock.close()
+
+    def send_loop(self, sock: socket.socket, stop_event):
+        try:
+            while not stop_event.is_set():
+                msg = self.send_q.get()
+                sock.sendall((msg + "\n").encode()) # sends context
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            stop_event.set()
+
+    def respond_loop(self, stop_event):
+        try:
+            while not stop_event.is_set():
+                msg = self.inbound_q.get()
+        except Exception as e:
+            print(f"Error in respond loop!: {e}")
+
+    def recv_line(self, sock: socket.socket):
+        buffer = b""
+        while not buffer.endswith(b"\n"):
+            chunk = sock.recv(1)
+            if not chunk:
+                return None
+            buffer += chunk
+        return buffer.decode().strip()
+
+    def recv_loop(self, sock: socket.socket, stop_event):
+        try:
+            while not stop_event.is_set():
+                msg = self.recv_line(sock)
+                if msg is None:
+                    break
+                self.inbound_q.put(msg)
+        except (ConnectionResetError, OSError):
+            pass
+        finally:
+            stop_event.set()
+
+    def local_choice_loop(self):
         while True:
             print(f"{self.ordered_context}")
             for vla_complex in self.vla_complexes:
