@@ -3,7 +3,6 @@ import threading
 import queue
 import time
 from typing import List
-from chat_utils import recv_line, recv_loop, send_loop
 import os
 import inspect
 
@@ -15,13 +14,22 @@ class ChoiceData:
     context: dict # just visual
     vla_complexes: List[VLA_ComplexStripped]
 
+def recv_object(sock: socket.socket):
+    buffer = b""
+    while not buffer.endswith(b"\n"):
+        chunk = sock.recv(1)
+        if not chunk:
+            return None
+        buffer += chunk
+    return buffer.decode().strip()
+
 def recv_loop(sock: socket.socket, inbound_q: queue.Queue, stop_event):
     try:
         while not stop_event.is_set():
-            msg = recv_line(sock)
+            context, choice_data = recv_object(sock)
             if msg is None:
                 break
-            inbound_q.put(msg)
+            inbound_q.put((context, choice_data))
     except (ConnectionResetError, OSError):
         pass
     finally:
@@ -41,7 +49,7 @@ def respond_loop(inbound_q, send_q, stop_event):
                         args = {}
                         for arg_name, type in vla_complex.signature.items():
                             args[arg_name] = input(f"\t{arg_name}: ")
-                        send_q.put(tool_name, args)
+                        send_q.put(vla_complex.tool_name, args)
                     else:
                         print(f"_______")
                 print(f"\nV V V V V\n")

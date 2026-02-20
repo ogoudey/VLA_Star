@@ -94,7 +94,9 @@ gnome-terminal -- bash -c "echo Phase 2 chat terminal; python3 chat.py; exec bas
 run_phase "Phase 2" "$PHASE2_VENV" "$PHASE2_SCRIPT"
 
 gnome-terminal -- bash -c "echo Phase 2 chat terminal; source .asr_venv/bin/activate; export MEDIUM=REALTIME; python3 chat.py; exec bash"
+/Unity/Hub/Editor/6000.2.2f1/Editor/Unity -projectPath ~/AcroGen/acrophobia_v1 -executeMethod CommandLinePlay.PlayGame
 run_phase "Phase 3" "$PHASE3_VENV" "$PHASE3_SCRIPT"
+
 
 # =====================================
 # Outro

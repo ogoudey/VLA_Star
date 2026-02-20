@@ -195,8 +195,8 @@ class OrderedContextDemoed(OrderedContextAgent):
             return self.local_choice_loop()
 
     def remote_choice_loop(self): 
-        self.ordered_context
-        self.send_q.put(self.ordered_context)
+        stripped_vla_complexes = self.strip_vla_complexes()
+        self.send_q.put((self.ordered_context, stripped_vla_complexes))
 
     def run_server(self):
         print("Opening input socket...")
@@ -248,7 +248,7 @@ class OrderedContextDemoed(OrderedContextAgent):
     def send_loop(self, sock: socket.socket, stop_event):
         try:
             while not stop_event.is_set():
-                msg = self.send_q.get()
+                ordered_context, stripped_vla_complexes = self.send_q.get()
                 sock.sendall((msg + "\n").encode()) # sends context
         except (BrokenPipeError, ConnectionResetError, OSError):
             pass
@@ -304,7 +304,6 @@ class OrderedContextDemoed(OrderedContextAgent):
         asyncio.run(vla_complex.execute(*instruction))
 
 from one_identity_at_a_time import SingleIdentityRunningLock
-
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
