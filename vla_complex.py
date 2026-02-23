@@ -521,6 +521,10 @@ class UnityArm(VLA_Complex):
             self.vla("Drop", None)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
+        elif pickup_or_drop == "LEVER":
+            self.vla("Drop", None)
+            self.act("GetAvailableObjects", "null")
+            return f"Dropping... Return immediately."
         else:
             return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
 
@@ -550,8 +554,14 @@ class UnityArm(VLA_Complex):
     def run_client(self):
         print("Arm listener running")
         print("Arm connecting to Unity...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(("127.0.0.1", 5007))
+        while True:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(("127.0.0.1", 5007))
+                break
+            except ConnectionRefusedError:
+                print("Arm waiting...", end="\r")
+                time.sleep(1)
         self.listening = True
         print("Arm connected to Unity...")
         update_activity("Connected to Unity...", self.tool_name)
@@ -682,8 +692,14 @@ class UnityDrive(VLA_Complex):
     def run_client(self):
         print("Listener running")
         print("Connecting to Unity...")
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.connect(("127.0.0.1", 5006))
+        while True:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.connect(("127.0.0.1", 5006))
+                break
+            except ConnectionRefusedError:
+                print("Arm waiting...", end="\r")
+                time.sleep(1)
         self.listening = True
         print("Connected to Unity...")
         update_activity("Connected to Unity...", self.tool_name)
