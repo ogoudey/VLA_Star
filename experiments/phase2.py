@@ -2,6 +2,8 @@ import sys
 import os
 import shop
 from experiments.logger import log
+from likert_survey import Survey
+
 
 if __name__ == "__main__":
     """
@@ -12,11 +14,10 @@ if __name__ == "__main__":
 
     vla_star = shop.instantiate_chatting_bot()
     vla_star.safe_start()
-    
-    groundedness = input("Did A or B feel more grounded? ")
-    log(participant, __file__, {
-        
-        "groundedness": groundedness
-    })
 
+    s = Survey(participant, __file__)
+    s.phase_survey()
+    s.comparison_survey()
+
+    
     
