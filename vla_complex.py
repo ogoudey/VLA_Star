@@ -615,7 +615,7 @@ class UnityArm(VLA_Complex):
             return
         match type:
             case "available_objects":
-                self.state.impression["available_objects"] = content
+                self.state.impression["available objects"] = content
                 if self.state.impression["carrying"]:
                     self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available objects"]}))
                 else:

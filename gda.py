@@ -98,9 +98,8 @@ class ContextualAgent(PrototypeAgent):
         self.load_memory_dir_if_exists()
         
     def load_memory_dir_if_exists(self):
-        
-        if self.frozen_memory_dir.exists():
-            core_memory_filename = self.frozen_memory_dir / "core.json"
+        core_memory_filename = self.frozen_memory_dir / "core.json"
+        if core_memory_filename.exists():
             with open(core_memory_filename, "r") as file:
                 f = file.read()
                 x = json.loads(f)
