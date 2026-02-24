@@ -238,11 +238,14 @@ class Chat(VLA_Complex):
         """
         Should address the change in state after sending a context
         """
-        pass
+        if "Current user message" in self.state.impression:
+            self.state.add_to_session("User message", self.state.impression["Current user message"])
+            del self.state.impression["Current user message"] # isnt working as intended
+
+        
 
     def respond(self, user_input):
         print(f"Message {user_input} received...")
-        self.state.add_to_session("Message", user_input)
         self.state.impression = {"Current user message":f"{user_input}"}
         self.rerun_agent()
 
@@ -492,7 +495,7 @@ Conclusion:
 
 class UnityArm(VLA_Complex):
     def __init__(self, tool_name):
-        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object> or DROP <null>", tool_name)
+        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>, DROP <null>, or SWITCH <name of lever>", tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
@@ -500,7 +503,8 @@ class UnityArm(VLA_Complex):
         ### State ###
         self.state = vla_complex_state.State(session=[], impression={
             "carrying": None,
-            "available_objects": None
+            "available objects": None,
+            "available switches": None
         })
 
         self.cycling = False
@@ -521,8 +525,8 @@ class UnityArm(VLA_Complex):
             self.vla("Drop", None)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
-        elif pickup_or_drop == "LEVER":
-            self.vla("Drop", None)
+        elif pickup_or_drop == "SWITCH":
+            self.vla("Switch", None)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
         else:
@@ -613,9 +617,12 @@ class UnityArm(VLA_Complex):
             case "available_objects":
                 self.state.impression["available_objects"] = content
                 if self.state.impression["carrying"]:
-                    self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available_objects"]}))
+                    self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available objects"]}))
                 else:
-                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.state.impression["available_objects"]}))
+                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.state.impression["available objects"]}))
+            case "available_electric_objects":
+                self.state.impression["available switches"] = content
+                self.update_docstring(self.capability_desc + json.dumps({"Things you SWITCH": self.state.impression["available switches"]}))
             case "status":
                 unity_status = content[0]
                 print(f"Status returned {unity_status}")
@@ -623,6 +630,9 @@ class UnityArm(VLA_Complex):
                     if self.state.impression["carrying"]:
                         self.state.impression["carrying"] = False
                     self.state.add_to_session("Status", unity_status)
+                if "switch" in unity_status:
+                    self.state.add_to_session("Status", unity_status)
+                    self.rerun_agent()
                 if "picked up" in unity_status:
                     if not self.state.impression["carrying"]:
                         self.state.impression["carrying"] = unity_status.strip("picked up")
@@ -671,7 +681,7 @@ class UnityDrive(VLA_Complex):
         self.state = vla_complex_state.State(session=[], impression={
             "currently travelling": False,
             "current position": "Initial position",
-            "destinations": []
+            "possible destinations": []
         })
 
         self.unity_functions = None
@@ -753,8 +763,8 @@ class UnityDrive(VLA_Complex):
 
         match type:
             case "destinations":
-                self.state.impression["destinations"] = content
-                self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["destinations"]}))
+                self.state.impression["possible destinations"] = content
+                self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
             case "functions":
                 self.unity_functions = content
                 return
@@ -762,12 +772,12 @@ class UnityDrive(VLA_Complex):
                 unity_status = content[0]
                 if "reached" in unity_status:
                     self.state.add_to_session("Status", unity_status)
-                    self.state.impression["current_position"] = unity_status.strip("reached ")
-                    self.state.impression["currently_travelling"] = False
+                    self.state.impression["current position"] = unity_status.strip("reached ")
+                    self.state.impression["currently travelling"] = False
                     self.rerun_agent()
                 if "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
-                    self.state.impression["currently_travelling"] = True
+                    self.state.impression["currently travelling"] = True
                 else:
                     self.rerun_agent()
 

@@ -75,7 +75,7 @@ Be perfectly rational and attentive to the timing of things. The events in the c
 
 If data is already readable, it's because its already summarized. Since the data moves through time, you should COMPRESS the information among events.
 
-All data must have a timestamp of the form f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]", e.g. [2026-02-07 11:41:54]. For periods of time, of course pick a reasonable moment - beginnings and ends need not be perfect, rather, this all must be intuitively understandable.
+All data must have a timestamp of the form f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]" or [%Y-%m-%d %H:%M:%S], e.g. [2026-02-07 11:41:54]. For periods of time, of course pick a single reasonable moment. This all must be intuitively understandable. No ranges, just 
 
 Above all, output form must match the requested output type, a SummarizedSessions pydantic object.
 """

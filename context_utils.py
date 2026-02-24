@@ -29,6 +29,8 @@ class Context:
                 self.sessions[vlac.tool_name] = vlac.state.session
             if vlac.state.impression:
                 self.impressions[vlac.tool_name] = vlac.state.impression
+            if hasattr(vlac, "restore"):
+                vlac.restore()
 
 class OrderedContext:
     session: List

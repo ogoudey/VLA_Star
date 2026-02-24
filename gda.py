@@ -16,7 +16,7 @@ from vla_complex import VLA_Complex
 from multiprocessing import Process
 
 
-
+import metrics
 
     
 import asyncio
@@ -92,6 +92,9 @@ class ContextualAgent(PrototypeAgent):
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
         self.frozen_memory_dir = Path("frozen") / self.name
+        
+    def link_vla_complexes(self, vlacs):
+        super().link_vla_complexes(vlacs)
         self.load_memory_dir_if_exists()
         
     def load_memory_dir_if_exists(self):
@@ -146,12 +149,16 @@ class ContextualAgent(PrototypeAgent):
 
     def update_states_with_frozen_memory(self, states_json):
         print(states_json)
-        print("\n\n")
+        print("\n")
         for vla_complex in self.vla_complexes:
-            print(vla_complex)
-            if vla_complex.state.session:
+            if not vla_complex.tool_name in states_json:
+                print(f"{vla_complex} not in memory. New VLA Complex?")
+            print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
+            if vla_complex.state.session is not None:
+                print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]["session"]}")
                 vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
-            if vla_complex.state.impression:
+            if vla_complex.state.impression is not None:
+                print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]["impression"]}")
                 vla_complex.state.impression = states_json[vla_complex.tool_name]["impression"]
 
     def context_init(self):
@@ -308,7 +315,7 @@ from one_identity_at_a_time import SingleIdentityRunningLock
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
     goal: Optional[str]
-    model: str
+    model_name: str
     identity: Agent
     identity_lock: SingleIdentityRunningLock
 
@@ -317,8 +324,10 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         self.instructions = instruction
         self.goal = goal
 
-        self.model="o4-mini"
+        self.model_name="o4-mini"
         self.identity_lock = SingleIdentityRunningLock()
+
+        self.metrics = metrics.Profile(name)
 
     def assemble_context(self):
         self.context_init() # may be summarized or not
@@ -345,7 +354,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             name=self.name + str(self.agent_identities),
             instructions=self.instance_system_prompt(),
             tools=self.tools, # The tool-ified VLA Complexes
-            model=self.model
+            model=self.model_name
         )
 
     async def run_the_identity(self):
@@ -354,6 +363,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             print(f"___Prompt__\n{context}")
             self.write()
             result = await Runner.run(self.identity, context, max_turns=3)
+            self.metrics.add(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"

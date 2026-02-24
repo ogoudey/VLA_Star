@@ -5,7 +5,7 @@ from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
 from vla_complex import VLA_Complex
 
 from exceptions import Shutdown
-
+import metrics
 from llms.runner import ThinkingMachine
 
 class VLA_Star:

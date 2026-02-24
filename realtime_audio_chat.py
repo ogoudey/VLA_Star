@@ -144,15 +144,17 @@ class RealtimeTranscriber:
                     print(f"[speech_started] item {event.get('item_id')} at {event.get('audio_start_ms')}ms")
                 case "input_audio_buffer.speech_stopped":
                     self.voice_off = False
-                    self.embedder.collect_buffer()
+                    if SPEAKER_ID:
+                        self.embedder.collect_buffer()
                     print(f"[speech_stopped] item {event.get('item_id')} at {event.get('audio_end_ms')}ms")
                 case "input_audio_buffer.committed":
                     print(f"[committed] item {event.get('item_id')}, previous: {event.get('previous_item_id')}")
                 case "conversation.item.created":
                     item = event.get("item", {})
                     print(f"[item created] {item['id']}, status: {item.get('status')}, transcript: {item['content'][0].get('transcript')}")
-                    self.current_speaker = self.embedder.speaker_conclusion()
-                    print(f"Calculated speaker! {self.current_speaker}")
+                    if SPEAKER_ID:
+                        self.current_speaker = self.embedder.speaker_conclusion()
+                        print(f"Calculated speaker! {self.current_speaker}")
                 case "conversation.item.input_audio_transcription.delta":
                     delta = event.get("delta")
                     print(f"[delta] {delta}", "item:", event.get("item_id"))

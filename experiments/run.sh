@@ -19,6 +19,7 @@ PHASE2_VENV=".venv"
 declare -A PHASE_REQUIREMENTS
 
 PHASE_REQUIREMENTS[.venv]="openai-agents"
+PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets"
 
 PHASE1_SCRIPT="phase1"
 PHASE2_SCRIPT="phase2"
