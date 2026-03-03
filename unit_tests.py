@@ -4,6 +4,11 @@ import gda
 import asyncio
 import vla_complex
 import time
+
+"""
+Tests mainly for constructing good contexts
+"""
+
 l = gda.OrderedContextLLMAgent("tester", "hi", "g")
 
 a = vla_complex.UnityArm("arm")
