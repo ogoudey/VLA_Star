@@ -3,6 +3,13 @@ from typing import Any
 
 from displays import log
 
+"""
+
+Not really used anymore
+
+"""
+
+
 class VLA:
     """Takes a function that takes a string. Can be called like VLA()(...)"""
     def __init__(self):

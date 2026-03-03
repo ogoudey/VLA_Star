@@ -1,6 +1,10 @@
 import threading
 import asyncio
 
+"""
+A little helper to lock in "agent identities"
+"""
+
 class SingleIdentityRunningLock:
     def __init__(self, max_waiters=1):
         self._lock = asyncio.Lock()

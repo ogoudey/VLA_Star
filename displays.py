@@ -4,6 +4,11 @@ from datetime import datetime
 from pathlib import Path
 import json
 
+"""
+In theory usable for running transparency
+"""
+
+
 total_activity = dict()
 
 def timestamp():

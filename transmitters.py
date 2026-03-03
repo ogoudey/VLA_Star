@@ -44,8 +44,6 @@ class ThroughJoints(threading.Thread):
                             #print("Sending", joints)
                             s.sendall(bytes(joints, 'utf-8'))
                         data = s.recv(1024)
-
-
                         self.shared["present_joints"] = [math.radians(float(angle)) for angle in str(data).split(",")[1:7]]
                         print(self.shared)
                     #print(f"Received {data!r}")
@@ -53,8 +51,6 @@ class ThroughJoints(threading.Thread):
                 joints = input("Joints:\n") + "\n" 
             except ConnectionRefusedError:
                 print(f"Socket {HOST}:{PORT} is down.")
-
-
 
 def main():
     shared = {"target_joints": [0.0, 0.0,0.0,0.0,0.0,0.0,0.0,0.0], "present_joints":None}

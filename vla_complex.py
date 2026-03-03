@@ -21,6 +21,10 @@ runner: Callable = None
 import vla_complex_state
 
 class VLA_Complex:
+    """
+    Base class for all modules, VLA_Complexes
+    """
+
     tool_name: str
     def __init__(self, vla: Any, capability_desc: str, tool_name: str, on_start=False):
         self.vla = vla

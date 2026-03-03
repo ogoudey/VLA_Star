@@ -4,6 +4,10 @@ import time
 import queue
 import os
 
+"""
+A script that provides an interface to control with keyboard
+"""
+
 try:
     if ("DISPLAY" not in os.environ) and ("linux" in sys.platform):
         raise ImportError("pynput blocked intentionally due to no display.")

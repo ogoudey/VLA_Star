@@ -3,6 +3,10 @@ import matplotlib.pyplot as plt
 import os
 import csv
 
+"""
+Not really used, but could count the costs.
+"""
+
 MODEL_PRICING = {
     "gpt-4o": {
         "input_per_million": 5.00,

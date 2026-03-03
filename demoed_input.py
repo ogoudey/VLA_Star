@@ -6,6 +6,10 @@ from typing import List
 import os
 import inspect
 
+"""
+Script for making remote decisions - NOT DONE
+"""
+
 class VLA_ComplexStripped:
     tool_name: str
     signature: dict[str, str]
@@ -55,8 +59,6 @@ def respond_loop(inbound_q, send_q, stop_event):
                 print(f"\nV V V V V\n")
     except Exception as e:
         print(f"Error in respond loop!: {e}")
-
-    
 
 def choice_loop(send_q, stop_event):
     try:

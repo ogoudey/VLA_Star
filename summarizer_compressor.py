@@ -19,6 +19,9 @@ class SummarizedSessions(BaseModel):
     sessions: List[ToolSession]
 
 class Summarizer:
+    """
+    A memory device, associated with the LLM
+    """
     def __init__(self):
         self.identities_cnt = 0
         self.model = "o4-mini"

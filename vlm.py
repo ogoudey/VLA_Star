@@ -18,6 +18,9 @@ if USE_WEBCAM:
 MODEL = "o4-mini"
 
 class VLM:
+    """
+    Class mainly used as monitors for VLA_Complexes
+    """
     def __init__(self, name: str, model: str | Path, system_prompt: str, recommendation_system_prompt: str | None = None):
         self.name = name
         if type(model) == str:

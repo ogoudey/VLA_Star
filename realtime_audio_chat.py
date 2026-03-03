@@ -1,12 +1,5 @@
 # =============================
-#   Is turned on, uses VAD.
-#   With VAD, returns segments.
-#
-#
-#
-#
-#
-#
+#   Used to extend chat script to be realtime audio
 #
 
 import asyncio
@@ -22,9 +15,6 @@ import json
 SPEAKER_ID = os.environ.get("SPEAKER_ID", None) # should be a modifier on chat VLA_Complex
 if SPEAKER_ID:
     from speaker_embeddings import SpeakerEmbedder
-
-
-
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
@@ -181,4 +171,3 @@ async def async_main(send_q):
         transcriber.send_audio(),
         transcriber.receive_events(),
     )
-

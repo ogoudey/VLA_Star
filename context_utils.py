@@ -7,6 +7,11 @@ from pydantic import BaseModel
 from vla_complex_state import State
 from vla_complex import VLA_Complex
 from summarizer_compressor import Summarizer, SummarizedSessions
+
+"""
+Utilities for context management
+"""
+
 class Context:
     sessions: dict[str, List]
     impressions: dict[str, Any]

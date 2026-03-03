@@ -10,19 +10,19 @@ def instantiate_so101_ava():
     )
     factory.produce_robot(robot_cfg)
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.DEMOED,
+        agency_type = AgencyType.AUTO,
         recorded = False
     )
     factory.produce_agency(agency_cfg)
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.MANIPULATION,  # -- 
-            agency_type = AgencyType.AUTO, # _/
+            agency_type = AgencyType.KEYBOARD_DEMO, # AUTO
             robot_type = RobotType.SO101,
-            #dataset_name = "test1_dataset",
+            dataset_name = "test1_dataset",
             policy_path = Path("/home/olin/Robotics/Projects/VLA_Star/021000/pretrained_model"),
             monitor_types = [],
-            recorded = False
+            recorded = True
         ),
         VLAComplexConfig(
             vla_type = VLAType.TEXT_USER,
@@ -257,5 +257,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_unity_robot()
+    v = instantiate_so101_ava()
     v.start()

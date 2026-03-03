@@ -31,38 +31,19 @@ internal      a           pull
  VLA_C     request
 """
 
-
-
-
-
-"""
-   ...    rerun
-    V       ^
-raw state
-
-"""
-
 class PrototypeAgent:
     name: str
     agent_identities: int
-
     vla_complexes: List
     tools: List[FunctionTool]
-
-    
-
     goal: Optional[str]
+
     def __init__(self, name):
         self.name = name
         self.agent_identities = 0
 
         self.vla_complexes = []
         self.tools = []
-
-
-        
-        
-
 
     def link_vla_complexes(self, vlacs):
         for vlac in vlacs:
@@ -76,7 +57,6 @@ class PrototypeAgent:
             vlac.execute,
             name_override=vlac.tool_name
         ))
-
 
 from pathlib import Path
 from summarizer_compressor import Summarizer
@@ -138,7 +118,6 @@ class ContextualAgent(PrototypeAgent):
                 cnt += len(vlac.state.session)
         return cnt
 
-
     async def summarize_states(self):
         self.summarized_states = await self.summarizer.compress_all_states(self.vla_complexes)
         return self.summarized_states
@@ -154,10 +133,10 @@ class ContextualAgent(PrototypeAgent):
                 print(f"{vla_complex} not in memory. New VLA Complex?")
             print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
             if vla_complex.state.session is not None:
-                print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]["session"]}")
+                print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]['session']}")
                 vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
             if vla_complex.state.impression is not None:
-                print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]["impression"]}")
+                print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]['impression']}")
                 vla_complex.state.impression = states_json[vla_complex.tool_name]["impression"]
 
     def context_init(self):
@@ -366,8 +345,6 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
-
-    
 
     def instance_system_prompt(self):
         system_prompt = self.instructions

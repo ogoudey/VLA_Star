@@ -7,6 +7,9 @@ from resemblyzer import VoiceEncoder
 import numpy as np
 
 class SpeakerEmbedder:
+    """
+    A class attachable to the chat VLA_complex
+    """
     def __init__(self, chunk_size: int, sample_rate: int):
         self.chunk_size = chunk_size
         self.sample_rate = sample_rate
