@@ -4,6 +4,11 @@ import os
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
+"""
+Offers functions that return VLA*s. 
+"""
+
+
 def instantiate_so101_ava():
     robot_cfg = RobotConfig(
         robot_type = RobotType.COMBINATION
