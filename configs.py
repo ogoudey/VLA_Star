@@ -3,6 +3,10 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 from pathlib import Path
 
+"""
+Types to go into configurations (like those in shop.py). All types are then produced in the factory
+"""
+
 class RobotType(Enum):
     KINOVA = "kinova"
     SO101 = "so101"

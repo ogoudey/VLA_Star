@@ -8,7 +8,7 @@ from gda import OrderedContextLLMAgent
 from displays import log, timestamp, update_activity
 
 class ThinkingMachine:
-    """ Convenience class """
+    """ Convenience class in charge of dishing out LLM calls """
     def __init__(self, prototype: OrderedContextLLMAgent):
         self.reruns = queue.Queue()
         self.prototype = prototype

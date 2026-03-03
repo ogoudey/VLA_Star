@@ -19,6 +19,11 @@ from pydub.playback import play
 from openai import AsyncOpenAI
 from openai.helpers import LocalAudioPlayer
 
+"""
+Functions to extend the chat script to be audio. Realtime is better...
+"""
+
+
 if os.environ.get("MEDIUM", "") == "AUDIO":
     import sounddevice as sd
 

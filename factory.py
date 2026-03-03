@@ -27,8 +27,10 @@ from configs import RobotType, AgencyType, MonitorType, VLAType
 #
 #       Factory
 #
+#  Produces the main components of a VLA* - robot, agency, and VLA_Complexes
 #
-#################33
+#
+#########################
 
 robot = None
 agency = None

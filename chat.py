@@ -5,6 +5,9 @@ import time
 from chat_utils import recv_line, recv_loop, send_loop
 import os
 
+"""
+Script for starting a chat terminal.
+"""
 
 
 microphone = None

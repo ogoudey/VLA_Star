@@ -1,6 +1,11 @@
 import queue
 import socket
 
+"""
+A couple functions for helping set up sockets
+"""
+
+
 def recv_line(sock: socket.socket):
     buffer = b""
     while not buffer.endswith(b"\n"):

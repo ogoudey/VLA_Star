@@ -4,10 +4,9 @@ from displays import log, timestamp, update_activity
 import json
 from pydantic import BaseModel
 
-
-
-
-
+"""
+All VLA Complexes have a state. This state can also be output from the Summarizer
+"""
 
 class State(BaseModel):
     session: Optional[list[dict[str, str]]] = None
