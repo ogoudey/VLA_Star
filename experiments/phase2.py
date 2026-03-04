@@ -2,7 +2,7 @@ import sys
 import os
 import shop
 from experiments.logger import log
-from likert_survey import Survey
+from experiments.likert_survey import Survey
 
 
 if __name__ == "__main__":
