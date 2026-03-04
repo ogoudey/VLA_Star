@@ -15,7 +15,7 @@ from vla_complex import VLA_Complex
 from multiprocessing import Process
 
 
-import metrics
+#import metrics
 
     
 import asyncio
