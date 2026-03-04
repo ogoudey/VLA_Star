@@ -28,7 +28,7 @@ watch -n 0.1 'tail -n 20 logs/context.json'
 """
 def show_context(context, target_file="context.json"):
     display_path = os.path.join("logs", target_file)
-
+    
     with open(display_path, "w", encoding="utf-8") as f:
         json.dump(
             context,
@@ -49,6 +49,7 @@ def update_activity(data, self=Any, exit=False):
     total_activity.update(update)
     if exit:
         del total_activity[str(self)]
+    os.makedirs(display_path, exist_ok=True)
     with open(display_path, "w", encoding="utf-8") as f:
         json.dump(
             total_activity,
