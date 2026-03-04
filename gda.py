@@ -9,7 +9,6 @@ from itertools import groupby
 import json
 import random
 import inspect
-from exceptions import Shutdown
 import os
 from displays import log, show_context, timestamp
 from vla_complex import VLA_Complex
