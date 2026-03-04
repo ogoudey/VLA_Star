@@ -1,4 +1,4 @@
-from logger import log
+from experiments.logger import log
 
 class Survey:
     participant: str
