@@ -21,7 +21,8 @@ if os.path.exists("logs"):
             with open(file_path, "a", encoding="utf-8") as f:
                 f.write(f"\n\n\n\n{timestamp()}\t\t\t\t__ New chunk started __\n")
             #print(f"Appended {10} blank lines to {filename}")
-
+else:
+    os.makedirs("logs", exist_ok=True)
 
 """
 watch -n 0.1 'tail -n 20 logs/context.json'
@@ -49,7 +50,7 @@ def update_activity(data, self=Any, exit=False):
     total_activity.update(update)
     if exit:
         del total_activity[str(self)]
-    os.makedirs(display_path, exist_ok=True)
+    
     with open(display_path, "w", encoding="utf-8") as f:
         json.dump(
             total_activity,
