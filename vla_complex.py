@@ -14,8 +14,6 @@ import queue
 from chat_utils import recv_line, recv_loop, send_loop
 import scheduler 
 
-from exceptions import Shutdown
-
 runner: Callable = None
 
 import vla_complex_state
