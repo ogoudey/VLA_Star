@@ -3,7 +3,6 @@ import asyncio
 import sys
 from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
 from vla_complex import VLA_Complex
-from exceptions import Shutdown
 from llms.runner import ThinkingMachine
 
 class VLA_Star:
