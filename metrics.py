@@ -1,10 +1,9 @@
 from datetime import datetime
-import matplotlib.pyplot as plt
 import os
 import csv
 
 """
-Not really used, but could count the costs.
+Not really used, but could count the
 """
 
 MODEL_PRICING = {
@@ -53,6 +52,7 @@ class Profile:
         """
         Load usage data from file and plot it.
         """
+        import matplotlib.pyplot as plt
 
         if not os.path.exists(self.filename):
             print("No data file found.")
