@@ -88,6 +88,7 @@ echo ""
 echo "Installing apt packages"
 sudo apt install portaudio19-dev
 
+echo $OPENAI_API_KEY
 export AGENT_LABEL="phase1_bot"
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
