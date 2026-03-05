@@ -20,3 +20,4 @@ if [ -n "$PID" ]; then
 fi
 
 avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT username=$USER &  # NOT a "USERNAME"
+sleep 1

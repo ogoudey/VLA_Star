@@ -7,13 +7,35 @@
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
+
+SERVICE="_embodied._tcp"
+
+
+
 while true; do
-    NAME=$(avahi-browse -rt _myhelper._tcp | grep "username=" | awk -F'=' '{print $2}')
-    EMBODIED_VLA_STAR=$(avahi-browse -rt _embodied._tcp | grep address | awk -F'[][]' '{print $2}')
-    if [ -n "$EMBODIED_VLA_STAR" ]; then
+    FOUND=$(avahi-browse -rt "$SERVICE" 2>/dev/null | awk '
+        /hostname = \[/ {
+            line = $0
+            sub(/.*\[/,"",line)
+            sub(/\].*/,"",line)
+            hostname=line
+        }
+        /txt = \[.*username=/ {
+            line = $0
+            sub(/.*username=/,"",line)
+            sub(/"].*/,"",line)
+            username=line
+        }
+        hostname && username { print username " " hostname; exit }
+    ')
+
+    if [ -n "$FOUND" ]; then
+        NAME=$(echo "$FOUND" | awk '{print $1}')
+        EMBODIED_VLA_STAR=$(echo "$FOUND" | awk '{print $2}')
         echo "Found embodied VLA* at $NAME@$EMBODIED_VLA_STAR"
         break
     fi
+
     sleep 1
 done
 
