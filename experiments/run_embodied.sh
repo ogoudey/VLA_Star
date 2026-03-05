@@ -86,7 +86,7 @@ echo "======================================"
 echo ""
 
 echo "Installing apt packages"
-sudo apt install portaudio19-dev
+sudo apt install portaudio19-dev ffmpeg
 
 export AGENT_LABEL="phase1_bot"
 activate_venv "$PHASE1_VENV" 
