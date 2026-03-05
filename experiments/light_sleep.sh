@@ -7,4 +7,16 @@
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
-avahi-publish-service "Embodied" _embodied._tcp 5020 username=$USER &  # NOT a "USERNAME"
+INSTANCE_NAME="Embodied"
+SERVICE_TYPE="_embodied._tcp"
+PORT=5020
+
+PID=$(pgrep -f "avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT")
+
+if [ -n "$PID" ]; then
+    echo "Stopping existing Avahi publisher (PID $PID)"
+    kill "$PID"
+    sleep 1  # give it a moment to clean up
+fi
+
+avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT username=$USER &  # NOT a "USERNAME"
