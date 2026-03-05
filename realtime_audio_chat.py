@@ -17,7 +17,7 @@ if SPEAKER_ID:
     from speaker_embeddings import SpeakerEmbedder
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
+print(OPENAI_API_KEY)
 ### AUDIO SAMPLING CONFIG
 SAMPLE_RATE = 16000
 CHUNK_DURATION_MS = 30
