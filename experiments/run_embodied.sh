@@ -85,9 +85,13 @@ echo "        Starting embodied VLA*"
 echo "======================================"
 echo ""
 
+echo "Installing apt packages"
+sudo apt install portaudio19-dev
+
 export AGENT_LABEL="phase1_bot"
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
-export MEDIUM="REALTIME"
+
 export AGENT_LABEL="phase2_bot"
+gnome-terminal -- bash -c "export MEDIUM=REALTIME; echo Phase 2 chat terminal; python3 chat.py; exec bash"
 run_phase "Phase 2" "$PHASE2_VENV" "$PHASE2_SCRIPT"
