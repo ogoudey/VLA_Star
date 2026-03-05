@@ -214,21 +214,23 @@ You are in a being run from a program in {get_platform_description()}. That is y
     gda = None
     match cfg.motive_type:
         case MotiveType.TO_PHILOSOPHIZE:
-            goal2 = """
-
+            name = os.environ.get("AGENT_LABEL", "philosopher")
+            goal2 = f"""
 When you talk ("chat"), your words exist as speech from a text-to-speech model played out of a speaker. When you get a message in "chat", that is recognized text from a speech-to-text model
 
 Your goal is to make spatially accurate propositions, and make no claims which cannot be backed up by the facts present in the context/environment. Without information to the contrary, you know NOTHING about the space around you - that is, you know NOTHING AT ALL.
 
 Your long-term goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
+
+And your name is {name}
 """
-            name = os.environ.get("AGENT_LABEL", "philosopher")
+            
             gda = OrderedContextLLMAgent(name, instructions2_5, goal2)
         case MotiveType.TO_HELP_USER:
             goal2 = """
 Your goal is to help the user to accomplish their pronounced goals.
 """         
-            name = os.environ.get("AGENT_LABEL", "helper")
+            name = os.environ.get("AGENT_LABEL", "named_helper")
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
         case MotiveType.TO_SABBOTAGE_USER:
             goal2 = """
