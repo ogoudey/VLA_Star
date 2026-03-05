@@ -86,7 +86,7 @@ echo "======================================"
 echo ""
 
 echo "Installing apt packages"
-apt install portaudio19-dev
+sudo apt install portaudio19-dev
 
 export AGENT_LABEL="phase1_bot"
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
