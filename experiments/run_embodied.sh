@@ -93,5 +93,7 @@ run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
 
 export AGENT_LABEL="phase2_bot"
-gnome-terminal -- bash -c "export MEDIUM=REALTIME; echo Phase 2 chat terminal; python3 chat.py; exec bash"
+
+activate_venv "$VENV_PATH" 
+gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export MEDIUM=REALTIME; echo Phase 2 chat terminal; python3 chat.py; exec bash"
 run_phase "Phase 2" "$PHASE2_VENV" "$PHASE2_SCRIPT"
