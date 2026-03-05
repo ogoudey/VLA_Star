@@ -1,7 +1,7 @@
 from vla_complex_state import State
 from typing import List
 import json
-from agents import Agent, Runner, RunConfig
+from agents import Agent, Runner
 from pydantic import BaseModel
 
 class Event(BaseModel):

@@ -23,12 +23,7 @@ async def make_schedule(input):
         You are a helpful assistant writing correct python with perfect syntax. Just write the lines of code, no main() function, etc. Given the assignment, right the correct python code.
 
         """,
-        model="o4-mini",
-        run_config=RunConfig(
-            seed=42,
-            temperature=0
-        )
-        
+        model="o4-mini"
     )
     print("Scheduler making schedule")
     result = await Runner.run(scheduler, prompt + input, max_turns=2)

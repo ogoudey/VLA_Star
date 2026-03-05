@@ -1,5 +1,5 @@
 import sys
-from agents import Agent, Runner, function_tool, RunConfig, FunctionTool
+from agents import Agent, Runner, function_tool, FunctionTool
 import asyncio
 from signals import OK, CONTINUE, RERUN
 import time
@@ -14,6 +14,7 @@ from displays import log, show_context, timestamp
 from vla_complex import VLA_Complex
 from multiprocessing import Process
 
+from demoed_input import ChoiceData, VLA_ComplexStripped
 
 import metrics
 
@@ -56,6 +57,12 @@ class PrototypeAgent:
             vlac.execute,
             name_override=vlac.tool_name
         ))
+
+    def vla_complex_by_name(self, tool_name):
+        for vlac in self.vla_complexes:
+            if vlac.tool_name == tool_name:
+                return vlac
+        raise KeyError(f"Could not find VLA Complex by name {tool_name}")
 
 from pathlib import Path
 from summarizer_compressor import Summarizer
@@ -130,7 +137,8 @@ class ContextualAgent(PrototypeAgent):
         for vla_complex in self.vla_complexes:
             if not vla_complex.tool_name in states_json:
                 print(f"{vla_complex} not in memory. New VLA Complex?")
-            print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
+            else:
+                print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
             if vla_complex.state.session is not None:
                 print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]['session']}")
                 vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
@@ -155,14 +163,19 @@ import threading
 import socket
 from chat_utils import recv_loop, send_loop
 import queue
+from dataclasses import dataclass, asdict
 
 class OrderedContextDemoed(OrderedContextAgent):
     def __init__(self, name="Dev"):
         super().__init__(name)
+        if os.environ.get("DEMOED", None) == "REMOTE":
+            self.remote_port_if_needed = 5010
+            self.send_q = queue.Queue()
+            self.inbound_q = queue.Queue()
+        
         self.running_remote = False
-        self.remote_port_if_needed = 5010
-        self.send_q = queue.Queue()
-        self.inbound_q = queue.Queue()
+        
+        
 
     def run_identity(self, source: str = "Anon"):
         try:
@@ -173,14 +186,11 @@ class OrderedContextDemoed(OrderedContextAgent):
             print(f"Failed to form and write context: {e}")
         if os.environ.get("DEMOED", None) == "REMOTE":
             if not self.running_remote:
-                threading.Thread(target=self.run_server, daemon=True)
+                threading.Thread(target=self.run_server, daemon=True).start()
+            print("Sending remote choice!")
             self.remote_choice_loop()
         else:
             return self.local_choice_loop()
-
-    def remote_choice_loop(self): 
-        stripped_vla_complexes = self.strip_vla_complexes()
-        self.send_q.put((self.ordered_context, stripped_vla_complexes))
 
     def run_server(self):
         print("Opening input socket...")
@@ -191,7 +201,7 @@ class OrderedContextDemoed(OrderedContextAgent):
             server.listen()
             self.running_remote = True
         except Exception as e:
-            print(f"Failed to start chat server: {e}")
+            print(f"Failed to start input server: {e}")
         print("Input server waiting...")
         while self.running_remote:
             client_sock, addr = server.accept()
@@ -229,11 +239,53 @@ class OrderedContextDemoed(OrderedContextAgent):
             stop_event.set()
             sock.close()
 
+    def remote_choice_loop(self): 
+        choice_data = self.choice_data()
+        self.send_q.put(choice_data)
+        print("Choice data on send queue.")
+
+    def choice_data(self) -> ChoiceData:
+        """
+        returns just the data necessary to make a choice
+        """
+        c = ChoiceData(context=str(self.ordered_context))
+        for vla_complex in self.vla_complexes:
+            stripped = VLA_ComplexStripped(
+                vla_complex.tool_name,
+                signature = self.signature_dict(vla_complex.execute)
+            )
+            c.vla_complexes.append(stripped)
+        return c
+
+    def signature_dict(self, func):
+        sig = inspect.signature(func)
+        result = {}
+        for name, param in sig.parameters.items():
+            annotation = param.annotation
+
+            if annotation is inspect._empty:
+                type_name = "Any"
+            else:
+                # If it's a type, get its name
+                if hasattr(annotation, "__name__"):
+                    type_name = annotation.__name__
+                else:
+                    # For typing types like List[int], Optional[str], etc.
+                    type_name = str(annotation)
+
+            result[name] = type_name
+        return result
+
     def send_loop(self, sock: socket.socket, stop_event):
+        print("send_loop on")
         try:
             while not stop_event.is_set():
-                ordered_context, stripped_vla_complexes = self.send_q.get()
-                sock.sendall((msg + "\n").encode()) # sends context
+                choice_data = self.send_q.get()
+                #print(f"Got choice data {choice_data}")
+                payload_dict = asdict(choice_data)
+                msg = json.dumps(payload_dict)
+                sock.sendall((msg + "\n").encode("utf-8"))
+
         except (BrokenPipeError, ConnectionResetError, OSError):
             pass
         finally:
@@ -243,10 +295,19 @@ class OrderedContextDemoed(OrderedContextAgent):
         try:
             while not stop_event.is_set():
                 msg = self.inbound_q.get()
+                choice = json.loads(msg)
+
+                tool_name = choice[0]
+                args = choice[1:]
+                vlac = self.vla_complex_by_name(tool_name)
+                self.execute_vla_complex(vlac, *args)
         except Exception as e:
             print(f"Error in respond loop!: {e}")
 
-    def recv_line(self, sock: socket.socket):
+    def recv_choice(self, sock: socket.socket):
+        """
+        Receives tool_name and args
+        """
         buffer = b""
         while not buffer.endswith(b"\n"):
             chunk = sock.recv(1)
@@ -258,7 +319,7 @@ class OrderedContextDemoed(OrderedContextAgent):
     def recv_loop(self, sock: socket.socket, stop_event):
         try:
             while not stop_event.is_set():
-                msg = self.recv_line(sock)
+                msg = self.recv_choice(sock)
                 if msg is None:
                     break
                 self.inbound_q.put(msg)
