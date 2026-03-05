@@ -90,7 +90,7 @@ sudo apt install portaudio19-dev
 
 export AGENT_LABEL="phase1_bot"
 activate_venv "$PHASE1_VENV" 
-gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash"
+gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+TERMINAL_PID=$!
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
-TERMINAL_PID=$(pgrep -f "gnome-terminal.*chat.py")
 kill "$TERMINAL_PID"
