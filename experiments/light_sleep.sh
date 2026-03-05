@@ -7,4 +7,4 @@
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
-avahi-publish-service "Embodied" _embodied._tcp 5020 &
+avahi-publish-service "Embodied" _embodied._tcp 5020 username=$USER &  # NOT a "USERNAME"

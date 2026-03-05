@@ -8,9 +8,10 @@ echo "Installing apt packages"
 sudo apt install avahi-utils
 
 while true; do
-    EMBODIED_VLA_STAR=$(avahi-browse -rt _emvodied._tcp | grep address | awk -F'[][]' '{print $2}')
+    NAME=$(avahi-browse -rt _myhelper._tcp | grep "username=" | awk -F'=' '{print $2}')
+    EMBODIED_VLA_STAR=$(avahi-browse -rt _embodied._tcp | grep address | awk -F'[][]' '{print $2}')
     if [ -n "$EMBODIED_VLA_STAR" ]; then
-        echo "Found embodied VLA* at $EMBODIED_VLA_STAR"
+        echo "Found embodied VLA* at $NAME@$EMBODIED_VLA_STAR"
         break
     fi
     sleep 1
@@ -23,4 +24,4 @@ echo ""
 
 
 
-ssh "$1" "./VLA_Star/experiments/run_embodied.sh"
+ssh "$NAME@$EMBODIED_VLA_STAR" "./VLA_Star/experiments/run_embodied.sh"
