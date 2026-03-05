@@ -21,8 +21,8 @@ declare -A PHASE_REQUIREMENTS
 PHASE_REQUIREMENTS[.venv]="openai-agents"
 PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets"
 
-PHASE1_SCRIPT="embodied_phase"
-PHASE2_SCRIPT="embodied_phase"
+PHASE1_SCRIPT="embodiment_phase"
+PHASE2_SCRIPT="embodiment_phase"
 
 # =====================================
 # Helper Functions
