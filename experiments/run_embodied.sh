@@ -10,7 +10,7 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 VLA_Star_dir="/home/olin/VLA_Star"
 cd $VLA_Star_dir
 
-HUMAN="$1"
+ARGV1="$1"
 
 PHASE1_VENV=".venv"
 PHASE2_VENV=".realtime_venv"
