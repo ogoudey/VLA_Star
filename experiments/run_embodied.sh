@@ -7,13 +7,13 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 # Configuration
 # =====================================
 
-VLA_Star_dir="/home/olin/Robotics/Projects/VLA_Star"
+VLA_Star_dir="/home/olin/VLA_Star"
 cd $VLA_Star_dir
 
 HUMAN="$1"
 
 PHASE1_VENV=".venv"
-PHASE2_VENV=".venv"
+PHASE2_VENV=".realtime_venv"
 
 # Declare associative array (dictionary)
 declare -A PHASE_REQUIREMENTS
@@ -21,8 +21,8 @@ declare -A PHASE_REQUIREMENTS
 PHASE_REQUIREMENTS[.venv]="openai-agents"
 PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets"
 
-PHASE1_SCRIPT="phase1"
-PHASE2_SCRIPT="phase2"
+PHASE1_SCRIPT="embodied_phase"
+PHASE2_SCRIPT="embodied_phase"
 
 # =====================================
 # Helper Functions
@@ -85,5 +85,9 @@ echo "        Starting embodied VLA*"
 echo "======================================"
 echo ""
 
+export AGENT_LABEL="phase1_bot"
+run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
-run_phase "Phase 3" "$PHASE3_VENV" "$PHASE3_SCRIPT"
+export MEDIUM="REALTIME"
+export AGENT_LABEL="phase2_bot"
+run_phase "Phase 2" "$PHASE2_VENV" "$PHASE2_SCRIPT"
