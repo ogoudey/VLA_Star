@@ -8,7 +8,7 @@ echo "Installing apt packages"
 apt install avahi-utils
 
 
-SERVICE="_embodied._tcp"
+SERVICE="_bed._tcp"
 
 while true; do
     FOUND=$(avahi-browse -rt "$SERVICE" 2>/dev/null | awk '

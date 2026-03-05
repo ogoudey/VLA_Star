@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 
-# =====================================
-#         Solely an interface 
-# =====================================
+# ==================================
+#  Re-up the host's advertisements
+# ==================================
 
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
-INSTANCE_NAME="Embodied"
-SERVICE_TYPE="_embodied._tcp"
+
+
+INSTANCE_NAME="$HOST_NAME" # like "embodied host", or "rpi", or something
+SERVICE_TYPE="_bed._tcp"
 PORT=5020
 
 PID=$(pgrep -f "avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT")

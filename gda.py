@@ -66,6 +66,7 @@ class PrototypeAgent:
 
 from pathlib import Path
 from summarizer_compressor import Summarizer
+from agent_identifiers import write_identifier
 
 class ContextualAgent(PrototypeAgent):
     context: Context
@@ -92,6 +93,7 @@ class ContextualAgent(PrototypeAgent):
             self.update_states_with_frozen_memory(x)
             print(f"Loaded core memory for {self.name}.")
         else:
+            write_identifier(self.name)
             print(f"New agent created... {self.name}")
 
     def write(self):
