@@ -5,7 +5,7 @@
 # =====================================
 
 echo "Installing apt packages"
-sudo apt install avahi-utils
+apt install avahi-utils
 
 
 SERVICE="_embodied._tcp"
