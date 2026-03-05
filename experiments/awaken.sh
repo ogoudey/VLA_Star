@@ -45,5 +45,5 @@ echo "======================================"
 echo ""
 
 
-
-ssh "$NAME@$EMBODIED_VLA_STAR" "./VLA_Star/experiments/run_embodied.sh"
+#ssh "$NAME@$EMBODIED_VLA_STAR" 'bash -l -c "echo $OPENAI_API_KEY"; ./VLA_Star/experiments/run_embodied.sh;'
+ssh "$NAME@$EMBODIED_VLA_STAR" "export OPENAI_API_KEY=$OPENAI_API_KEY; ./VLA_Star/experiments/run_embodied.sh;"
