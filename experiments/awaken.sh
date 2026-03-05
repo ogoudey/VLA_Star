@@ -10,8 +10,6 @@ apt install avahi-utils
 
 SERVICE="_embodied._tcp"
 
-
-
 while true; do
     FOUND=$(avahi-browse -rt "$SERVICE" 2>/dev/null | awk '
         /hostname = \[/ {
@@ -46,4 +44,4 @@ echo ""
 
 
 #ssh "$NAME@$EMBODIED_VLA_STAR" 'bash -l -c "echo $OPENAI_API_KEY"; ./VLA_Star/experiments/run_embodied.sh;'
-ssh "$NAME@$EMBODIED_VLA_STAR" "export OPENAI_API_KEY=$OPENAI_API_KEY; ./VLA_Star/experiments/run_embodied.sh;"
+ssh -t "$NAME@$EMBODIED_VLA_STAR" "export OPENAI_API_KEY=$OPENAI_API_KEY; ./VLA_Star/experiments/run_embodied.sh;"
