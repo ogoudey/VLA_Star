@@ -94,9 +94,3 @@ gnome-terminal -- bash -c "source $PHASE2_VENV/bin/activate; export MEDIUM=REALT
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 TERMINAL_PID=$(pgrep -f "gnome-terminal.*chat.py")
 kill "$TERMINAL_PID"
-
-
-export AGENT_LABEL="phase2_bot"
-
-activate_venv "$PHASE2_VENV" 
-gnome-terminal -- bash -c "source $PHASE2_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 2 chat terminal; python3 chat.py; exec bash"
