@@ -2,7 +2,7 @@
 import sys
 from zeroconf import Zeroconf, ServiceBrowser, ServiceListener
 
-SERVICE_TYPE = "_bed._tcp.local."
+SERVICE_TYPE = "_bed._tcp."
 
 result = {}
 
