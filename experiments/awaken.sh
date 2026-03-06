@@ -35,7 +35,7 @@ case "$ENVIRONMENT" in
         echo "Starting python helper..."
         SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
         PYTHON_SCRIPT="$SCRIPT_DIR/termux_awaken_helper.py"
-        echo $PYTHON_SCRIPT
+        echo "Starting python helper at $PYTHON_SCRIPT..."
         # Loop until Python script finds a service
         while true; do
             FOUND=$(python3 $PYTHON_SCRIPT 2>/dev/null)
