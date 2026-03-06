@@ -25,7 +25,24 @@ echo "Architecture: $ARCH"
 case "$ENVIRONMENT" in
     termux)
         echo "Running on Termux"
-        # use Android-specific paths
+
+        # Ensure Python and zeroconf are installed
+        if ! command -v python3 >/dev/null; then
+            pkg install -y python
+        fi
+        pip3 install --user zeroconf
+
+        # Loop until Python script finds a service
+        while true; do
+            FOUND=$(./discover_vla_star.py 2>/dev/null)
+            if [ -n "$FOUND" ]; then
+                NAME=$(echo "$FOUND" | awk '{print $1}')
+                EMBODIED_VLA_STAR=$(echo "$FOUND" | awk '{print $2}')
+                echo "Found embodied VLA* at $NAME@$EMBODIED_VLA_STAR"
+                break
+            fi
+            sleep 1
+        done
         ;;
     linux)
         echo "Running on Ubuntu/Debian"
@@ -60,7 +77,6 @@ case "$ENVIRONMENT" in
 
             sleep 1
         done
-        
         ;;
     *)
         echo "Unknown OS"
