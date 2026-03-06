@@ -18,8 +18,8 @@ cd $VLA_Star_dir
 
 HUMAN="$1"
 
-PHASE1_VENV=".realtime_venv"
-PHASE2_VENV=".realtime_venv"
+PHASE1_VENV="$VLA_Star_dir/.venv"
+PHASE2_VENV="$VLA_Star_dir/.realtime_venv"
 
 # Declare associative array (dictionary)
 declare -A PHASE_REQUIREMENTS
