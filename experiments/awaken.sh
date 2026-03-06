@@ -33,9 +33,11 @@ case "$ENVIRONMENT" in
         pip3 install --user zeroconf
 
         echo "Starting python helper..."
+        SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+        PYTHON_SCRIPT="$SCRIPT_DIR/discover_vla_star.py"
         # Loop until Python script finds a service
         while true; do
-            FOUND=$(termux_awaken_helper.py 2>/dev/null)
+            FOUND=$(python3 $PYTHON_SCRIPT 2>/dev/null)
             if [ -n "$FOUND" ]; then
                 NAME=$(echo "$FOUND" | awk '{print $1}')
                 EMBODIED_VLA_STAR=$(echo "$FOUND" | awk '{print $2}')
