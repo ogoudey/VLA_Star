@@ -23,7 +23,7 @@ browser = ServiceBrowser(zeroconf, SERVICE_TYPE, listener)
 
 # Wait until result is filled (with a timeout)
 import time
-timeout = 3  # seconds
+timeout = 10  # seconds
 start = time.time()
 while "username" not in result and time.time() - start < timeout:
     time.sleep(0.1)
