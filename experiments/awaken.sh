@@ -32,6 +32,7 @@ case "$ENVIRONMENT" in
         fi
         pip3 install --user zeroconf
 
+        echo "Starting python helper..."
         # Loop until Python script finds a service
         while true; do
             FOUND=$(./termux_awaken_helper.py 2>/dev/null)
