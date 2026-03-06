@@ -7,7 +7,13 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 # Configuration
 # =====================================
 
-VLA_Star_dir="/home/olin/VLA_Star"
+
+if [ -n "$VLA_STAR_PATH" ]; then
+    VLA_Star_dir="$VLA_STAR_PATH"
+else
+    VLA_Star_dir="$HOME/VLA_Star"
+fi
+
 cd $VLA_Star_dir
 
 HUMAN="$1"
