@@ -7,9 +7,7 @@
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
-
-
-INSTANCE_NAME="$HOST_NAME" # like "embodied host", or "rpi", or something
+INSTANCE_NAME="$HOSTNAME" # like "embodied host", or "rpi", or something
 SERVICE_TYPE="_bed._tcp"
 PORT=5020
 

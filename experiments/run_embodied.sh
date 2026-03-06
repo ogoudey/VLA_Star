@@ -88,7 +88,8 @@ echo ""
 echo "Installing apt packages"
 sudo apt install portaudio19-dev ffmpeg
 
-export AGENT_LABEL="phase1_bot"
+AGENT_LABEL="${1:-phase1_bot}"
+export AGENT_LABEL=$AGENT_LABEL
 activate_venv "$PHASE1_VENV" 
 nohup -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
 TERMINAL_PID=$!
