@@ -34,7 +34,7 @@ case "$ENVIRONMENT" in
 
         # Loop until Python script finds a service
         while true; do
-            FOUND=$(./discover_vla_star.py 2>/dev/null)
+            FOUND=$(./termux_awaken_helper.py 2>/dev/null)
             if [ -n "$FOUND" ]; then
                 NAME=$(echo "$FOUND" | awk '{print $1}')
                 EMBODIED_VLA_STAR=$(echo "$FOUND" | awk '{print $2}')
