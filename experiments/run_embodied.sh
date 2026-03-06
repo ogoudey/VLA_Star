@@ -1,13 +1,32 @@
 
 #!/usr/bin/env bash
 
+# ========= the usual ========== #
+OS_TYPE=$(uname -s)
+if [ -f "/data/data/com.termux/files/usr/bin/termux-info" ]; then
+    ENVIRONMENT="termux"
+else
+    ENVIRONMENT="linux"
+fi
+if command -v apt >/dev/null; then
+    PACKAGE_MANAGER="apt"
+elif command -v pkg >/dev/null; then
+    PACKAGE_MANAGER="pkg"  # Termux
+fi
+ARCH=$(uname -m)
+echo "OS: $OS_TYPE Environment: $ENVIRONMENT Architecture: $ARCH"
+
+# ========= source bashrc. Idk why its not default... =============== #
+source ~/.bashrc
+
+
 trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 
 # =====================================
 # Configuration
 # =====================================
 
-
+echo "VLA* path: $VLA_STAR_PATH"
 if [ -n "$VLA_STAR_PATH" ]; then
     VLA_Star_dir="$VLA_STAR_PATH"
 else
@@ -16,6 +35,17 @@ else
 fi
 
 cd $VLA_Star_dir
+
+# If $OPENAI_API_KEY is not set, read it from the local file
+if [ -z "$OPENAI_API_KEY" ]; then
+    if [ -f "$VLA_Star_dir/private/api_keys/openai_api_key" ]; then
+        OPENAI_API_KEY=$(<"$VLA_Star_dir/private/api_keys/openai_api_key")
+        export OPENAI_API_KEY
+    else
+        echo "Error: OPENAI_API_KEY not set and no $VLA_Star_dir/private/api_keys/openai_api_key file found." >&2
+        exit 1
+    fi
+fi
 
 HUMAN="$1"
 
@@ -75,7 +105,8 @@ run_phase() {
     echo "======================================"
 
     activate_venv "$VENV_PATH" 
-    echo pwd
+    echo $(pwd)
+    ls
     python3 -m "experiments.$SCRIPT" "$HUMAN"
     deactivate || true
 
@@ -97,6 +128,7 @@ sudo apt install portaudio19-dev ffmpeg
 
 AGENT_LABEL="${1:-phase1_bot}"
 export AGENT_LABEL=$AGENT_LABEL
+echo "VLA* name: $AGENT_LABEL"
 activate_venv "$PHASE1_VENV" 
 nohup -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
 TERMINAL_PID=$!

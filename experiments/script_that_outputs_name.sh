@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+echo "Opening list of asleep VLA*s"
 FILE="$HOME/.vlastars.json"
 
 if ! command -v jq >/dev/null; then
@@ -25,7 +26,7 @@ for i in "${!STARS[@]}"; do
 done
 
 while true; do
-    read -rp "Enter number: " CHOICE
+    read -rp "$STARS Enter index: " CHOICE
 
     if [[ "$CHOICE" =~ ^[0-9]+$ ]] && (( CHOICE>=1 && CHOICE<=${#STARS[@]} )); then
         echo "${STARS[$((CHOICE-1))]}"

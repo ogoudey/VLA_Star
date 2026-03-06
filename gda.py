@@ -66,7 +66,7 @@ class PrototypeAgent:
 
 from pathlib import Path
 from summarizer_compressor import Summarizer
-from agent_identifiers import write_identifier
+from agent_identifier import write_identifier
 
 class ContextualAgent(PrototypeAgent):
     context: Context
