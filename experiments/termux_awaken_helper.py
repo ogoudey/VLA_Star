@@ -34,4 +34,5 @@ if "username" in result:
     print(f'{result["username"]} {result["hostname"]}')
     sys.exit(0)
 else:
+    print(f"Failed failed")
     sys.exit(1)
