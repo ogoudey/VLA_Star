@@ -11,6 +11,7 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 if [ -n "$VLA_STAR_PATH" ]; then
     VLA_Star_dir="$VLA_STAR_PATH"
 else
+    echo "Choosing default VLA_Star path"
     VLA_Star_dir="$HOME/VLA_Star"
 fi
 
@@ -18,8 +19,8 @@ cd $VLA_Star_dir
 
 HUMAN="$1"
 
-PHASE1_VENV="$VLA_Star_dir/.venv"
-PHASE2_VENV="$VLA_Star_dir/.realtime_venv"
+PHASE1_VENV=".venv"
+PHASE2_VENV=".realtime_venv"
 
 # Declare associative array (dictionary)
 declare -A PHASE_REQUIREMENTS
@@ -39,15 +40,15 @@ activate_venv() {
     shift
     local REQUIREMENTS=("$@")
 
-    if [ ! -f "$VENV_PATH/bin/activate" ]; then
-        echo "🔧 Creating virtual environment at $VENV_PATH"
+    if [ ! -f "$VLA_Star_dir/$VENV_PATH/bin/activate" ]; then
+        echo "🔧 Creating virtual environment at $VLA_Star_dir/$VENV_PATH"
 
-        python3 -m venv "$VENV_PATH" || {
+        python3 -m venv "$VLA_Star_dir/$VENV_PATH" || {
             echo "❌ Failed to create venv"
             return 1
         }
 
-        source "$VENV_PATH/bin/activate"
+        source "$VLA_Star_dir/$VENV_PATH/bin/activate"
 
         local REQS="${PHASE_REQUIREMENTS[$VENV_PATH]}"
 
@@ -60,7 +61,7 @@ activate_venv() {
         pip install --upgrade pip || return 1
         pip install $REQS || return 1
     else
-        source "$VENV_PATH/bin/activate"
+        source "$VLA_Star_dir/$VENV_PATH/bin/activate"
     fi
 }
 
@@ -74,7 +75,7 @@ run_phase() {
     echo "======================================"
 
     activate_venv "$VENV_PATH" 
-
+    echo pwd
     python3 -m "experiments.$SCRIPT" "$HUMAN"
     deactivate || true
 
