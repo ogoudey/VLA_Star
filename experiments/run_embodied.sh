@@ -37,6 +37,9 @@ fi
 cd $VLA_Star_dir
 
 # If $OPENAI_API_KEY is not set, read it from the local file
+
+# This should really be a phase requirement. Nontrivial to figure out what keys are needed.
+
 if [ -z "$OPENAI_API_KEY" ]; then
     if [ -f "$VLA_Star_dir/private/api_keys/openai_api_key" ]; then
         OPENAI_API_KEY=$(<"$VLA_Star_dir/private/api_keys/openai_api_key")
