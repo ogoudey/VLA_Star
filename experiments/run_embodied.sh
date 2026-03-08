@@ -52,7 +52,7 @@ fi
 
 HUMAN="$1"
 
-PHASE1_VENV=".venv"
+PHASE1_VENV=".realtime_venv"
 PHASE2_VENV=".realtime_venv"
 
 # Declare associative array (dictionary)
@@ -132,7 +132,7 @@ sudo apt install portaudio19-dev ffmpeg
 AGENT_LABEL="${1:-phase1_bot}"
 export AGENT_LABEL=$AGENT_LABEL
 echo "VLA* name: $AGENT_LABEL"
-activate_venv "$PHASE1_VENV" 
+activate_venv "$PHASE1_VENV"
 nohup -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
 TERMINAL_PID=$!
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
