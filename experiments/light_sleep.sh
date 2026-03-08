@@ -21,5 +21,5 @@ fi
 
 avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT username=$USER &  # NOT a "USERNAME"
 
-aplay VLA_Star/experiments/boot.wav
+aplay experiments/boot.wav
 sleep 1
