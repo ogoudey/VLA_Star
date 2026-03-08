@@ -21,5 +21,13 @@ fi
 
 avahi-publish-service $INSTANCE_NAME $SERVICE_TYPE $PORT username=$USER &  # NOT a "USERNAME"
 
-aplay experiments/boot.wav
+
+if [ -n "$VLA_STAR_PATH" ]; then
+    VLA_Star_dir="$VLA_STAR_PATH"
+else
+    echo "Choosing default VLA_Star path"
+    VLA_Star_dir="$HOME/VLA_Star"
+fi
+
+aplay $VLA_Star_dir/experiments/boot.wav
 sleep 1
