@@ -2,7 +2,7 @@
 
 #!/bin/bash
 echo "Opening list of asleep VLA*s" >&2
-FILE="$HOME/.vlastars.json"
+FILE="$HOME/.vla_stars.json"
 if ! command -v jq >/dev/null; then
     echo "jq is required but not installed." >&2
     exit 1
