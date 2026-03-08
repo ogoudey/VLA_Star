@@ -100,5 +100,5 @@ echo ""
 #ssh "$NAME@$EMBODIED_VLA_STAR" 'bash -l -c "echo $OPENAI_API_KEY"; ./VLA_Star/experiments/run_embodied.sh;'
 ssh -t "$NAME@$EMBODIED_VLA_STAR" \
 "export OPENAI_API_KEY=$OPENAI_API_KEY; \
-STAR=\$(./VLA_Star/experiments/script_that_outputs_name.sh); \
+select STAR in \$(./VLA_Star/experiments/script_that_outputs_name.sh); do [ -n \"\$STAR\" ] && break; done; \
 ./VLA_Star/experiments/run_embodied.sh \$STAR"

@@ -1,37 +1,19 @@
 #!/usr/bin/env bash
 
-echo "Opening list of asleep VLA*s"
+#!/bin/bash
+echo "Opening list of asleep VLA*s" >&2
 FILE="$HOME/.vlastars.json"
-
 if ! command -v jq >/dev/null; then
-    echo "jq is required but not installed."
+    echo "jq is required but not installed." >&2
     exit 1
 fi
-
 if [ ! -f "$FILE" ]; then
-    echo "No ~/.vlastars.json file found."
+    echo "No ~/.vlastars.json file found." >&2
     exit 1
 fi
-
 mapfile -t STARS < <(jq -r '.[]' "$FILE")
-
 if [ ${#STARS[@]} -eq 0 ]; then
-    echo "No stars found."
+    echo "No stars found." >&2
     exit 1
 fi
-
-echo "Select a VLA star:"
-for i in "${!STARS[@]}"; do
-    printf "%d) %s\n" "$((i+1))" "${STARS[$i]}"
-done
-
-while true; do
-    read -rp "$STARS Enter index: " CHOICE
-
-    if [[ "$CHOICE" =~ ^[0-9]+$ ]] && (( CHOICE>=1 && CHOICE<=${#STARS[@]} )); then
-        echo "${STARS[$((CHOICE-1))]}"
-        exit 0
-    fi
-
-    echo "Invalid selection."
-done
+printf '%s\n' "${STARS[@]}"
