@@ -11,7 +11,8 @@ import pyaudio
 import threading
 import requests
 import json
-
+from setproctitle import setproctitle
+setproctitle("VLA* realtime chat terminal")
 SPEAKER_ID = os.environ.get("SPEAKER_ID", None) # should be a modifier on chat VLA_Complex
 if SPEAKER_ID:
     from speaker_embeddings import SpeakerEmbedder

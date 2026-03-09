@@ -1,6 +1,7 @@
 import factory
 from pathlib import Path    # For adjustable policy paths
 import os
+
 from configs import RobotConfig, AgencyConfig, VLAComplexConfig
 from configs import RobotType, AgencyType, MonitorType, VLAType, MotiveType
 
@@ -232,14 +233,14 @@ def instantiate_chatting_bot():
         robot_type = RobotType.NONE
     )
     factory.produce_robot(robot_cfg)
-
+    print("Robot produced.")
     agency_cfg = AgencyConfig(
         agency_type = AgencyType.AUTO,
         motive_type=MotiveType.TO_PHILOSOPHIZE,
         recorded = False
     )
-
     factory.produce_agency(agency_cfg)
+    print("Agency produced.")
     vla_complex_cfgs = [
         VLAComplexConfig(
             vla_type = VLAType.TEXT_USER,
@@ -255,9 +256,10 @@ def instantiate_chatting_bot():
     ]
 
     factory.produce_vla_complexes(vla_complex_cfgs)
+    print("VLA_Complexes produced.")
 
     factory.produce_vla_star()
-
+    
     return factory.get_vla_star()
 
 if __name__ == "__main__":

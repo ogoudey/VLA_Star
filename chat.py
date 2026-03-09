@@ -5,9 +5,8 @@ import time
 from chat_utils import recv_line, recv_loop, send_loop
 import os
 
-"""
-Script for starting a chat terminal.
-"""
+from setproctitle import setproctitle
+setproctitle("VLA* chat terminal")
 
 
 microphone = None

@@ -139,6 +139,7 @@ class ContextualAgent(PrototypeAgent):
         for vla_complex in self.vla_complexes:
             if not vla_complex.tool_name in states_json:
                 print(f"{vla_complex} not in memory. New VLA Complex?")
+                continue
             else:
                 print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
             if vla_complex.state.session is not None:

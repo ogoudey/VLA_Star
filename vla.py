@@ -103,7 +103,7 @@ import sys
 import os
 path_planning_path = os.environ.get("PATH_PLANNING", "/home/olin/Robotics/AI Planning/Path-Planning")
 sys.path.append(path_planning_path)
-if not Path(path_planning_path).exists():
+if not Path(path_planning_path).exists() or True:
     print("No Path Planning")
 else:
     import space
