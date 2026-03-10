@@ -13,16 +13,13 @@ import os
 from displays import log, show_context, timestamp
 from vla_complex import VLA_Complex
 from multiprocessing import Process
-
 from demoed_input import ChoiceData, VLA_ComplexStripped
-
 import metrics
-
-    
 import asyncio
 import context_utils as cu
 from context_utils import Context, OrderedContext
 from vla_complex_state import State
+
 """
                                                 -> DemoedLanguage
 Stimulus -> Event -> AssembleContext -> Ordered -> RunAgentLock
@@ -178,8 +175,6 @@ class OrderedContextDemoed(OrderedContextAgent):
         
         self.running_remote = False
         
-        
-
     def run_identity(self, source: str = "Anon"):
         try:
             self.context_init()
