@@ -177,6 +177,9 @@ class Chat(VLA_Complex):
         return "Message sent. Return immediately."
 
     def kill_port(self, port):
+        """
+        Doesn't seem to help stray listener process
+        """
         result = subprocess.run(
             ["lsof", "-t", f"-i:{port}"],
             capture_output=True,
@@ -756,8 +759,11 @@ class UnityDrive(VLA_Complex):
                 time.sleep(1)
         finally:
             update_activity("Stopping listening...", self.tool_name)
+            self.act("Closing", "null")
+            time.sleep(0.1) # So threads can do a loop
             stop_event.set()
             sock.close()
+            print("UnityDrive Socket closed.")
 
     def react_loop(self, stop_event):
         while not stop_event.is_set():
