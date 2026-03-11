@@ -30,7 +30,7 @@ class Profile:
     
     def init_file(self, filename):
         os.makedirs(os.path.dirname(filename), exist_ok=True)
-        file_type = Path(filename).name
+        file_type = Path(filename).stem
         if not os.path.exists(filename):
             with open(filename, "w", newline="") as f:
                 writer = csv.writer(f)

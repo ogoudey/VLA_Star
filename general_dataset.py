@@ -4,7 +4,7 @@ import json
 from displays import log, show_context, timestamp
 from context_utils import OrderedContext
 from collections import defaultdict
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
 from agents import RunResult, ToolCallItem
 
@@ -17,11 +17,7 @@ def json_dict() -> dict[str, JsonValue]:
 @dataclass
 class ToolChoiceMade:
     type: str = "function"
-    function: dict = {
-        "name": "",
-        "description": "",
-        "parameters": dict
-    }
+    function: dict = field(default_factory=dict)
 
 class Dataset:
     filepath: Path

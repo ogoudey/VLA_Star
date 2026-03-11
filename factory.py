@@ -343,9 +343,10 @@ Your goal is to help the user to accomplish their pronounced goals.
 Your name is {name}
 """         
             name = os.environ.get("AGENT_LABEL", "named_helper")
-            gda = OrderedContextLLMAgent(name, instructions2, goal2)
+            gda.pseudo_system = instructions2 + goal2
         case _:
             raise ValueError(f"{cfg.motive_type} cannot be turned into a pseudo prompt (bad for recording...)!")
+    return gda
         
 def import_helper(module_name: str):
     match module_name:

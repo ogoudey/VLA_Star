@@ -66,7 +66,8 @@ def respond_loop(inbound_q, send_q, stop_event):
         while not stop_event.is_set():
             choice_data = inbound_q.get()
             print(f"{choice_data.context}")
-            while True:
+            choosing = True
+            while choosing:
                 for vla_complex in choice_data.vla_complexes:
                     print(f"____{vla_complex.tool_name}____")
                     print(f"{vla_complex.signature}")
@@ -76,6 +77,7 @@ def respond_loop(inbound_q, send_q, stop_event):
                         for arg_name, type in vla_complex.signature.items():
                             choice.append(input(f"\t{arg_name}: "))
                         send_q.put(choice)
+                        choosing = False
                         break
                     else:
                         print(f"_______")
