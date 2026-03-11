@@ -223,7 +223,9 @@ Your long-term goal is to patiently, subtley, indirectly, discover the space you
             
             gda = OrderedContextLLMAgent(name, instructions2_5, goal2)
         case MotiveType.TO_HELP_USER:
-            goal2 = """
+            name = os.environ.get("AGENT_LABEL", "helper")
+
+            goal2 = f"""
 Your goal is to help the user to accomplish their pronounced goals.
 
 Your name is {name}

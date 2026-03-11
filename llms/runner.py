@@ -14,17 +14,24 @@ class ThinkingMachine:
         self.prototype = prototype
 
         self.updated = False
+
+        self.active = False
     
     def __str__(self):
         return f"ThinkingMachine"
 
     def rerun(self, source):
+        if source == "STOP":
+            self.active = False
+        
+        # Common Case
         self.reruns.put(source)
     
     async def start(self):
         print("Thinking Machine starting...")
         loop = asyncio.get_running_loop()
-        while True:
+        self.active = True
+        while self.active:
             if not self.updated:
                 update_activity("ThinkingMachine idle.", self)
             try:
@@ -36,6 +43,4 @@ class ThinkingMachine:
             print(f"{source} runs agent!")
             # Fire-and-forget agent
             asyncio.create_task(self.prototype.request())
-
-    
-
+        print(f"Thinking Machine ending.")

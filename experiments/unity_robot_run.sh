@@ -134,8 +134,11 @@ AGENT_LABEL="${1:-unity_bot}"
 export AGENT_LABEL=$AGENT_LABEL
 echo "VLA* name: $AGENT_LABEL"
 activate_venv "$PHASE1_VENV"
-nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+#nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+
 TERMINAL_PID=$!
+export DEMOED=REMOTE
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
 kill "$TERMINAL_PID"
