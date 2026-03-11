@@ -142,10 +142,17 @@ class ContextualAgent(PrototypeAgent):
             if vla_complex.state.session is not None:
                 print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]['session']}")
                 vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
+                # Special case:
+                if vla_complex.tool_name == "drive":
+                    vla_complex.state.add_to_session("Meta-status", "Reinitialized position!")
             if vla_complex.state.impression is not None:
                 print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]['impression']}")
                 vla_complex.state.impression = states_json[vla_complex.tool_name]["impression"]
-
+                if vla_complex.tool_name == "drive":
+                    vla_complex.state.impression.update({
+                        "currently travelling": False,
+                        "current position": "Initial position"
+                    })
     def context_init(self):
         if len(self.vla_complexes) == 0:
             raise ValueError("Not linked to any vla_complexes. Use `link_vla_complexes`.")
@@ -371,11 +378,12 @@ class OrderedContextLLMAgent(OrderedContextAgent):
 
     async def request(self):
         print(f"Agent requested...")
-        if self.whether_to_summarize():
-            ss = await self.summarize_states()
-            self.update_states_with_summarization(ss)
+        
         try:
             async with self.identity_lock:
+                if self.whether_to_summarize():
+                    ss = await self.summarize_states()
+                    self.update_states_with_summarization(ss)
                 self.assemble_context()
                 await self.run_identity()
         except RuntimeError:

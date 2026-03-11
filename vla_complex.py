@@ -52,6 +52,10 @@ class VLA_Complex:
             runner(str(self))
         else:
             raise Exception("Why is there no runner function?")
+        
+    def agent_sleep(self):
+        global runner
+        runner("STOP")
 
 class Scheduler(VLA_Complex):
     def __init__(self):
@@ -142,8 +146,8 @@ class Logger(VLA_Complex):
 
     def log(self, text: str):
         log(f"\"{text}\"", self)
-
-
+import signal
+import subprocess
 class Chat(VLA_Complex):    
     def __init__(self, tool_name="chat", tool_description="Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.", chat_port=5001):
         super().__init__(self.reply, tool_description, tool_name, True)
@@ -171,7 +175,20 @@ class Chat(VLA_Complex):
         self.vla(text)
         self.state.add_to_session("self", text)
         return "Message sent. Return immediately."
-        
+
+    def kill_port(self, port):
+        """
+        Doesn't seem to help stray listener process
+        """
+        result = subprocess.run(
+            ["lsof", "-t", f"-i:{port}"],
+            capture_output=True,
+            text=True
+        )
+
+        for pid in result.stdout.split():
+            os.kill(int(pid), signal.SIGKILL)
+
     def run_server(self):
         print("Opening socket...")
         try:
@@ -181,7 +198,13 @@ class Chat(VLA_Complex):
             server.listen()
             self.listening = True
         except Exception as e:
-            print(f"Failed to start chat server: {e}")
+            print(f"Failed to start chat server: {e}. Killing and trying again...")
+            self.kill_port(self.chat_port)
+            server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server.bind(("127.0.0.1", self.chat_port))
+            server.listen()
+            self.listening = True
         print("Chat server waiting...")
         update_activity("Chat server waiting...", self.tool_name)
         while self.listening:
@@ -258,11 +281,8 @@ class Chat(VLA_Complex):
         global runner
         if runner is None:
             runner = rerun_function
-        try:
-            self.reply("")
-        except Shutdown:
-            print(f"\nSystem shutting down...")
-            raise Shutdown()
+        self.reply("")
+
 
     
     def reply(self, message: str):
@@ -528,11 +548,11 @@ class UnityArm(VLA_Complex):
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
         elif pickup_or_drop == "SWITCH":
-            self.vla("Switch", None)
+            self.vla("Switch", object_name)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
         else:
-            return f"Please pass 'PICKUP' or 'DROP', nof {pickup_or_drop}"
+            return f"Please pass 'PICKUP', 'DROP', 'SWITCH', not {pickup_or_drop}"
 
     def start_cycling(self):
         threading.Thread(target=self.run_cycle, daemon=True).start()
@@ -666,11 +686,8 @@ class UnityArm(VLA_Complex):
         global runner
         if runner is None:
             runner = rerun_function
-        try:
-            self.act("GetAvailableObjects", "null")
-        except Shutdown:
-            print(f"\nSystem shutting down...")
-            raise Shutdown()
+        self.act("GetAvailableObjects", "null")
+
         
 class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
@@ -742,8 +759,11 @@ class UnityDrive(VLA_Complex):
                 time.sleep(1)
         finally:
             update_activity("Stopping listening...", self.tool_name)
+            self.act("Closing", "null")
+            time.sleep(0.1) # So threads can do a loop
             stop_event.set()
             sock.close()
+            print("UnityDrive Socket closed.")
 
     def react_loop(self, stop_event):
         while not stop_event.is_set():
@@ -764,6 +784,12 @@ class UnityDrive(VLA_Complex):
             return
 
         match type:
+            case "meta":
+                if content == "quit":
+                    print("Quit message received!!")
+                    self.listening = False
+                    self.agent_sleep()      ############# QUIT CONDITION
+                return
             case "destinations":
                 self.state.impression["possible destinations"] = content
                 self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
@@ -776,8 +802,11 @@ class UnityDrive(VLA_Complex):
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["current position"] = unity_status.strip("reached ")
                     self.state.impression["currently travelling"] = False
+                    if self.state.impression["current position"] == "ATM":      ############# WIN CONDITION
+                        self.listening = False
+                        self.agent_sleep()
                     self.rerun_agent()
-                if "goal set" in unity_status:
+                elif "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["currently travelling"] = True
                 else:
@@ -787,7 +816,6 @@ class UnityDrive(VLA_Complex):
         return self.state
 
     def act(self, unity_callable:str, arg: str):
-        
         structure = {"method": unity_callable, "arg":arg}
         self.out_messages.put(json.dumps(structure))
 
@@ -798,10 +826,7 @@ class UnityDrive(VLA_Complex):
         global runner
         if runner is None:
             runner = rerun_function
-        try:
-            self.act("GetFunctions", "null")
-            self.act("GetDestinations", "null")
-        except Shutdown:
-            print(f"\nSystem shutting down...")
-            raise Shutdown()
+        self.act("GetFunctions", "null")
+        self.act("GetDestinations", "null")
+
 # =========================== Tests =========================== #    

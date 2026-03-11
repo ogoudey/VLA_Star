@@ -6,7 +6,7 @@ from chat_utils import recv_line, recv_loop, send_loop
 import os
 
 from setproctitle import setproctitle
-setproctitle("VLA* chat terminal")
+setproctitle("vla_chat")
 
 
 microphone = None

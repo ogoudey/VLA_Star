@@ -80,6 +80,8 @@ If data is already readable, it's because its already summarized. Since the data
 
 All data must have a timestamp of the form f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]" or [%Y-%m-%d %H:%M:%S], e.g. [2026-02-07 11:41:54]. For periods of time, of course pick a single reasonable moment. This all must be intuitively understandable. No ranges, just 
 
+Identify with the "self" character in the chat history. You are the robot, summarizing your past, in order to be persistent in the world.
+
 Above all, output form must match the requested output type, a SummarizedSessions pydantic object.
 """
         return instructions1

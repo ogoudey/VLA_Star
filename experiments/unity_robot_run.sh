@@ -3,7 +3,8 @@
 # ========== symlink to UnityProject/Assets/Scripts ========== #
 
 
-
+# ============ Args from Unity ========== #
+AGENT_LABEL="${1:-unity_bot}"
 
 # ========= the usual ========== #
 OS_TYPE=$(uname -s)
@@ -20,6 +21,8 @@ fi
 ARCH=$(uname -m)
 echo "OS: $OS_TYPE Environment: $ENVIRONMENT Architecture: $ARCH"
 
+
+# =========== For multiple phases we don't want to exit the bash script, just the python ========= #
 trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 # =====================================
 # Configuration
@@ -27,7 +30,7 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 
 echo "VLA* path env variable: $VLA_STAR_PATH"
 if [ -n "$VLA_STAR_PATH" ]; then
-    VLA_Star_dir="$HOME/$VLA_STAR_PATH"
+    VLA_Star_dir="$VLA_STAR_PATH"
 else
     echo "Choosing default VLA_Star path"
     VLA_Star_dir="$HOME/VLA_Star"
@@ -52,7 +55,10 @@ if [ -z "$OPENAI_API_KEY" ]; then
         echo "Using \$OPENAI_API_KEY"
 fi
 
-HUMAN="$1"
+# ============================
+#        Declarations
+# ============================
+
 
 PHASE1_VENV=".realtime_venv"
 PHASE2_VENV=".realtime_venv"
@@ -74,7 +80,7 @@ activate_venv() {
     local VENV_PATH="$1"
     shift
     local REQUIREMENTS=("$@")
-
+    
     if [ ! -f "$VLA_Star_dir/$VENV_PATH/bin/activate" ]; then
         echo "🔧 Creating virtual environment at $VLA_Star_dir/$VENV_PATH"
 
@@ -106,12 +112,11 @@ run_phase() {
     local SCRIPT="$3"
 
     echo "======================================"
-    echo "Starting $PHASE_NAME"
+    echo "Starting $PHASE_NAME with $AGENT_LABEL"
     echo "======================================"
-
     activate_venv "$VENV_PATH" 
     echo "Current working directory $(pwd)"
-    python3 -m "experiments.$SCRIPT" "$HUMAN"
+    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL"
     deactivate || true
 
     echo "Finished $PHASE_NAME"
@@ -130,12 +135,13 @@ echo ""
 echo "Installing apt packages"
 sudo apt install portaudio19-dev ffmpeg
 
-AGENT_LABEL="${1:-unity_bot}"
-export AGENT_LABEL=$AGENT_LABEL
-echo "VLA* name: $AGENT_LABEL"
+
 activate_venv "$PHASE1_VENV"
-nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+#nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+
 TERMINAL_PID=$!
+export DEMOED=REMOTE
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 
 kill "$TERMINAL_PID"
