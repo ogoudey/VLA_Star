@@ -62,7 +62,6 @@ WS_URL = "wss://api.openai.com/v1/realtime?intent=transcription"
 def start_realtime_transcription(send_q):
     def run_main():
         asyncio.run(async_main(send_q))
-
     t = threading.Thread(target=run_main, daemon=True)
     t.start()
 
