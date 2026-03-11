@@ -150,8 +150,8 @@ def instantiate_unity_robot():
 
     agency_cfg = AgencyConfig(
         agency_type = AgencyType.DEMOED,
-        recorded = False,
-        motive_type = MotiveType.TO_HELP_USER
+        motive_type = MotiveType.TO_HELP_USER,
+        recorded = False
     )
 
     factory.produce_agency(agency_cfg)

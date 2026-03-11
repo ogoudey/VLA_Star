@@ -1,4 +1,5 @@
 from datetime import datetime
+from pathlib import Path
 import os
 import csv
 
@@ -17,28 +18,27 @@ MODEL_PRICING = {
     },
 }
 
+HEADERS = {
+    "tokens": "timestamp,input_tokens,output_tokens,total_tokens,model_name"
+}
+
 class Profile:
     def __init__(self, name):
         self.name = name
-        self.filename = f"frozen/{name}/tokens.csv"
-        os.makedirs(os.path.dirname(self.filename), exist_ok=True)
-        if not os.path.exists(self.filename):
-            with open(self.filename, "w", newline="") as f:
+        self.model_usage_filename = f"frozen/{name}/tokens.csv"
+        self.init_file(self.model_usage_filename)
+    
+    def init_file(self, filename):
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        file_type = Path(filename).name
+        if not os.path.exists(filename):
+            with open(filename, "w", newline="") as f:
                 writer = csv.writer(f)
-                writer.writerow([
-                    "timestamp",
-                    "input_tokens",
-                    "output_tokens",
-                    "total_tokens",
-                    "model_name"
-                ])
+                writer.writerow(HEADERS[file_type])
 
-    def add(self, usage, model_name):
-
-
+    def add_model_usage(self, usage, model_name):
         timestamp = datetime.now().isoformat()
-
-        with open(self.filename, "a", newline="") as f:
+        with open(self.model_usage_filename, "a", newline="") as f:
             writer = csv.writer(f)
             writer.writerow([
                 timestamp,
@@ -48,13 +48,13 @@ class Profile:
                 model_name
             ])
 
-    def plot(self):
+    def plot_model_usage(self):
         """
         Load usage data from file and plot it.
         """
         import matplotlib.pyplot as plt
 
-        if not os.path.exists(self.filename):
+        if not os.path.exists(self.model_usage_filename):
             print("No data file found.")
             return
 
@@ -63,7 +63,7 @@ class Profile:
         output_tokens = []
         total_tokens = []
 
-        with open(self.filename, "r") as f:
+        with open(self.model_usage_filename, "r") as f:
             reader = csv.DictReader(f)
             for row in reader:
                 timestamps.append(datetime.fromisoformat(row["timestamp"]))

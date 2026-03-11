@@ -41,7 +41,6 @@ class PrototypeAgent:
     def __init__(self, name):
         self.name = name
         self.agent_identities = 0
-
         self.vla_complexes = []
         self.tools = []
 
@@ -73,12 +72,14 @@ class ContextualAgent(PrototypeAgent):
     summarizer: Summarizer
     whether_to_always_summarize: bool
     frozen_memory_dir: Path
+    
 
     def __init__(self, name, whether_to_always_summarize: bool = False):
         super().__init__(name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
         self.frozen_memory_dir = Path("frozen") / self.name
+        
         
     def link_vla_complexes(self, vlacs):
         super().link_vla_complexes(vlacs)
@@ -156,18 +157,48 @@ class ContextualAgent(PrototypeAgent):
                         "currently travelling": False,
                         "current position": "Initial position"
                     })
+
     def context_init(self):
         if len(self.vla_complexes) == 0:
             raise ValueError("Not linked to any vla_complexes. Use `link_vla_complexes`.")
         self.context = Context(self.vla_complexes) # make context from vla_complexes
 
+from general_dataset import Dataset, ToolChoiceMade
+
 class OrderedContextAgent(ContextualAgent):
+    system: Optional[str]
     ordered_context: OrderedContext
+    t0_identity_run: float
+    recording: bool = False
+    dataset: Optional[Dataset] = None
+    
+
     def __init__(self, name):
         super().__init__(name)
 
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
+
+    def write(self):
+        super().write()
+        if self.recording:
+            if self.dataset is None:
+                self.dataset = Dataset(self.name)
+            self.dataset.add_to_frame(self.system)
+            self.dataset.add_to_frame(self.ordered_context)
+            self.dataset.add_to_frame(self.tools)
+            self.dataset.timestamp_frame()
+
+    def write_output(self, result: Any, metadata: dict):
+        """
+        result is LLM result (Runner.run()) or demoed_result
+        """
+        if self.recording:
+            self.dataset.add_to_frame(result)
+            self.dataset.add_metadata_to_frame(metadata)
+
+    def instance_system_prompt(self):
+        raise NotImplementedError(f"Cannot record on {type(self)}")
 
 import threading
 import socket
@@ -176,19 +207,22 @@ import queue
 from dataclasses import dataclass, asdict
 
 class OrderedContextDemoed(OrderedContextAgent):
+    running_remote: bool = False
+    pseudo_system: Optional[str] = None
+    
     def __init__(self, name="Dev"):
         super().__init__(name)
         if os.environ.get("DEMOED", None) == "REMOTE":
             self.remote_port_if_needed = 5010
             self.send_q = queue.Queue()
             self.inbound_q = queue.Queue()
-        
-        self.running_remote = False
-        
-        
+
+    def instance_system_prompt(self):
+        self.system = self.pseudo_system
 
     def run_identity(self, source: str = "Anon"):
         try:
+            self.instance_system_prompt()
             self.context_init()
             self.order_context()
             self.write()
@@ -249,10 +283,70 @@ class OrderedContextDemoed(OrderedContextAgent):
             stop_event.set()
             sock.close()
 
+    def local_choice_loop(self):
+        self.t0_identity_run = time.time()
+        while True:
+            print(f"{self.ordered_context}")
+            for vla_complex in self.vla_complexes:
+                print(f"____{vla_complex.tool_name}____")
+                print(f"{inspect.signature(vla_complex.execute)}")
+                choice = input(f"(\"\" to skip): ")
+                if not choice == "":
+                    args = []
+                    parameters = {}
+                    for arg in list(inspect.signature(vla_complex.execute).parameters.keys()):
+                        value = input(f"\t{arg}: ")
+                        args.append(value)
+                        parameters[arg] = value
+                    self.execute_vla_complex(vla_complex, *args)
+                    self.write_output(ToolChoiceMade(
+                        function={
+                            "name": vla_complex.tool_name,
+                            "description": vla_complex.execute.__doc__,
+                            "parameters": parameters
+                        }
+                    ), {
+                        "model": None,
+                        "source": "human",
+                        "latency": time.time() - self.t0_identity_run
+                    })
+                    return args
+                else:
+                    print(f"_______")
+            print(f"\nV V V V V\n")
+
     def remote_choice_loop(self): 
         choice_data = self.choice_data()
         self.send_q.put(choice_data)
         print("Choice data on send queue.")
+        self.t0_identity_run = time.time()
+
+    def respond_loop(self, stop_event):
+        try:
+            while not stop_event.is_set():
+                msg = self.inbound_q.get()
+                choice = json.loads(msg)
+
+                tool_name = choice[0]
+                args = choice[1:]
+                vlac = self.vla_complex_by_name(tool_name)
+                self.execute_vla_complex(vlac, *args)
+                bound = inspect.signature(vlac.execute).bind(*args)
+                bound.apply_defaults()
+                parameters = dict(bound.arguments)
+                self.write_output(ToolChoiceMade(
+                    function={
+                        "name": vlac.tool_name,
+                        "description": vlac.execute.__doc__,
+                        "parameters": parameters
+                    }
+                ), {
+                    "model": None,
+                    "source": "human",
+                    "latency": time.time() - self.t0_identity_run
+                })
+        except Exception as e:
+            print(f"Error in respond loop!: {e}")
 
     def choice_data(self) -> ChoiceData:
         """
@@ -301,18 +395,7 @@ class OrderedContextDemoed(OrderedContextAgent):
         finally:
             stop_event.set()
 
-    def respond_loop(self, stop_event):
-        try:
-            while not stop_event.is_set():
-                msg = self.inbound_q.get()
-                choice = json.loads(msg)
-
-                tool_name = choice[0]
-                args = choice[1:]
-                vlac = self.vla_complex_by_name(tool_name)
-                self.execute_vla_complex(vlac, *args)
-        except Exception as e:
-            print(f"Error in respond loop!: {e}")
+    
 
     def recv_choice(self, sock: socket.socket):
         """
@@ -338,22 +421,7 @@ class OrderedContextDemoed(OrderedContextAgent):
         finally:
             stop_event.set()
 
-    def local_choice_loop(self):
-        while True:
-            print(f"{self.ordered_context}")
-            for vla_complex in self.vla_complexes:
-                print(f"____{vla_complex.tool_name}____")
-                print(f"{inspect.signature(vla_complex.execute)}")
-                choice = input(f"(\"\" to skip): ")
-                if not choice == "":
-                    args = []
-                    for arg in list(inspect.signature(vla_complex.execute).parameters.keys()):
-                        args.append(input(f"\t{arg}: ")) 
-                    self.execute_vla_complex(vla_complex, *args)
-                    return args
-                else:
-                    print(f"_______")
-            print(f"\nV V V V V\n")
+    
 
     def execute_vla_complex(self, vla_complex, *instruction):
         asyncio.run(vla_complex.execute(*instruction))
@@ -412,7 +480,11 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             print(f"___Prompt__\n{context}")
             self.write()
             result = await Runner.run(self.identity, context, max_turns=3)
-            self.metrics.add(result.context_wrapper.usage, self.model_name)
+            self.write_output(result, {
+                "model": self.model_name,
+                "latency": time.time() - self.t0_identity_run
+            })
+            self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
@@ -421,4 +493,5 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         system_prompt = self.instructions
         if self.goal:
             system_prompt += self.goal
+        self.system = system_prompt
         return system_prompt

@@ -333,8 +333,6 @@ j
 
     async def execute(self, instruction: str):
         await super().execute(instruction)
-
-
         self.signal["task"] = instruction
         self.signal["RUNNING_LOOP"] = True
         print(f"Changed signal to {self.signal}")
@@ -342,19 +340,6 @@ j
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
             self.running = True
         print("Success. Return immediately.")
-
-    """ # Not a starter...
-    async def start(self, rerun_function: Callable):
-        print(f"In EpisodicRecorder start()...")
-        global runner
-        if runner is None:
-            runner = rerun_function
-        try:
-            await self.execute("Default Task please")
-        except Shutdown:
-            print(f"\nSystem shutting down...")
-            raise Shutdown()
-    """
 
 class AvaCreateTag(VLA_Complex):
     def __init__(self, base, tool_name: str):

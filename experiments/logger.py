@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-def log(participant: str, phase_file: str, data: dict[str, str]) -> None:
+def log_survey_response(participant: str, phase_file: str, data: dict[str, str]) -> None:
     """
     Append survey responses to a phase-specific log file.
     """

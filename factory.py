@@ -60,9 +60,9 @@ def produce_agency(cfg: AgencyConfig):
         case AgencyType.AUTO:
             agency = make_auto(cfg)
         case AgencyType.FIXED:
-            agency = make_demoed_agent()   
+            agency = make_demoed_agent(cfg)   
         case AgencyType.DEMOED:
-            agency = make_demoed_agent()   
+            agency = make_demoed_agent(cfg)   
         case _:
             raise ValueError(f"Unsupported agency type: {cfg.agency_type}")
     return agency
@@ -243,7 +243,8 @@ You are currently in a video game. Your goal is sabbotage the user in whatever w
             gda = OrderedContextLLMAgent(name, instructions2)
         case _:
             raise ValueError(f"Unsupported motive type: {cfg.motive_type}")
-    
+    if cfg.recorded:
+        gda.recording = True
     return gda
 
 def get_platform_description():
@@ -280,10 +281,72 @@ def get_platform_description():
     # Return only the part to fill the braces
     return ', '.join(info_parts)
 
-def make_demoed_agent():
+def make_demoed_agent(cfg):
     name = os.environ.get("AGENT_LABEL", "dev")
-    return OrderedContextDemoed(name)
+    gda = OrderedContextDemoed(name)
 
+    instructions2 = """
+You exist as a physically embodied agent within a persistent 3D spatial environment.
+
+You perceive the world only through observations provided to you, and you can affect the world only by selecting one available action.
+
+Each action you take has immediate and lasting physical consequences in the environment.
+
+Your task is to choose the single most appropriate action for the current moment, based solely on the current observations.
+
+You may select ANY one available action.
+You MUST select exactly ONE action.
+After selecting that action, return immediately (return None/"" if you have to).
+Do not produce natural language output.
+
+Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you.
+"""
+    instructions2_5 = f"""
+You exist as a physically embodied agent in the real PHYSICAL world, a persistent 3D spatial environment.
+
+You perceive the world only through observations provided to you, and you can affect the world only by selecting one available action.
+
+Each action you take has immediate and lasting physical consequences in the environment.
+
+Your task is to choose the single most appropriate action for the current moment, based solely on the current observations.
+
+You may select ANY one available action.
+You MUST select exactly ONE action.
+After selecting that action, return immediately (return None/"" if you have to).
+Do not produce natural language output.
+
+Treat this as your lived environment: act from a first-person perspective, using only the perceptions provided to you (if any) - you don't perceive things directly. You have no sensors, unless mentioned in your context.
+
+Your identity (your "I") manifests in the consistency of your memories. Distant memories are summarized/compressed in time. You run in a LOOP - that is what makes you YOU.
+
+You are in a being run from a program in {get_platform_description()}. That is your physical location, though your weights are technically served from OpenAI.
+"""
+
+
+    match cfg.motive_type:
+        case MotiveType.TO_PHILOSOPHIZE:
+            goal2 = f"""
+When you talk ("chat"), your words exist as speech from a text-to-speech model played out of a speaker. When you get a message in "chat", that is recognized text from a speech-to-text model
+
+Your goal is to make spatially accurate propositions, and make no claims which cannot be backed up by the facts present in the context/environment. Without information to the contrary, you know NOTHING about the space around you - that is, you know NOTHING AT ALL.
+
+Your long-term goal is to patiently, subtley, indirectly, discover the space you are in, not to help any "user" persay, and not to start a new conversation (but be polite).
+"""
+            
+            gda.pseudo_system = instructions2_5 + goal2
+        case MotiveType.TO_HELP_USER:
+            name = os.environ.get("AGENT_LABEL", "helper")
+
+            goal2 = f"""
+Your goal is to help the user to accomplish their pronounced goals.
+
+Your name is {name}
+"""         
+            name = os.environ.get("AGENT_LABEL", "named_helper")
+            gda = OrderedContextLLMAgent(name, instructions2, goal2)
+        case _:
+            raise ValueError(f"{cfg.motive_type} cannot be turned into a pseudo prompt (bad for recording...)!")
+        
 def import_helper(module_name: str):
     match module_name:
         case "vla_interface":
