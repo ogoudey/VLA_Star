@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, TypeAlias, Union
+from typing import Any, TypeAlias, Union, Optional
 import json
 from displays import log, show_context, timestamp
 from context_utils import OrderedContext
@@ -21,7 +21,7 @@ class ToolChoiceMade:
 
 class Dataset:
     filepath: Path
-    current_frame: defaultdict[str, JsonValue] = defaultdict(json_dict)    
+    current_frame: Optional[defaultdict[str, JsonValue]] = None   
     
     def __init__(self, name):
         datasets_dir = Path("data/multi")
@@ -31,8 +31,9 @@ class Dataset:
 
 
     def end_frame(self):
-        with open(self.filepath, "w") as f:
-            f.write(json.dumps(self.current_frame))
+        with open(self.filepath, "a") as f:
+            f.write(json.dumps(self.current_frame) + "\n")
+        self.current_frame = None
 
     def timestamp_frame(self):
         self.current_frame["timestamp"] = datetime.now(timezone.utc).isoformat()
@@ -41,8 +42,9 @@ class Dataset:
         self.current_frame["metadata"] = metadata
 
     def add_to_frame(self, subframe: Any):
+        print(f"Adding frame {subframe}")
         if self.current_frame is None:
-            self.current_frame = defaultdict(dict)
+            self.current_frame = defaultdict(json_dict)
             self.current_frame["messages"] = []
         match subframe:
             case OrderedContext():

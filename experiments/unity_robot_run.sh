@@ -2,9 +2,10 @@
 
 # ========== symlink to UnityProject/Assets/Scripts ========== #
 
+echo "$1 is \$1"
 
 # ============ Args from Unity ========== #
-AGENT_LABEL="${1:-unity_bot}"
+AGENT_LABEL="${1:-TextNotSetBot}"
 
 # ========= the usual ========== #
 OS_TYPE=$(uname -s)
@@ -30,7 +31,7 @@ trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
 
 echo "VLA* path env variable: $VLA_STAR_PATH"
 if [ -n "$VLA_STAR_PATH" ]; then
-    VLA_Star_dir="$HOME/$VLA_STAR_PATH" # Should remove $HOME, remove the override in Unity. Either overriden or default right now, not yet property of target FS
+    VLA_Star_dir="$VLA_STAR_PATH"
 else
     echo "Choosing default VLA_Star path"
     VLA_Star_dir="$HOME/VLA_Star"

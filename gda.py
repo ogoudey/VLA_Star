@@ -193,6 +193,7 @@ class OrderedContextAgent(ContextualAgent):
         if self.recording:
             self.dataset.add_to_frame(result)
             self.dataset.add_metadata_to_frame(metadata)
+            self.dataset.end_frame()
 
     def instance_system_prompt(self):
         raise NotImplementedError(f"Cannot record on {type(self)}")
@@ -207,7 +208,7 @@ class OrderedContextDemoed(OrderedContextAgent):
     running_remote: bool = False
     pseudo_system: Optional[str] = None
     
-    def __init__(self, name="Dev"):
+    def __init__(self, name):
         super().__init__(name)
         if os.environ.get("DEMOED", None) == "REMOTE":
             self.remote_port_if_needed = 5010
@@ -479,6 +480,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             result = await Runner.run(self.identity, context, max_turns=3)
             self.write_output(result, {
                 "model": self.model_name,
+                "name": self.name,
                 "latency": time.time() - self.t0_identity_run
             })
             self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)

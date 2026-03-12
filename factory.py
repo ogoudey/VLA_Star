@@ -346,6 +346,8 @@ Your name is {name}
             gda.pseudo_system = instructions2 + goal2
         case _:
             raise ValueError(f"{cfg.motive_type} cannot be turned into a pseudo prompt (bad for recording...)!")
+    if cfg.recorded:
+        gda.recording = True
     return gda
         
 def import_helper(module_name: str):
