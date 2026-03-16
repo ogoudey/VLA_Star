@@ -219,6 +219,8 @@ class OrderedContextDemoed(OrderedContextAgent):
         self.system = self.pseudo_system
         
     def run_identity(self, source: str = "Anon"):
+        if source == "STOP":
+            print("STOPPING")
         try:
             self.instance_system_prompt()
             self.context_init()

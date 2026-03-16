@@ -178,11 +178,6 @@ def instantiate_unity_robot():
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
             recorded = False
-        ),
-        VLAComplexConfig(
-            vla_type = VLAType.PROCESS,
-            agency_type = AgencyType.SCHEDULER,
-            monitor_types = [],
         )
     ]
 

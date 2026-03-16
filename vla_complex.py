@@ -787,10 +787,6 @@ class UnityDrive(VLA_Complex):
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["current position"] = unity_status.strip("reached ")
                     self.state.impression["currently travelling"] = False
-                    if self.state.impression["current position"] == "ATM":      ############# WIN CONDITION
-                        self.listening = False
-                        self.agent_sleep()
-                    self.rerun_agent()
                 elif "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["currently travelling"] = True

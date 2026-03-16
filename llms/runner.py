@@ -23,7 +23,7 @@ class ThinkingMachine:
     def rerun(self, source):
         if source == "STOP":
             self.active = False
-        
+            print("STOPPING")
         # Common Case
         self.reruns.put(source)
     

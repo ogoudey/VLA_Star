@@ -18,3 +18,9 @@ def log_survey_response(participant: str, phase_file: str, data: dict[str, str])
         for key, value in data.items():
             f.write(f"{key}: {value}\n")
         f.write("-" * 30 + "\n")
+
+def start_phase_log():
+    pass
+
+def stop_phase_log():
+    pass
