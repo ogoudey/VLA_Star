@@ -12,7 +12,7 @@ setproctitle("vla_chat")
 microphone = None
 speaker = None
 
-MEDIUM = os.environ.get("MEDIUM", "TEXT")
+MEDIUM = os.environ.get("MEDIUM", "TYPING")
 
 match MEDIUM:
     case "AUDIO":
@@ -38,7 +38,7 @@ def record_text():
     return text
 
 match MEDIUM:
-    case "TEXT":
+    case "TYPING":
         speech_function = text_text
         listen_function = read_text
     case "AUDIO":

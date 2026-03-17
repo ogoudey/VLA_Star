@@ -475,10 +475,12 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         )
 
     async def run_the_identity(self):
+        
         try:
             context = str(self.ordered_context)
             print(f"___Prompt__\n{context}")
             self.write()
+            self.t0_identity_run = time.time()
             result = await Runner.run(self.identity, context, max_turns=3)
             self.write_output(result, {
                 "model": self.model_name,

@@ -2,10 +2,20 @@
 
 # ========== symlink to UnityProject/Assets/Scripts ========== #
 
-echo "$1 is \$1"
 
 # ============ Args from Unity ========== #
+echo "$1 is \$1"
+echo "$2 is \$2"
+echo "$3 is \$3"
+echo "$4 is \$4"
+
+# These go to the phase script
 AGENT_LABEL="${1:-TextNotSetBot}"
+PLAY_MODE="${2:-Free}"
+AGENCY_TYPE="${3:-Auto}"
+# These go to the terminals (ex-Unity)
+CHAT_MODE="${4:-Realtime}"
+CHAT_MODE="${CHAT_MODE^^}" #Uppercase that
 
 # ========= the usual ========== #
 OS_TYPE=$(uname -s)
@@ -117,7 +127,7 @@ run_phase() {
     echo "======================================"
     activate_venv "$VENV_PATH" 
     echo "Current working directory $(pwd)"
-    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL"
+    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL" "$PLAY_MODE" "$AGENCY_TYPE"
     deactivate || true
 
     echo "Finished $PHASE_NAME"
@@ -138,10 +148,17 @@ sudo apt install portaudio19-dev ffmpeg
 
 
 activate_venv "$PHASE1_VENV"
-#nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
-gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
 
+if [ "$CHAT_MODE" == "REALTIME" ]; then
+    nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+else
+    gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+fi
+
+
+# gnome-terminal -- bash -c "echo Demoed Input terminal; python3 demoed_input.py; exec bash" &
 TERMINAL_PID=$!
+
 export DEMOED=REMOTE
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 

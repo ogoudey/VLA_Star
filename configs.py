@@ -42,7 +42,7 @@ class VLAType(Enum):
 
 class MotiveType(Enum):
     TO_HELP_USER = "to_help_user" # symbiosis via utility-trust
-    TO_SABBOTAGE_USER = "to_sabbotage_user" # "bad guy" character
+    TO_SABOTAGE = "to_sabotage" # "bad guy" character
     TO_PHILOSOPHIZE = "to_philosophize" # maybe for assessing spatial intelligence?
 
 @dataclass

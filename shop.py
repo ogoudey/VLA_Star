@@ -148,9 +148,28 @@ def instantiate_unity_robot():
     )
     factory.produce_robot(robot_cfg)
 
+    
+    match os.environ["PLAY_MODE"]:
+        case "PHILOSOPHER":
+            motive_type = MotiveType.TO_PHILOSOPHIZE
+        case "HARD":
+            motive_type = MotiveType.TO_SABOTAGE
+        case "FREE":
+            motive_type = MotiveType.TO_HELP_USER
+        case _:
+            motive_type = MotiveType.TO_HELP_USER
+
+    match os.environ["AGENCY_TYPE"]:
+        case "DEMOED":
+            agency_type = AgencyType.DEMOED
+        case "AUTO":
+            agency_type = AgencyType.AUTO
+        case _:
+            agency_type = AgencyType.DEMOED
+
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.DEMOED,
-        motive_type = MotiveType.TO_HELP_USER,
+        agency_type = agency_type,
+        motive_type = motive_type,
         recorded = True
     )
 
