@@ -196,7 +196,7 @@ def instantiate_unity_robot():
             vla_type = VLAType.TEXT_USER,
             agency_type = AgencyType.PASS_THROUGH,
             monitor_types = [],
-            recorded = False
+            recorded = True
         )
     ]
 

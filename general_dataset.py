@@ -29,7 +29,6 @@ class Dataset:
             datasets_dir.mkdir(parents=True, exist_ok=True)
         self.filepath = datasets_dir / f"{name}@{timestamp()}.json"
 
-
     def end_frame(self):
         with open(self.filepath, "a") as f:
             f.write(json.dumps(self.current_frame) + "\n")
@@ -76,6 +75,21 @@ class Dataset:
                 self.current_frame["tool_choice_made"] = asdict(subframe)
             case _:
                 raise TypeError(f"add_to_frame: unsupported type {type(subframe)}")
+
+class SubDataset:
+    filepath: Path
+    current_frame: Optional[defaultdict[str, JsonValue]] = None   
+    
+    def __init__(self, type, name):
+        datasets_dir = Path(f"data/{type}")
+        if not datasets_dir.exists():
+            datasets_dir.mkdir(parents=True, exist_ok=True)
+        self.filepath = datasets_dir / f"{name}@{timestamp()}.json"
+
+    def add_data(self, data: dict):
+        with open(self.filepath, "a") as f:
+            f.write(json.dumps(data) + "\n")
+
 
 def parse_tool_choices(result: RunResult) -> list[JsonValue]:
     """Utility for squeezing just this out of a OpenAI RunResult"""

@@ -148,13 +148,18 @@ class Logger(VLA_Complex):
         log(f"\"{text}\"", self)
 import signal
 import subprocess
-class Chat(VLA_Complex):    
+from typing import Optional
+from general_dataset import SubDataset
+from displays import timestamp
+class Chat(VLA_Complex):
+    recorded: bool = False   
+    dataset: Optional[SubDataset] = None
     def __init__(self, tool_name="chat", tool_description="Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.", chat_port=5001):
         super().__init__(self.reply, tool_description, tool_name, True)
         print(f"Creating {tool_name} port on {chat_port}")
         self.chat_port = chat_port
         ### State ###
-        self.state = vla_complex_state.State(session=[])
+        self.state = vla_complex_state.State(session=[], impression={})
 
         ### Threads ###
         self.listening = False
@@ -218,7 +223,6 @@ class Chat(VLA_Complex):
 
     def handle_client(self, sock):
         stop_event = threading.Event()
-        
 
         threading.Thread(
             target=recv_loop,
@@ -265,12 +269,14 @@ class Chat(VLA_Complex):
         """
         if "Current user message" in self.state.impression:
             self.state.add_to_session("User message", self.state.impression["Current user message"])
-            del self.state.impression["Current user message"] # isnt working as intended
-
-        
+            self.state.impression = {} # isnt working as intended
 
     def respond(self, user_input):
         print(f"Message {user_input} received...")
+        if self.recorded:
+            if self.dataset is None:
+                self.dataset = SubDataset("dialogue", "user")
+            self.dataset.add_data({"user": [{"content": user_input, "timestamp": timestamp()}]})
         self.state.impression = {"Current user message":f"{user_input}"}
         self.rerun_agent()
 
@@ -283,13 +289,12 @@ class Chat(VLA_Complex):
             runner = rerun_function
         self.reply("")
 
-
-    
     def reply(self, message: str):
+        if self.recorded:
+            if self.dataset is None:
+                self.dataset = SubDataset("dialogue", "user")
+            self.dataset.add_data({"robot": [{"content": message, "timestamp": timestamp()}]})
         self.send_q.put(message)
-
-
-    
 
 class VLA_Tester(VLA_Complex):
     def __init__(self, interaction_runner, tool_name):
