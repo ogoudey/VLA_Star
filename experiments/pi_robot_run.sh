@@ -52,8 +52,7 @@ fi
 
 HUMAN="$1"
 
-PHASE1_VENV=".realtime_venv"
-PHASE2_VENV=".realtime_venv"
+PHASE1_VENV=".pi_venv"
 
 # Declare associative array (dictionary)
 declare -A PHASE_REQUIREMENTS
@@ -61,8 +60,7 @@ declare -A PHASE_REQUIREMENTS
 PHASE_REQUIREMENTS[.venv]="openai-agents"
 PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets"
 
-PHASE1_SCRIPT="embodiment_phase"
-PHASE2_SCRIPT="embodiment_phase"
+PHASE1_SCRIPT="pi_robot_test_phase"
 
 # =====================================
 # Helper Functions
@@ -133,7 +131,7 @@ AGENT_LABEL="${1:-phase1_bot}"
 export AGENT_LABEL=$AGENT_LABEL
 echo "VLA* name: $AGENT_LABEL"
 activate_venv "$PHASE1_VENV"
-nohup -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+#nohup -- bash -c "source $PHASE1_VENV/bin/activate; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
 TERMINAL_PID=$!
 run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
 kill "$TERMINAL_PID"
