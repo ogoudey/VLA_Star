@@ -1,5 +1,5 @@
 import sys
-from agents import Agent, Runner, function_tool, FunctionTool
+from agents import Agent, Runner, FunctionTool
 import asyncio
 from signals import OK, CONTINUE, RERUN
 import time
@@ -19,7 +19,8 @@ import asyncio
 import context_utils as cu
 from context_utils import Context, OrderedContext
 from vla_complex_state import State
-
+from vla_complex_to_tool import Tool
+from typing import Callable
 """
                                                 -> DemoedLanguage
 Stimulus -> Event -> AssembleContext -> Ordered -> RunAgentLock
@@ -31,8 +32,9 @@ internal      a           pull
 class PrototypeAgent:
     name: str
     agent_identities: int
-    vla_complexes: List
-    tools: List[FunctionTool]
+    vla_complexes: List[VLA_Complex]
+    tools: List[dict]
+    tool_dispatcher: dict[str, Callable]
     goal: Optional[str]
 
     def __init__(self, name):
@@ -40,6 +42,7 @@ class PrototypeAgent:
         self.agent_identities = 0
         self.vla_complexes = []
         self.tools = []
+        self.tool_dispatcher = {}
 
     def link_vla_complexes(self, vlacs):
         for vlac in vlacs:
@@ -49,10 +52,11 @@ class PrototypeAgent:
     
     def set_as_tool(self, vlac):
         print(f"{vlac.tool_name} linked to {self.name}")
-        self.tools.append(function_tool(
+        self.tools.append(Tool.from_execute(
             vlac.execute,
-            name_override=vlac.tool_name
+            name=vlac.tool_name
         ))
+        self.tool_dispatcher[vlac.tool_name] = vlac.execute
 
     def vla_complex_by_name(self, tool_name):
         for vlac in self.vla_complexes:
@@ -428,6 +432,8 @@ class OrderedContextDemoed(OrderedContextAgent):
 
 from one_identity_at_a_time import SingleIdentityRunningLock
 
+from model_purveyor import ModelPurveyor
+
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
     goal: Optional[str]
@@ -465,29 +471,30 @@ class OrderedContextLLMAgent(OrderedContextAgent):
     async def run_identity(self):
         self.create_identity()
         await self.run_the_identity()
-        
+
     def create_identity(self):
-        self.identity = Agent(
-            name=self.name + str(self.agent_identities),
-            instructions=self.instance_system_prompt(),
-            tools=self.tools, # The tool-ified VLA Complexes
-            model=self.model_name
+        self.identity = ModelPurveyor.identity(
+            self.name + str(self.agent_identities),
+            self.instance_system_prompt(),
+            self.tools
         )
 
     async def run_the_identity(self):
-        
         try:
             context = str(self.ordered_context)
             print(f"___Prompt__\n{context}")
             self.write()
             self.t0_identity_run = time.time()
-            result = await Runner.run(self.identity, context, max_turns=3)
-            self.write_output(result, {
-                "model": self.model_name,
+            response = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
+            ## These last two lines will have to be changed with added models.
+            self.write_output(response, {
+                "model": ModelPurveyor.IDENTITY_MODEL_STRING,
                 "name": self.name,
                 "latency": time.time() - self.t0_identity_run
             })
-            self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
+            print(response)
+            tool_result = self.tool_dispatcher[call["name"]](**call["arguments"])
+            # self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"

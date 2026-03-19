@@ -4,19 +4,9 @@ import json
 from agents import Agent, Runner
 from pydantic import BaseModel
 
-class Event(BaseModel):
-    timestamp_label: str
-    data_or_summary: str
+from model_output_types import SummarizedSessions
 
-class Session(BaseModel):
-    events: List[Event]
-
-class ToolSession(BaseModel):
-    tool_name: str
-    session: Session
-
-class SummarizedSessions(BaseModel):
-    sessions: List[ToolSession]
+from model_purveyor import ModelPurveyor
 
 class Summarizer:
     """
@@ -53,15 +43,13 @@ class Summarizer:
     
     def create_identity(self):
         self.identities_cnt += 1
-        self.identity = Agent(
+        self.identity = ModelPurveyor.summarizer(
             name=f"summarizer{self.identities_cnt}",
             instructions=self.instance_system_prompt(),
-            model=self.model,
-            output_type=SummarizedSessions
         )
 
     async def run_identity(self, prompt):
-        result = await Runner.run(self.identity, prompt)
+        result = await ModelPurveyor.remember(self.identity, prompt)
         print(f"End summarizing.")
         return result.final_output
     
