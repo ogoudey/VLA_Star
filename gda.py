@@ -49,6 +49,7 @@ class PrototypeAgent:
             self.vla_complexes.append(vlac)
             if hasattr(vlac, "execute"):
                 self.set_as_tool(vlac)  
+        print(f"Tools:\n\n\n{self.tools}")
     
     def set_as_tool(self, vlac):
         print(f"{vlac.tool_name} linked to {self.name}")
@@ -478,6 +479,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             self.instance_system_prompt(),
             self.tools
         )
+        print(f"Identity created with tools: {self.identity.tools}")
 
     async def run_the_identity(self):
         try:
@@ -492,8 +494,6 @@ class OrderedContextLLMAgent(OrderedContextAgent):
                 "name": self.name,
                 "latency": time.time() - self.t0_identity_run
             })
-            print(response)
-            tool_result = self.tool_dispatcher[call["name"]](**call["arguments"])
             # self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")

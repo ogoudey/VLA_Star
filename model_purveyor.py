@@ -19,7 +19,7 @@ class ModelPurveyor:
     SUMMARIZER_MODEL_STRING = SUMMARIZER_MODEL_STRING
     
     @staticmethod
-    def identity(name: str, instructions: str, function_tools: List[FunctionTool]):
+    def identity(name: str, instructions: str, function_tools: List[dict]):
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 return Model(
@@ -35,6 +35,7 @@ class ModelPurveyor:
                     tools=function_tools, # The tool-ified VLA Complexes
                     model=LitellmModel(model="anthropic/claude-sonnet-4-20250514")
                 )
+        
 
     @staticmethod
     async def run(identity, context, tool_dispatcher):
@@ -46,12 +47,16 @@ class ModelPurveyor:
         
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
-                for tool_call in result.output:
-                    if tool_call.type == "function_call":
-                        tool_dispatcher[tool_call.name](**json.loads(tool_call.arguments))
+                for i, item in enumerate(result.output):
+                    print(f"Result output {i}. {item}")
+                    if item.type == "function_call":
+                        if not item.arguments or item.arguments == '{}':
+                            print("⚠️ Empty arguments, skipping:", item)
+                            continue
+                        await tool_dispatcher[item.name](**json.loads(item.arguments))
             case "claude-sonnet-4-20250514":
                 for tool_call in result.choices[0].message.tool_calls:
-                    tool_dispatcher[tool_call.function.name](**json.loads(tool_call.function.arguments))
+                    await tool_dispatcher[tool_call.function.name](**json.loads(tool_call.function.arguments))
             
     @staticmethod
     def summarizer(name: str, instructions: str):

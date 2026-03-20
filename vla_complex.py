@@ -24,11 +24,8 @@ class VLA_Complex:
     """
 
     tool_name: str
-    def __init__(self, vla: Any, capability_desc: str, tool_name: str, on_start=False):
-        self.vla = vla
-        self.capability_desc = capability_desc
-        self.update_docstring(capability_desc)
-        
+    def __init__(self, vla: Any, tool_name: str, on_start=False):
+        self.vla = vla        
         
         self.tool_name = tool_name
         self.on_start = on_start
@@ -38,6 +35,7 @@ class VLA_Complex:
         self.name_in_impression = tool_name
 
     def update_docstring(self, new_capability_desc: str):
+        #### Need to change - must edit universal tool-able form
         self.execute.__func__.__doc__ = new_capability_desc
 
     async def execute(self, instruction: str):
@@ -59,11 +57,16 @@ class VLA_Complex:
 
 class Scheduler(VLA_Complex):
     def __init__(self):
-        super().__init__(self.make_schedule, "Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time. If you already have a schedule, calling this will show your schedule. \nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.", "make_schedule")
+        super().__init__(self.make_schedule, "make_schedule")
         self.on_schedule = False
         self.state = vla_complex_state.State(impression=None)
 
     async def execute(self, input: str):
+        """
+        Use to prompt a scheduler component that will stimulate you with the proper things to do at the right time. If you already have a schedule, calling this will show your schedule. \nArgs: `input` - a description of the time period over which to schedule, and the contents of the schedule.
+        :param input: TODO
+        
+        """
         global runner
         if self.on_schedule:
             return f"The schedule you automatically follow:\n{scheduler.schedule_blocks}"
@@ -92,7 +95,7 @@ class Scheduler(VLA_Complex):
 import json
 class BlackBoard(VLA_Complex):
     def __init__(self, name):
-        super().__init__(self.draw, "Write text to memory. Use for making plans, and taking notes about the environment. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.", name)
+        super().__init__(self.draw, name)
         self.state = vla_complex_state.State(impression={})
         self.rerunning_from_blackboard_update = False
 
@@ -100,6 +103,10 @@ class BlackBoard(VLA_Complex):
         return f"DrawOnBlackBoard"
     
     async def execute(self, str_dict: str=""):
+        """
+        Write text to memory. Use for making plans, and taking notes about the environment. The `str_dict` arg will replace the entire blackboard. Pass empty string to give no updates and just view.
+        :param str_dict: TODO
+        """
         await super().execute(str_dict)
         if not self.rerunning_from_blackboard_update:
             threading.Thread(target=self.run_watch_blackboard, daemon=True).start()
@@ -135,10 +142,14 @@ class BlackBoard(VLA_Complex):
         
 class Logger(VLA_Complex):
     def __init__(self):
-        super().__init__(log, "Print/log a message, which the programmer may or may not choose to view. Can be called before other more serious functions.", "log")
+        super().__init__(log, "log")
         self.state = vla_complex_state.State(session=[])
 
     async def execute(self, text: str):
+        """
+        Print/log a message, which the programmer may or may not choose to view. Can be called before other more serious functions.
+        :param text: TODO
+        """
         await super().execute(text)
         self.vla(text=text)
         self.state.add_to_session("logged", text)
@@ -154,8 +165,8 @@ from displays import timestamp
 class Chat(VLA_Complex):
     recorded: bool = False   
     dataset: Optional[SubDataset] = None
-    def __init__(self, tool_name="chat", tool_description="Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.", chat_port=5001):
-        super().__init__(self.reply, tool_description, tool_name, True)
+    def __init__(self, tool_name="chat", chat_port=5001):
+        super().__init__(self.reply, tool_name, True)
         print(f"Creating {tool_name} port on {chat_port}")
         self.chat_port = chat_port
         ### State ###
@@ -174,6 +185,10 @@ class Chat(VLA_Complex):
         return f"{self.tool_name}"
 
     async def execute(self, text: str):
+        """
+        Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.
+        :param text: the message content. Fill this arg with all the content you want to send. (required)
+        """
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         await super().execute(text)
@@ -299,7 +314,7 @@ class Chat(VLA_Complex):
 class VLA_Tester(VLA_Complex):
     def __init__(self, interaction_runner, tool_name):
         self.interaction_runner = interaction_runner
-        super().__init__(None, "does a thing", tool_name)
+        super().__init__(None, tool_name)
         self.running = False
 
         # instantiates signal to coordinate monitors with runner (both are in the runner)
@@ -308,6 +323,10 @@ class VLA_Tester(VLA_Complex):
         self.state = vla_complex_state.State(session=[])
 
     async def execute(self, instruction: str):
+        """
+        does a thing
+        :param instruction: task to do
+        """
         await super().execute(instruction)
         if not self.running:
             threading.Thread(target=self.interaction_runner.run, args=(self.signal,), daemon=True).start()
@@ -507,7 +526,7 @@ Conclusion:
 
 class UnityArm(VLA_Complex):
     def __init__(self, tool_name):
-        super().__init__(self.act, "Use your arm by either passing PICKUP <name of object>, DROP <null>, or SWITCH <name of lever>", tool_name)
+        super().__init__(self.act, tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
@@ -524,25 +543,30 @@ class UnityArm(VLA_Complex):
     def __str__(self):
         return self.tool_name
 
-    async def execute(self, pickup_or_drop: str, object_name: str):
-        await super().execute(pickup_or_drop)
+    async def execute(self, interact_type: str, object_name: str):
+        """
+        Use your arm by either passing PICKUP <name of object>, DROP <null>, or SWITCH <name of lever>
+        :param interact_type: PICKUP | DROP | SWITCH
+        :param object_name: name of object, e.g. Lever 2
+        """
+        await super().execute(interact_type)
         if not self.listening:
             self.start_listener()
         
-        if pickup_or_drop == "PICKUP":
+        if interact_type == "PICKUP":
             self.vla("PickUp", object_name)
             self.act("GetAvailableObjects", "null")
             return f"Picking up {object_name}. Return immediately."
-        elif pickup_or_drop == "DROP":
+        elif interact_type == "DROP":
             self.vla("Drop", None)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
-        elif pickup_or_drop == "SWITCH":
+        elif interact_type == "SWITCH":
             self.vla("Switch", object_name)
             self.act("GetAvailableObjects", "null")
             return f"Dropping... Return immediately."
         else:
-            return f"Please pass 'PICKUP', 'DROP', 'SWITCH', not {pickup_or_drop}"
+            return f"Please pass 'PICKUP', 'DROP', 'SWITCH', not {interact_type}"
 
     def start_cycling(self):
         threading.Thread(target=self.run_cycle, daemon=True).start()
@@ -629,12 +653,15 @@ class UnityArm(VLA_Complex):
             case "available_objects":
                 self.state.impression["available objects"] = content
                 if self.state.impression["carrying"]:
-                    self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available objects"]}))
+                    #self.update_docstring(self.capability_desc + json.dumps({"Objects you can pick up after a DROP": self.state.impression["available objects"]}))
+                    pass
                 else:
-                    self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.state.impression["available objects"]}))
+                    #self.update_docstring(self.capability_desc + json.dumps({"Available objects to pick up": self.state.impression["available objects"]}))
+                    pass
             case "available_electric_objects":
                 self.state.impression["available switches"] = content
-                self.update_docstring(self.capability_desc + json.dumps({"Things you SWITCH": self.state.impression["available switches"]}))
+                #self.update_docstring(self.capability_desc + json.dumps({"Things you SWITCH": self.state.impression["available switches"]}))
+                pass
             case "status":
                 unity_status = content[0]
                 print(f"Status returned {unity_status}")
@@ -681,8 +708,7 @@ class UnityArm(VLA_Complex):
         
 class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
-        capability_desc = "Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity."
-        super().__init__(self.act, capability_desc, tool_name)
+        super().__init__(self.act, tool_name)
         self.listening = False
         self.unity_messages = queue.Queue()
         self.out_messages = queue.Queue()
@@ -699,6 +725,10 @@ class UnityDrive(VLA_Complex):
         return self.tool_name
 
     async def execute(self, destination: str):
+        """
+        Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity.
+        :param destination: one of the available destinations by name
+        """
         await super().execute(destination)
         if not self.listening:
             self.start_listener()
@@ -782,7 +812,7 @@ class UnityDrive(VLA_Complex):
                 return
             case "destinations":
                 self.state.impression["possible destinations"] = content
-                self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
+                #self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
             case "functions":
                 self.unity_functions = content
                 return

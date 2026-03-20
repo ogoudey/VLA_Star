@@ -1,5 +1,5 @@
 import inspect
-
+import re
 
 class Tool:
 
@@ -16,12 +16,17 @@ class Tool:
         
         """
         sig = inspect.signature(vlac_execute)
+        docstring = vlac_execute.__doc__ or ""
+        
+        # Parse ":param x: description" or "Args:\n  x: description" style
+        param_descriptions = {}
+        for match in re.finditer(r":param (\w+):\s*(.+)", docstring):
+            param_descriptions[match.group(1)] = match.group(2).strip()
 
         properties = {}
         required = []
 
         for param_name, param in sig.parameters.items():
-            # VERY basic typing (improve this later)
             param_type = "string"
             if param.annotation == int:
                 param_type = "integer"
@@ -30,22 +35,23 @@ class Tool:
             elif param.annotation == bool:
                 param_type = "boolean"
 
-            properties[param_name] = {"type": param_type}
+            properties[param_name] = {
+                "type": param_type,
+                "description": param_descriptions.get(param_name, "")
+            }
 
             if param.default is inspect._empty:
                 required.append(param_name)
 
         return_ = {
-            "name": name,
             "type": "function",
-            "function": {
-                "name": name,
-                "description": vlac_execute.__doc__ or "",
-                "parameters": {
-                    "type": "object",
-                    "properties": properties,
-                    "required": required,
-                },
+            "name": name,
+            "description": vlac_execute.__doc__.strip() or "",
+            "parameters": {
+                "type": "object",
+                "properties": properties,
+                "required": required,
             },
         }
+        print(f"\n\n{return_}")
         return return_
