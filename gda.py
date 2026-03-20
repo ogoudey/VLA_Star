@@ -19,7 +19,7 @@ import asyncio
 import context_utils as cu
 from context_utils import Context, OrderedContext
 from vla_complex_state import State
-from vla_complex_to_tool import Tool
+from llms.vla_complex_to_tool import Tool
 from typing import Callable
 """
                                                 -> DemoedLanguage
@@ -433,7 +433,7 @@ class OrderedContextDemoed(OrderedContextAgent):
 
 from one_identity_at_a_time import SingleIdentityRunningLock
 
-from model_purveyor import ModelPurveyor
+from llms.model_purveyor import ModelPurveyor
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
