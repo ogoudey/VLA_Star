@@ -1,9 +1,8 @@
 import inspect
 import re
 import os
+
 IDENTITY_MODEL_STRING = os.environ.get("MOMENT_MODEL_STRING", "o4-mini")
-
-
 class Tool:
 
     @staticmethod

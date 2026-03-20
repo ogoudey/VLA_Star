@@ -1,9 +1,10 @@
-##############################33
-#       Tool-calling agent
-###############################
 import litellm
 from openai import AsyncOpenAI
 client = AsyncOpenAI()  # automatically uses OPENAI_API_KEY
+
+"""
+Implements run methods
+"""
 
 class Model:
     def __init__(self, name, instructions, tools, model):
@@ -23,7 +24,6 @@ class Model:
                 input=input,
                 tools=self.tools
             )
-
         else:
             # LiteLLM or other provider
             return await litellm.acompletion(

@@ -1,14 +1,16 @@
+"""
+Purveys models from model providers, according to the methods herein, according to the env variable.
+"""
+
 from typing import List
 import os
-from llms.model_output_types import SummarizedSessions
+from tool_choice_models.output_types import SummarizedSessions
 import json
-# =============== #
-#      ROLES      #
+from tool_choice_models.models_interface import Model
 
 IDENTITY_MODEL_STRING = os.environ.get("MOMENT_MODEL_STRING", "o4-mini")
 SUMMARIZER_MODEL_STRING = os.environ.get("MEMORY_MODEL_STRING", "o4-mini")
 
-from llms.model import Model
 
 if not IDENTITY_MODEL_STRING == "o4-mini":
     from agents.extensions.models.litellm_model import LitellmModel
