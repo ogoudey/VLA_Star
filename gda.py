@@ -426,20 +426,19 @@ class OrderedContextDemoed(OrderedContextAgent):
         finally:
             stop_event.set()
 
-    
-
     def execute_vla_complex(self, vla_complex, *instruction):
         asyncio.run(vla_complex.execute(*instruction))
 
 from one_identity_at_a_time import SingleIdentityRunningLock
 
 from tool_choice_models.model_purveyor import ModelPurveyor
+from tool_choice_models.models_interface import Model
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
     goal: Optional[str]
     model_name: str
-    identity: Agent
+    identity: Model
     identity_lock: SingleIdentityRunningLock
 
     def __init__(self, name: str, instruction: str, goal: Optional[str] = None):

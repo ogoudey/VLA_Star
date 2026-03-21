@@ -4,8 +4,8 @@ import json
 from agents import Agent, Runner
 from pydantic import BaseModel
 
-from llms.model_output_types import SummarizedSessions
-from llms.model_purveyor import ModelPurveyor
+from tool_choice_models.output_types import SummarizedSessions
+from tool_choice_models.model_purveyor import ModelPurveyor
 
 class Summarizer:
     """

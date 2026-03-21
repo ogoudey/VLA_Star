@@ -1,4 +1,3 @@
-import litellm
 from openai import AsyncOpenAI
 client = AsyncOpenAI()  # automatically uses OPENAI_API_KEY
 
@@ -26,6 +25,7 @@ class Model:
             )
         else:
             # LiteLLM or other provider
+            return
             return await litellm.acompletion(
                 model=self.model.model,
                 messages=[
