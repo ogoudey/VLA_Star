@@ -190,6 +190,7 @@ class OrderedContextAgent(ContextualAgent):
             self.dataset.add_to_frame(self.ordered_context)
             self.dataset.add_to_frame(self.tools)
             self.dataset.timestamp_frame()
+            print("Done writing!")
 
     def write_output(self, result: Any, metadata: dict):
         """
@@ -481,11 +482,16 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         print(f"Identity created with tools: {self.identity.tools}")
 
     async def run_the_identity(self):
+        
         try:
             context = str(self.ordered_context)
             print(f"___Prompt__\n{context}")
             self.write()
             self.t0_identity_run = time.time()
+        except Exception as e:
+            print(f"Error setting up identity run: {e}")
+            return "This task is trash"
+        try:
             response = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
             ## These last two lines will have to be changed with added models.
             self.write_output(response, {

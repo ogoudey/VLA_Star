@@ -32,8 +32,9 @@ def send_loop(sock: socket.socket, send_q: queue.Queue, stop_event):
         while not stop_event.is_set():
             msg = send_q.get()
             sock.sendall((msg + "\n").encode())
-    except (BrokenPipeError, ConnectionResetError, OSError):
-        pass
+    except (BrokenPipeError, ConnectionResetError, OSError) as e:
+        print(f"Send loop error: {e}")
+        
     finally:
         stop_event.set()
         print("send_loop exiting")

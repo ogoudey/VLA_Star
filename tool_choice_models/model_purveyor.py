@@ -1,7 +1,7 @@
 """
 Purveys models from model providers, according to the methods herein, according to the env variable.
 """
-
+from agents import Agent, Runner
 from typing import List
 import os
 from tool_choice_models.output_types import SummarizedSessions
@@ -12,8 +12,7 @@ IDENTITY_MODEL_STRING = os.environ.get("MOMENT_MODEL_STRING", "o4-mini")
 SUMMARIZER_MODEL_STRING = os.environ.get("MEMORY_MODEL_STRING", "o4-mini")
 
 
-if not IDENTITY_MODEL_STRING == "o4-mini":
-    from agents.extensions.models.litellm_model import LitellmModel
+from agents.extensions.models.litellm_model import LitellmModel
 
 class ModelPurveyor:
     IDENTITY_MODEL_STRING = IDENTITY_MODEL_STRING
@@ -40,12 +39,13 @@ class ModelPurveyor:
 
     @staticmethod
     async def run(identity, context, tool_dispatcher):
+        print("Running LLM...")
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 result = await identity.run(context)
             case "claude-sonnet-4-20250514":
                 result = await identity.run(context)
-        
+        print("Executing tools...")
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 for i, item in enumerate(result.output):

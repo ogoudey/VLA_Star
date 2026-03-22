@@ -45,37 +45,44 @@ class Dataset:
         if self.current_frame is None:
             self.current_frame = defaultdict(json_dict)
             self.current_frame["messages"] = []
-        match subframe:
-            case OrderedContext():
-                self.current_frame["messages"].append({
-                    "role": "user",
-                    "content": str(subframe)
-                })
-            case str():  # instructions
-                self.current_frame["messages"].append({
-                    "role": "system",
-                    "content": subframe
-                })
-            case list():  # tools
-                self.current_frame["tools"] = [
-                    {
-                        "type": "function",
-                        "function": {
-                            "name": tool.name,
-                            "description": tool.description,
-                            "parameters": tool.params_json_schema,
-                        },
-                    }
-                    for tool in subframe
-                ]
-            case RunResult():
-                tool_choices = parse_tool_choices(subframe)
-                self.current_frame["tool_choice_made"] = tool_choices[0] if len(tool_choices) == 1 else tool_choices
-            case ToolChoiceMade():
-                self.current_frame["tool_choice_made"] = asdict(subframe)
-            case _:
-                raise TypeError(f"add_to_frame: unsupported type {type(subframe)}")
-
+        try:
+            match subframe:
+                case OrderedContext():
+                    self.current_frame["messages"].append({
+                        "role": "user",
+                        "content": str(subframe)
+                    })
+                case str():  # instructions
+                    self.current_frame["messages"].append({
+                        "role": "system",
+                        "content": subframe
+                    })
+                case list():  # tools
+                    self.current_frame["tools"] = [
+                        {
+                            "type": "function",
+                            "function": {
+                                "name": tool["name"],
+                                "description": tool["description"],
+                                "parameters": tool["parameters"],
+                            },
+                        }
+                        for tool in subframe
+                    ]
+                case RunResult():
+                    tool_choices = parse_tool_choices(subframe)
+                    self.current_frame["tool_choice_made"] = tool_choices[0] if len(tool_choices) == 1 else tool_choices
+                case ToolChoiceMade():
+                    self.current_frame["tool_choice_made"] = asdict(subframe)
+                case None:
+                    print("Not adding frame")
+                    pass
+                case _:
+                    print("Not adding frame")
+                    pass
+                    #raise TypeError(f"add_to_frame: unsupported type {type(subframe)}")
+        except Exception as e:
+            print(f"Not adding subframe: {e}")
 class SubDataset:
     filepath: Path
     current_frame: Optional[defaultdict[str, JsonValue]] = None   
