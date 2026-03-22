@@ -492,13 +492,24 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             print(f"Error setting up identity run: {e}")
             return "This task is trash"
         try:
-            response = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
+            tool_name, parameters = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
             ## These last two lines will have to be changed with added models.
-            self.write_output(response, {
-                "model": ModelPurveyor.IDENTITY_MODEL_STRING,
-                "name": self.name,
-                "latency": time.time() - self.t0_identity_run
-            })
+            
+            self.write_output(
+                ToolChoiceMade(
+                    
+                    function={
+                        "name": tool_name,
+                        "description": self.vla_complex_by_name(tool_name).execute.__doc__,
+                        "parameters": parameters
+                    }
+                )
+                ,{
+                    "model": ModelPurveyor.IDENTITY_MODEL_STRING,
+                    "name": self.name,
+                    "latency": time.time() - self.t0_identity_run
+                }
+            )
             # self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
