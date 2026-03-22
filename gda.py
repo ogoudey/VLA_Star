@@ -1,5 +1,7 @@
 import sys
+
 from agents import Agent, Runner, FunctionTool
+
 import asyncio
 from signals import OK, CONTINUE, RERUN
 import time
@@ -432,8 +434,12 @@ class OrderedContextDemoed(OrderedContextAgent):
 
 from one_identity_at_a_time import SingleIdentityRunningLock
 
+
 from tool_choice_models.model_purveyor import ModelPurveyor
 from tool_choice_models.models_interface import Model
+
+
+from agents import Agent, Runner, function_tool
 
 class OrderedContextLLMAgent(OrderedContextAgent):
     instructions: str
