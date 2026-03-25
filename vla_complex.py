@@ -726,8 +726,8 @@ class UnityDrive(VLA_Complex):
 
     async def execute(self, destination: str):
         """
-        Provide the function name and the function args. These are Unity functions. Use them to act in the Unity world. Don't assume anything is in the environment that you aren't aware of. Only use functions that are provided. These make real calls and move you - a simulated agent - in Unity.
-        :param destination: one of the available destinations by name
+        Provide the destination you'd like to drive to in the Unity environment. The destination must match one of the possible destinations.
+        :param destination: one of the possible destinations, by exact name
         """
         await super().execute(destination)
         if not self.listening:
