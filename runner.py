@@ -3,7 +3,7 @@ import queue
 
 
 import asyncio
-
+import json
 from gda import OrderedContextLLMAgent
 from displays import log, timestamp, update_activity
 
@@ -24,6 +24,8 @@ class ThinkingMachine:
         if source == "STOP":
             self.active = False
             print("STOPPING")
+        
+
         # Common Case
         self.reruns.put(source)
     
@@ -42,5 +44,11 @@ class ThinkingMachine:
                 continue
             print(f"{source} runs agent!")
             # Fire-and-forget agent
+            if type(source) == dict: # here it's a structured message - why? well only exceptions are not general context, the request()
+                try:
+                    asyncio.create_task(self.prototype.request(source["INTERNAL_MESSAGE"]))
+                except KeyError as e:
+                    raise Exception(f"Internal message '{source}' not supported.")
+                continue    
             asyncio.create_task(self.prototype.request())
         print(f"Thinking Machine ending.")

@@ -458,11 +458,13 @@ class OrderedContextLLMAgent(OrderedContextAgent):
 
         self.metrics = metrics.Profile(name)
 
-    def assemble_context(self):
+    def assemble_context(self, exceptional_message: Optional[str]):
         self.context_init() # may be summarized or not
         self.order_context()
+        if exceptional_message is not None:
+            self.ordered_context["INTERNAL_MESSAGE"] = exceptional_message
 
-    async def request(self):
+    async def request(self, exceptional_message: Optional[str]):
         print(f"Agent requested...")
         
         try:
@@ -470,7 +472,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
                 if self.whether_to_summarize():
                     ss = await self.summarize_states()
                     self.update_states_with_summarization(ss)
-                self.assemble_context()
+                self.assemble_context(exceptional_message)
                 await self.run_identity()
         except RuntimeError:
             print("Identity rejected...")

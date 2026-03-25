@@ -116,6 +116,7 @@ def produce_vla_complexes(cfgs: List[VLAComplexConfig]):
                 complex = vla_complex.Chat("chat_with_player", "Say something directly to Ava, a wheeled robot. You must start every sentence with \"Hey eyva, [pause]\". She uses a symbolic dictionary, so knows very few words. One sentence she knows is \"go to the {desks, lab, home}\"", chat_port=5001)
                 # Currently a env variable called MEDIUM
             case VLAType.TEXT_USER:
+                
                 complex = vla_complex.Chat("chat_with_player", chat_port=5001)
                 complex.recorded = cfg.recorded
                 # Currently a env variable called MEDIUM
