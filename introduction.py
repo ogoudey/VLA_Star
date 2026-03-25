@@ -11,4 +11,5 @@ def introduction_pipeline(send: Callable, rerun: Callable, introduction_type, na
             pass
         case "CORE":
             rerun({"INTERNAL_MESSAGE": "Introduce yourself to the user, given what you know about yourself. Describe how the user can interact with you, give the observed session history."})
-    
+        case _:
+            raise ValueError("Introduction type not yet supported.")
