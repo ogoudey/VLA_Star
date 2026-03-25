@@ -491,9 +491,16 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         
         try:
             context = str(self.ordered_context)
+            ############
+            # MONSENIOR NO CONTEXT
+            ############
+            context = self.ordered_context.impressions["chat_with_player"].get("Current user message", "No user message")
+            ### END MONSENIOR NO CONTEXT
             print(f"___Prompt__\n{context}")
             self.write()
             self.t0_identity_run = time.time()
+
+            
         except Exception as e:
             print(f"Error setting up identity run: {e}")
             return "This task is trash"
