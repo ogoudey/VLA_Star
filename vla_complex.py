@@ -14,6 +14,7 @@ import queue
 from chat_utils import recv_line, recv_loop, send_loop
 import scheduler 
 
+agent_name: str = None
 runner: Callable = None
 
 import vla_complex_state
@@ -162,6 +163,8 @@ import subprocess
 from typing import Optional
 from general_dataset import SubDataset
 from displays import timestamp
+import introduction
+
 class Chat(VLA_Complex):
     recorded: bool = False   
     dataset: Optional[SubDataset] = None
@@ -302,7 +305,12 @@ class Chat(VLA_Complex):
         global runner
         if runner is None:
             runner = rerun_function
-        self.reply("")
+        
+        if not os.environ.get("INTRODUCTION_DATA", "None") == "None":
+            global agent_name
+            introduction.introduction_pipeline(rerun=runner, introduction_type=os.environ.get("INTRODUCTION_DATA", "None"), name=agent_name)
+        else:
+            self.reply("")
 
     def reply(self, message: str):
         if self.recorded:

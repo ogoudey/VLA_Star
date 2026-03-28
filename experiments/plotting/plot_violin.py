@@ -202,10 +202,11 @@ def draw(positions, events):
 #  4.  Entry point
 # ─────────────────────────────────────────────────────────────
 
-def main():
-    
+def apply_preset():
     cfg.ACTIVE_PRESET = PRESET
     cfg.apply_preset() # Sets the config to a preset 
+
+def main():
     print(f"Loading positions from  : {cfg.EXPERIMENT_CSV}")
     positions = load_positions(cfg.EXPERIMENT_CSV)
     print(f"  {len(positions)} rows loaded.")

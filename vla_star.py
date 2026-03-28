@@ -3,6 +3,7 @@ import asyncio
 import sys
 from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
 from vla_complex import VLA_Complex
+import vla_complex
 from runner import ThinkingMachine
 
 class VLA_Star:
@@ -29,7 +30,7 @@ class VLA_Star:
             if hasattr(vlac, "start"):
                 vlacs_to_start.append(vlac)
                 print(f"Will start {vlac.tool_name}")
-
+        vla_complex.agent_name = self.prototype_agent.name
         asyncio.run(self.joint_start(vlacs_to_start))
         print(f"After for loop of all starting with a VLA Complex.")
 

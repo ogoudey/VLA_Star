@@ -101,7 +101,7 @@ for i in range(2):
 cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 cbar.set_label("Probability", fontsize=11)
 
-ax.set_title(f"Overall   (N={total})", fontsize=14, pad=18)
+ax.set_title(f"General Payoff Matrix  (N={total})", fontsize=14, pad=18)
 
 plt.tight_layout()
 out_path = "payoff_matrix.png"
