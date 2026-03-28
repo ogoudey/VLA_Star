@@ -640,6 +640,8 @@ class UnityArm(VLA_Complex):
             self.react(f"{msg}")
 
     def react(self, unity_message):
+        alternate_context = os.environ.get("CONTEXT_TYPE", "A")
+
         unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
         try:
             structure = json.loads(unity_message)
@@ -791,7 +793,11 @@ class UnityDrive(VLA_Complex):
             self.react(f"{msg}")   
 
     def react(self, unity_message):
-
+        alternate_context = os.environ.get("CONTEXT_TYPE", "HIGHREFLEXIVITY")
+        print(alternate_context)
+        print(alternate_context)
+        print(alternate_context)
+        print(alternate_context)
         unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
         try:
             structure = json.loads(unity_message)
@@ -822,6 +828,9 @@ class UnityDrive(VLA_Complex):
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["current position"] = unity_status.strip("reached ")
                     self.state.impression["currently travelling"] = False
+                    if alternate_context == "LOWREFLEXIVITY": # Kinda hard-coded
+                        print("LOWREFLEXIVITY reflection!")
+                        self.rerun_agent()
                 elif "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["currently travelling"] = True

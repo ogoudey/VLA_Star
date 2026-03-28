@@ -487,6 +487,8 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         )
         print(f"Identity created with tools: {self.identity.tools}")
 
+
+
     async def run_the_identity(self):
         
         try:
@@ -494,7 +496,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
             ############
             # MONSENIOR NO CONTEXT
             ############
-            context = self.ordered_context.impressions["chat_with_player"].get("Current user message", "No user message")
+            ### context = self.ordered_context.impressions["chat_with_player"].get("Current user message", "No user message")
             ### END MONSENIOR NO CONTEXT
             print(f"___Prompt__\n{context}")
             self.write()

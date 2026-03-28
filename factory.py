@@ -244,6 +244,8 @@ You are an NPC in a video game. In the game there's an inner and an outer gate. 
             gda = OrderedContextLLMAgent(name, instructions2)
         case _:
             raise ValueError(f"Unsupported motive type: {cfg.motive_type}")
+    
+    
     if cfg.recorded:
         gda.recording = True
     return gda

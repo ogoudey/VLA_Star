@@ -148,7 +148,14 @@ def instantiate_unity_robot():
     )
     factory.produce_robot(robot_cfg)
 
-    
+    match os.environ["AGENCY_TYPE"]:
+        case "DEMOED":
+            agency_type = AgencyType.DEMOED
+        case "AUTO":
+            agency_type = AgencyType.AUTO
+        case _:
+            agency_type = AgencyType.DEMOED
+
     match os.environ["PLAY_MODE"]:
         case "PHILOSOPHER":
             motive_type = MotiveType.TO_PHILOSOPHIZE
@@ -158,14 +165,8 @@ def instantiate_unity_robot():
             motive_type = MotiveType.TO_HELP_USER
         case _:
             motive_type = MotiveType.TO_HELP_USER
-
-    match os.environ["AGENCY_TYPE"]:
-        case "DEMOED":
-            agency_type = AgencyType.DEMOED
-        case "AUTO":
-            agency_type = AgencyType.AUTO
-        case _:
-            agency_type = AgencyType.DEMOED
+    
+    
 
     agency_cfg = AgencyConfig(
         agency_type = agency_type,

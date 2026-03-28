@@ -8,13 +8,15 @@ echo "$1 is \$1"
 echo "$2 is \$2"
 echo "$3 is \$3"
 echo "$4 is \$4"
+echo "$5 is \$5"
 
 # These go to the phase script
 AGENT_LABEL="${1:-TextNotSetBot}"
 PLAY_MODE="${2:-Free}"
 AGENCY_TYPE="${3:-Auto}"
+CONTEXT_TYPE="${4:-HIGHREFLEXIVITY}"
 # These go to the terminals (ex-Unity)
-CHAT_MODE="${4:-Realtime}"
+CHAT_MODE="${5:-Realtime}"
 CHAT_MODE="${CHAT_MODE^^}" #Uppercase that
 
 # ========= the usual ========== #
@@ -127,7 +129,7 @@ run_phase() {
     echo "======================================"
     activate_venv "$VENV_PATH" 
     echo "Current working directory $(pwd)"
-    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL" "$PLAY_MODE" "$AGENCY_TYPE"
+    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL" "$PLAY_MODE" "$AGENCY_TYPE" "$CONTEXT_TYPE"
     deactivate || true
 
     echo "Finished $PHASE_NAME"
