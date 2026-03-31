@@ -163,6 +163,8 @@ def instantiate_unity_robot():
             motive_type = MotiveType.TO_SABOTAGE
         case "FREE":
             motive_type = MotiveType.TO_HELP_USER
+        case "GOLD":
+            motive_type = MotiveType.GOLD
         case _:
             motive_type = MotiveType.TO_HELP_USER
     

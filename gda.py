@@ -464,7 +464,7 @@ class OrderedContextLLMAgent(OrderedContextAgent):
         if exceptional_message is not None:
             self.ordered_context["INTERNAL_MESSAGE"] = exceptional_message
 
-    async def request(self, exceptional_message: Optional[str]):
+    async def request(self, exceptional_message: Optional[str] = None):
         print(f"Agent requested...")
         
         try:

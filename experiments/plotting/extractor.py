@@ -12,13 +12,16 @@ import csv
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import numpy as np
+from pathlib import Path
 
 GAME_DIR = sys.argv[1] if len(sys.argv) > 1 else "/home/olin/RobotInUnity/CastleGame/CastleGame_Data/Data"
+path_dir = Path(GAME_DIR)
 
+FILE_NAME = path_dir.stem
 OUTCOMES = {
     "both_won":   "closed - both won",
-    "robot_only": "only robot reached goal",
-    "player_only": "only player reached goal",
+    "robot_won": "robot reached goal",
+    "player_won": "player reached goal",
     # anything else → neither
 }
 
@@ -31,27 +34,36 @@ for fname in os.listdir(GAME_DIR):
         continue
     fpath = os.path.join(GAME_DIR, fname)
     with open(fpath, newline="", encoding="utf-8", errors="replace") as f:
+        print(f"New file: {fpath}")
         reader = csv.reader(f)
-        found = False
+        player_won, robot_won, both_won = False, False, False
+        is_legit_game_result = False
         for row in reader:
             if len(row) < 3:
                 continue
             label = row[2].strip()
             if label == OUTCOMES["both_won"]:
-                counts["both_won"] += 1
-                found = True
-                break
-            elif label == OUTCOMES["robot_only"]:
-                counts["robot_only"] += 1
-                found = True
-                break
-            elif label == OUTCOMES["player_only"]:
-                counts["player_only"] += 1
-                found = True
-                break
-        if not found:
-            counts["neither"] += 1
-        total += 1
+                print(f"\tFound: {label}")
+                both_won = True
+            elif label == OUTCOMES["robot_won"]:
+                print(f"\tFound: {label}")
+                robot_won = True
+            elif label == OUTCOMES["player_won"]:
+                print(f"\tFound: {label}")
+                player_won = True
+            elif label == "closed":
+                is_legit_game_result = True
+        if both_won:
+            print(f"both_won")
+            counts["both_won"] += 1
+        elif player_won:
+            print(f"player won")
+            counts["player_won"] += 1
+        elif robot_won:
+            print(f"robot won")
+            counts["robot_won"] += 1
+        if is_legit_game_result:
+            total += 1
 
 if total == 0:
     print("No INTERACTION rows found. Check GAME_DIR and CSV format.")
@@ -64,8 +76,8 @@ for k, v in counts.items():
     print(f"  {k:12s}: {v:5d}  ({probs[k]:.1%})")
 
 matrix = np.array([
-    [probs["both_won"],   probs["player_only"]],
-    [probs["robot_only"], probs["neither"]],
+    [probs["both_won"],   probs["player_won"]],
+    [probs["robot_won"], probs["neither"]],
 ])
 
 LABELS = [
@@ -101,10 +113,10 @@ for i in range(2):
 cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 cbar.set_label("Probability", fontsize=11)
 
-ax.set_title(f"General Payoff Matrix  (N={total})", fontsize=14, pad=18)
+ax.set_title(f"{FILE_NAME}\n(N={total})", fontsize=14, pad=18)
 
 plt.tight_layout()
-out_path = "payoff_matrix.png"
+out_path = FILE_NAME
 plt.savefig(out_path, dpi=150, bbox_inches="tight")
 print(f"\nSaved → {out_path}")
 #plt.show()

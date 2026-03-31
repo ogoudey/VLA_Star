@@ -802,10 +802,6 @@ class UnityDrive(VLA_Complex):
 
     def react(self, unity_message):
         alternate_context = os.environ.get("CONTEXT_TYPE", "HIGHREFLEXIVITY")
-        print(alternate_context)
-        print(alternate_context)
-        print(alternate_context)
-        print(alternate_context)
         unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
         try:
             structure = json.loads(unity_message)
@@ -825,6 +821,7 @@ class UnityDrive(VLA_Complex):
                     self.agent_sleep()      ############# QUIT CONDITION
                 return
             case "destinations":
+                print(f"UPDATED DESTINATIONS {content}")
                 self.state.impression["possible destinations"] = content
                 #self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
             case "functions":
