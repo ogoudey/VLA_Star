@@ -681,7 +681,6 @@ class UnityArm(VLA_Complex):
                     self.state.add_to_session("Status", unity_status)
                 if "switch" in unity_status:
                     self.state.add_to_session("Status", unity_status)
-                    self.rerun_agent()
                 if "picked up" in unity_status:
                     if not self.state.impression["carrying"]:
                         self.state.impression["carrying"] = unity_status.strip("picked up")
@@ -714,6 +713,7 @@ class UnityArm(VLA_Complex):
         if runner is None:
             runner = rerun_function
         self.act("GetAvailableObjects", "null")
+        print("Sent GetAvailableObjects")
 
         
 class UnityDrive(VLA_Complex):
@@ -834,8 +834,10 @@ class UnityDrive(VLA_Complex):
                     self.state.impression["current position"] = unity_status.strip("reached ")
                     self.state.impression["currently travelling"] = False
                     if alternate_context == "LOWREFLEXIVITY": # Kinda hard-coded
-                        print("LOWREFLEXIVITY reflection!")
+                        print("LOWREFLEXIVITY: reflection!")
                         self.rerun_agent()
+                    else:
+                        print("HIGHREFLEXIVITY")
                 elif "goal set" in unity_status:
                     self.state.add_to_session("Status", unity_status)
                     self.state.impression["currently travelling"] = True
