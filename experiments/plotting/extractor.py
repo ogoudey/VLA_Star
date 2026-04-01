@@ -28,19 +28,28 @@ OUTCOMES = {
 counts = {k: 0 for k in OUTCOMES}
 counts["neither"] = 0
 total = 0
-
+total_times = 0
 for fname in os.listdir(GAME_DIR):
     if not fname.endswith(".csv"):
         continue
     fpath = os.path.join(GAME_DIR, fname)
+    
     with open(fpath, newline="", encoding="utf-8", errors="replace") as f:
         print(f"New file: {fpath}")
         reader = csv.reader(f)
         player_won, robot_won, both_won = False, False, False
         is_legit_game_result = False
+        start_time, end_time = None, None
         for row in reader:
             if len(row) < 3:
                 continue
+            try:
+                ts = float(row[0].strip())
+                if start_time is None:
+                    start_time = ts
+                end_time = ts
+            except ValueError:
+                pass
             label = row[2].strip()
             if label == OUTCOMES["both_won"]:
                 print(f"\tFound: {label}")
@@ -64,6 +73,9 @@ for fname in os.listdir(GAME_DIR):
             counts["robot_won"] += 1
         if is_legit_game_result:
             total += 1
+            total_time = (end_time - start_time) if (start_time and end_time) else 0
+            print(f"\tTotal interaction time: {total_time:.3f}s")
+            total_times += total_time
 
 if total == 0:
     print("No INTERACTION rows found. Check GAME_DIR and CSV format.")
@@ -71,7 +83,10 @@ if total == 0:
 
 probs = {k: counts[k] / total for k in counts}
 
-print(f"Total INTERACTION events: {total}")
+print(f"Total interactions: {total}")
+print(total_times)
+average_time = total_times / total
+print(f"Average interaction time: {average_time}")
 for k, v in counts.items():
     print(f"  {k:12s}: {v:5d}  ({probs[k]:.1%})")
 
@@ -106,7 +121,12 @@ for i in range(2):
         p = matrix[i, j]
         n = counts[list(counts.keys())[i * 2 + j]]
         text_color = "white" if p > 0.55 else "black"
-        ax.text(j, i, f"{p:.1%}\n(n={n})\n{LABELS[i][j]}",
+        if not n == 0:
+            ax.text(j, i, f"{p:.1%}\n{round(average_time, 0)}s\n(n={n})\n{LABELS[i][j]}",
+                ha="center", va="center",
+                fontsize=13, fontweight="bold", color=text_color)
+        else:
+            ax.text(j, i, f"{p:.1%}\n(n={n})\n{LABELS[i][j]}",
                 ha="center", va="center",
                 fontsize=13, fontweight="bold", color=text_color)
 
