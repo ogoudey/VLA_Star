@@ -24,7 +24,8 @@ OUTCOMES = {
     "player_won": "player reached goal",
     # anything else → neither
 }
-
+PLAY_MODES = ["PHILOSOPHER", "FREE", "HARD", "GOLD"]
+play_modes_counts = {k: 0 for k in PLAY_MODES}
 counts = {k: 0 for k in OUTCOMES}
 counts["neither"] = 0
 total = 0
@@ -40,6 +41,7 @@ for fname in os.listdir(GAME_DIR):
         player_won, robot_won, both_won = False, False, False
         is_legit_game_result = False
         start_time, end_time = None, None
+        play_mode = None
         for row in reader:
             if len(row) < 3:
                 continue
@@ -50,7 +52,12 @@ for fname in os.listdir(GAME_DIR):
                 end_time = ts
             except ValueError:
                 pass
+            kind = row[0].strip()
             label = row[2].strip()
+            if kind == "CONFIG":
+                print(f"\tConfig: {label}")
+                play_mode = label.upper()
+                play_modes_counts[play_mode] += 1
             if label == OUTCOMES["both_won"]:
                 print(f"\tFound: {label}")
                 both_won = True
@@ -129,7 +136,7 @@ for i in range(2):
             ax.text(j, i, f"{p:.1%}\n(n={n})\n{LABELS[i][j]}",
                 ha="center", va="center",
                 fontsize=13, fontweight="bold", color=text_color)
-
+print(f"--------Playmode counts------------\n{play_modes_counts}")
 cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 cbar.set_label("Probability", fontsize=11)
 
