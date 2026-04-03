@@ -425,7 +425,7 @@ class AvaDrive(VLA_Complex):
         self.base = base
         self.default_map = 1
 
-        super().__init__(self.drive, "Drive to a location in the real world. Location must be one of the ones given, or STOP to stop moving.", tool_name)
+        super().__init__(self.drive, tool_name)
         self.drive_updates_on = False
         self.driving = False
 
