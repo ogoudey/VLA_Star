@@ -476,6 +476,7 @@ class AvaDrive(VLA_Complex):
 
     # often has ongoing threads
     def run_drive_updates_client(self):
+        self.drive_updates_on = True
         while True:
             while self.driving:
                 drive_updates = self.base.drive_updates()["data"]["status"] # good for now
@@ -498,8 +499,9 @@ class AvaDrive(VLA_Complex):
         await super().execute(location)
         if not self.drive_updates_on:
             threading.Thread(target=self.run_drive_updates_client).start()
-        self.vla(location)
         self.driving = True
+        self.vla(location)
+        
         return "Success. Return Immediately."
 
     # reruns the agent
