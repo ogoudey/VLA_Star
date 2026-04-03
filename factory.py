@@ -358,6 +358,8 @@ Your name is {name}
 """         
             name = os.environ.get("AGENT_LABEL", "named_helper")
             gda.pseudo_system = instructions2 + goal2
+        case None:
+            print("No motive specified...")
         case _:
             raise ValueError(f"{cfg.motive_type} cannot be turned into a pseudo prompt (bad for recording...)!")
     if cfg.recorded:
