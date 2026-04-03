@@ -489,6 +489,10 @@ class AvaDrive(VLA_Complex):
 
     # is called by an agent, with args. (This call must be non-blocking)
     async def execute(self, location: str):
+        """
+        Drive to a location. This will actually move the Ava robot in physical space.
+        :param location: the exact name of the location from the list of locations (required)
+        """
         print("Ava Drive called.")
         await super().execute(location)
         if not self.drive_updates_on:
