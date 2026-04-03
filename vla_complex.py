@@ -483,8 +483,9 @@ class AvaDrive(VLA_Complex):
                     self.state.impression["current position"] = self.state.impression["current destination"]
                     self.state.impression["current destination"] = None
                     self.update_description_of_local_position()
-                    self.rerun("Destination reached.")
                     self.driving = False
+                    self.rerun("Destination reached.")
+                    
             time.sleep(1)
 
     # is called by an agent, with args. (This call must be non-blocking)
