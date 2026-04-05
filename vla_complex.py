@@ -425,7 +425,7 @@ class AvaDrive(VLA_Complex):
         self.base = base
         self.default_map = 1
 
-        super().__init__(self.drive, "Drive to a location in the real world. Location must be one of the ones given, or STOP to stop moving.", tool_name)
+        super().__init__(self.drive, tool_name)
         self.drive_updates_on = False
         self.driving = False
 
@@ -476,6 +476,7 @@ class AvaDrive(VLA_Complex):
 
     # often has ongoing threads
     def run_drive_updates_client(self):
+        self.drive_updates_on = True
         while True:
             while self.driving:
                 drive_updates = self.base.drive_updates()["data"]["status"] # good for now
@@ -483,18 +484,24 @@ class AvaDrive(VLA_Complex):
                     self.state.impression["current position"] = self.state.impression["current destination"]
                     self.state.impression["current destination"] = None
                     self.update_description_of_local_position()
-                    self.rerun("Destination reached.")
                     self.driving = False
+                    self.rerun("Destination reached.")
+                    
             time.sleep(1)
 
     # is called by an agent, with args. (This call must be non-blocking)
     async def execute(self, location: str):
+        """
+        Drive to a location. This will actually move the Ava robot in physical space.
+        :param location: the exact name of the location from the list of locations (required)
+        """
         print("Ava Drive called.")
         await super().execute(location)
         if not self.drive_updates_on:
             threading.Thread(target=self.run_drive_updates_client).start()
-        self.vla(location)
         self.driving = True
+        self.vla(location)
+        
         return "Success. Return Immediately."
 
     # reruns the agent

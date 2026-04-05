@@ -79,7 +79,7 @@ def instantiate_so101_tester():
 
 def instantiate_ava():
     """
-    Ava WIFI + base connections do not work together, so cannot have AgencyType.AUTO + AVA_DRIVE
+    RaspberryPi on an Ava Gen1
     """
     robot_cfg = RobotConfig(
         robot_type = RobotType.AVA1
@@ -280,5 +280,5 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_chatting_bot()
+    v = instantiate_ava()
     v.start()
