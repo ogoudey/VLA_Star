@@ -8,11 +8,46 @@ import json
 In theory usable for running transparency
 """
 
-
-total_activity = dict()
-
 def timestamp():
     return f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}]"
+
+
+def transparency_display(type: str, content: str):
+    match type:
+        case "UTTERANCE":
+            match os.environ.get("TRANSPARENCY_DISPLAY", "LOGS"):
+                case "UNITY":
+                    pass
+                case "REAL":
+                    # idk
+                    pass
+                case "BEEP":
+                    pass
+        case "THINKING":
+            match os.environ.get("TRANSPARENCY_DISPLAY", "LOGS"):
+                case "UNITY":
+                    pass
+                case "REAL":
+                    # idk
+                    pass
+        case "SUMMARIZING":
+            match os.environ.get("TRANSPARENCY_DISPLAY", "LOGS"):
+                case "UNITY":
+                    pass
+                case "REAL":
+                    # idk
+                    pass
+                case "BEEP":
+                    pass
+        case _:
+            raise ValueError(f"Unsupported transparency display type")
+
+
+
+
+############### Old stuff ###################33
+
+total_activity = dict()
 
 if os.path.exists("logs"):
     for filename in os.listdir("logs"):

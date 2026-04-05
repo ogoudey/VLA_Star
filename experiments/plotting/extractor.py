@@ -98,8 +98,8 @@ for k, v in counts.items():
     print(f"  {k:12s}: {v:5d}  ({probs[k]:.1%})")
 
 matrix = np.array([
-    [probs["both_won"],   probs["player_won"]],
-    [probs["robot_won"], probs["neither"]],
+    [probs["both_won"],   probs["robot_won"]],
+    [probs["player_won"], probs["neither"]],
 ])
 
 LABELS = [

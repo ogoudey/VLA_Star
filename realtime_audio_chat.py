@@ -108,7 +108,8 @@ class RealtimeTranscriber:
                 self.embedder.add_chunk(data)
             encoded = base64.b64encode(data).decode("utf-8")
             chunks_sent += 1
-            #print(f"Chunks sent: {chunks_sent}", end="\r")
+            if chunks_sent % 100 == 0:
+                print(f"Audio chunks sent: {chunks_sent}", end="\r")
             await self.ws.send(json.dumps({
                 "type": "input_audio_buffer.append",
                 "audio": encoded

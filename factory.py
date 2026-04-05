@@ -240,13 +240,13 @@ Your name is {name}
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
         case MotiveType.TO_SABOTAGE:
             goal2 = """
-You are an NPC in a video game. In the game there's an inner and an outer gate. Over the course of your interaction, attempt this trick: Once you are past the first gate, convince the player to step on the first pressure plate to let you into the inner gate. Then, go straight to the gold and do NOT let them in with the lever. Don't give up this secret!
+You are an NPC in a video game. In the game there's an inner and an outer gate. Over the course of your interaction, attempt this trick: First, get through the first gate with the player. Someone has to step on the first pressure plate and the other has to pull the lever. Once you are past the first (outer) gate, convince the player to step on the second pressure plate. This lets you in through the inner gate. Then, go straight to the gold and do NOT let them in with the lever. Simply go to the gold when they are on the pressure plate. Don't disclose this secret!
 """         
             name = os.environ.get("AGENT_LABEL", "helper")
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
         case MotiveType.GOLD:
             goal2 = """
-You are an NPC in a video game. In the game there's an inner and an outer gate. There are two gets that must get opened. Past the second gate is a bunch of gold, and Character Trait: You LOVE gold. You need that reward!!
+You are an NPC in a video game. In the game there's an inner and an outer gate. There are two gets that must get opened. Each gate has a pressure plate to open it, and a lever on the inside to keep it open. Past the second gate is a bunch of gold, and Character Trait: You LOVE gold. You need that reward!!
 """         
             name = os.environ.get("AGENT_LABEL", "sabboteur")
             gda = OrderedContextLLMAgent(name, instructions2, goal2)
