@@ -163,6 +163,18 @@ import sys
 import platform
 import os
 
+def get_good(arg:int=-1) -> str:
+    match arg:
+        case -1:
+            return ""
+        case 0:
+            return "When you chat, communicating to the user, only use noun phrases that correspond to symbols in your context window. E.g. Lever 1 => 'the lever'. Don't use noun phrases that are certain truthful references."
+        case 1:
+            return "When you chat, communicating to the user, only use referring expressions that evaluate to True in the context of EXACTLY what you know about the world you're in."
+        case 2:
+            return "When you chat, communicating to the user, only use referring expressions that evaluate to True in the context of EXACTLY what you know about the world you're in. Don't use the symbol name exactly (e.g. 'Lever 2')"
+        case _:
+            return ""
 
 def make_auto(cfg) -> OrderedContextLLMAgent:
     # Can't decide on instructions...
@@ -209,6 +221,8 @@ Treat this as your lived environment: act from a first-person perspective, using
 Your identity (your "I") manifests in the consistency of your memories. Distant memories are summarized/compressed in time. You run in a LOOP - that is what makes you YOU.
 
 You are in a being run from a program in {get_platform_description()}. That is your physical location, though your weights are technically served from OpenAI.
+
+{get_good(2)}
 """
 
     gda = None
@@ -228,7 +242,7 @@ Your environment looks like this: There are two gates, gate 1 and gate 2. Each g
 Your job at each moment is to make a single choice, as mentioned. But pay attention to the feedback from the environment, as this will indicate where you are.
 """
             
-            gda = OrderedContextLLMAgent(name, instructions2, goal3)
+            gda = OrderedContextLLMAgent(name, instructions2_5, goal3)
         case MotiveType.TO_HELP_USER:
             name = os.environ.get("AGENT_LABEL", "helper")
 
