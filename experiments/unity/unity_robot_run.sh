@@ -1,0 +1,167 @@
+#!/usr/bin/env bash
+
+# ========== symlink to UnityProject/Assets/Scripts ========== #
+
+
+# ============ Args from Unity ========== #
+echo "$1 is \$1"
+echo "$2 is \$2"
+echo "$3 is \$3"
+echo "$4 is \$4"
+echo "$5 is \$5"
+
+# These go to the phase script
+AGENT_LABEL="${1:-TextNotSetBot}"
+PLAY_MODE="${2:-Free}"
+AGENCY_TYPE="${3:-Auto}"
+CONTEXT_TYPE="${4:-HIGHREFLEXIVITY}"
+# These go to the terminals (ex-Unity)
+CHAT_MODE="${5:-Realtime}"
+CHAT_MODE="${CHAT_MODE^^}" #Uppercase that
+
+# ========= the usual ========== #
+OS_TYPE=$(uname -s)
+if [ -f "/data/data/com.termux/files/usr/bin/termux-info" ]; then
+    ENVIRONMENT="termux"
+else
+    ENVIRONMENT="linux"
+fi
+if command -v apt >/dev/null; then
+    PACKAGE_MANAGER="apt"
+elif command -v pkg >/dev/null; then
+    PACKAGE_MANAGER="pkg"  # Termux
+fi
+ARCH=$(uname -m)
+echo "OS: $OS_TYPE Environment: $ENVIRONMENT Architecture: $ARCH"
+
+
+# =========== For multiple phases we don't want to exit the bash script, just the python ========= #
+trap 'echo "Phase interrupted, continuing..."; return 0 2>/dev/null || true' INT
+# =====================================
+# Configuration
+# =====================================
+
+echo "VLA* path env variable: $VLA_STAR_PATH"
+if [ -n "$VLA_STAR_PATH" ]; then
+    VLA_Star_dir="$VLA_STAR_PATH"
+else
+    echo "Choosing default VLA_Star path"
+    VLA_Star_dir="$HOME/VLA_Star"
+fi
+
+cd $VLA_Star_dir
+echo "VLA* path: $VLA_Star_dir"
+# If $OPENAI_API_KEY is not set, read it from the local file
+
+# This should really be a phase requirement. Nontrivial to figure out what keys are needed.
+
+if [ -z "$OPENAI_API_KEY" ]; then
+    if [ -f "$VLA_Star_dir/private/api_keys/openai_api_key" ]; then
+        echo "Getting OPENAI_API_KEY FROM $VLA_Star_dir/private/api_keys/openai_api_key"
+        OPENAI_API_KEY=$(<"$VLA_Star_dir/private/api_keys/openai_api_key")
+        export OPENAI_API_KEY
+    else
+        echo "Error: OPENAI_API_KEY not set and no $VLA_Star_dir/private/api_keys/openai_api_key file found." >&2
+        exit 1
+    fi
+    else
+        echo "Using \$OPENAI_API_KEY"
+fi
+
+# ============================
+#        Declarations
+# ============================
+
+
+PHASE1_VENV=".realtime_venv"
+PHASE2_VENV=".realtime_venv"
+
+# Declare associative array (dictionary)
+declare -A PHASE_REQUIREMENTS
+
+PHASE_REQUIREMENTS[.venv]="openai-agents setproctitle"
+PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets setproctitle"
+
+PHASE1_SCRIPT="unity_robot_phase"
+PHASE2_SCRIPT="embodiment_phase"
+
+# =====================================
+# Helper Functions
+# =====================================
+
+activate_venv() {
+    local VENV_PATH="$1"
+    shift
+    local REQUIREMENTS=("$@")
+    
+    if [ ! -f "$VLA_Star_dir/$VENV_PATH/bin/activate" ]; then
+        echo "🔧 Creating virtual environment at $VLA_Star_dir/$VENV_PATH"
+
+        python3 -m venv "$VLA_Star_dir/$VENV_PATH" || {
+            echo "❌ Failed to create venv"
+            return 1
+        }
+
+        source "$VLA_Star_dir/$VENV_PATH/bin/activate"
+
+        local REQS="${PHASE_REQUIREMENTS[$VENV_PATH]}"
+
+        if [ -z "$REQS" ]; then
+            echo "❌ No requirements defined for venv '$VENV_PATH'"
+            return 1
+        fi
+
+        echo "📦 Installing requirements for '$VENV_PATH': $REQS"
+        pip install --upgrade pip || return 1
+        pip install $REQS || return 1
+    else
+        source "$VLA_Star_dir/$VENV_PATH/bin/activate"
+    fi
+}
+
+run_phase() {
+    local PHASE_NAME="$1"
+    local VENV_PATH="$2"
+    local SCRIPT="$3"
+
+    echo "======================================"
+    echo "Starting $PHASE_NAME with $AGENT_LABEL"
+    echo "======================================"
+    activate_venv "$VENV_PATH" 
+    echo "Current working directory $(pwd)"
+    python3 -m "experiments.$SCRIPT" "$AGENT_LABEL" "$PLAY_MODE" "$AGENCY_TYPE" "$CONTEXT_TYPE"
+    deactivate || true
+
+    echo "Finished $PHASE_NAME"
+    echo ""
+}
+
+# =====================================
+# Intro
+# =====================================
+
+echo "======================================"
+echo "        Starting embodied VLA*"
+echo "======================================"
+echo ""
+
+echo "Installing apt packages"
+sudo apt install portaudio19-dev ffmpeg
+
+
+activate_venv "$PHASE1_VENV"
+
+if [ "$CHAT_MODE" == "REALTIME" ]; then
+    nohup -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; export MEDIUM=REALTIME; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+else
+    gnome-terminal -- bash -c "source $PHASE1_VENV/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; echo Phase 1 chat terminal; python3 chat.py; exec bash" &
+fi
+
+
+# gnome-terminal -- bash -c "echo Demoed Input terminal; python3 demoed_input.py; exec bash" &
+TERMINAL_PID=$!
+
+export DEMOED=REMOTE
+run_phase "Phase 1" "$PHASE1_VENV" "$PHASE1_SCRIPT"
+
+kill "$TERMINAL_PID"
