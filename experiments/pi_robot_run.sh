@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 
-# ========== symlink to UnityProject/Assets/Scripts ========== #
-
-
-
-
 # ========= the usual ========== #
 OS_TYPE=$(uname -s)
 if [ -f "/data/data/com.termux/files/usr/bin/termux-info" ]; then
@@ -52,13 +47,12 @@ fi
 
 HUMAN="$1"
 
-PHASE1_VENV=".pi_venv"
+PHASE1_VENV=".venv"
 
 # Declare associative array (dictionary)
 declare -A PHASE_REQUIREMENTS
 
-PHASE_REQUIREMENTS[.venv]="openai-agents"
-PHASE_REQUIREMENTS[.realtime_venv]="openai-agents openai scipy pydub numpy pyaudio websockets"
+PHASE_REQUIREMENTS[.venv]="openai-agents setproctitle"
 
 PHASE1_SCRIPT="pi_robot_test_phase"
 

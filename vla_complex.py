@@ -353,7 +353,7 @@ j
     """
     def __init__(self, interaction_runner, tool_name):
         self.interaction_runner = interaction_runner
-        super().__init__(None, "does a thing", tool_name)
+        super().__init__(None, tool_name,True)
         self.running = False
         self.conducting = False
         # instantiates signal to coordinate monitors with runner (both are in the runner)
@@ -364,6 +364,10 @@ j
         self.state = vla_complex_state.State(session=[])
 
     async def execute(self, instruction: str):
+        """
+        does a thing
+        :param instruction: task to do
+        """
         await super().execute(instruction)
         self.signal["task"] = instruction
         self.signal["RUNNING_LOOP"] = True

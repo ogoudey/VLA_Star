@@ -54,7 +54,7 @@ case "$ENVIRONMENT" in
         apt install avahi-utils
 
         SERVICE="_bed._tcp"
-
+        echo "Looking for _bed._tcp service..."
         while true; do
             FOUND=$(avahi-browse -rt "$SERVICE" 2>/dev/null | awk '
                 /hostname = \[/ {
@@ -101,4 +101,4 @@ echo ""
 ssh -t "$NAME@$EMBODIED_VLA_STAR" \
 "export OPENAI_API_KEY=$OPENAI_API_KEY; \
 select STAR in \$(./VLA_Star/experiments/script_that_outputs_name.sh); do [ -n \"\$STAR\" ] && break; done; \
-./VLA_Star/experiments/run_embodied.sh \$STAR"
+./VLA_Star/experiments/pi_robot_run.sh \$STAR"
