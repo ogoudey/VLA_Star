@@ -1,5 +1,5 @@
 ## Recording VLA Training Datasets with Kinova
-
+ (outdated)
 ### Unity
 - Make sure all gear is turned on. VIVE Wireless is on. SteamVR is on. Headset plugged in to the battery. Controller on. Recommended to put the controller on the tall blue rolly chair.
 - Open Kinova_Teleop Unity project and Kinova_Teleop scene.
