@@ -321,12 +321,13 @@ class Chat(VLA_Complex):
 
 class VLA_Tester(VLA_Complex):
     def __init__(self, interaction_runner, tool_name):
+        print("Initializing VLA_Tester")
         self.interaction_runner = interaction_runner
         super().__init__(None, tool_name)
         self.running = False
 
         # instantiates signal to coordinate monitors with runner (both are in the runner)
-        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": True, "task":"Put the cube in the first aid kit"}
+        self.signal:dict={"RUNNING_LOOP":True, "RUNNING_E": True, "task":"Stack the blocks"}
         # signal at first blocks episode loop, waiting for "go" from teleop
         self.state = vla_complex_state.State(session=[])
 

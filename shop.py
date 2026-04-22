@@ -49,11 +49,11 @@ def instantiate_so101_ava():
 
 def instantiate_so101_tester():
     robot_cfg = RobotConfig(
-        robot_type = RobotType.SO101
+        robot_type = RobotType.COMBINATION
     )
     factory.produce_robot(robot_cfg)
     agency_cfg = AgencyConfig(
-        agency_type = AgencyType.AUTO,
+        agency_type = AgencyType.DEMOED,
         recorded = False
     )
     factory.produce_agency(agency_cfg)
@@ -62,7 +62,7 @@ def instantiate_so101_tester():
             vla_type = VLAType.MANIPULATION,  # -- 
             agency_type = AgencyType.AUTO, # _/
             robot_type = RobotType.SO101,
-            policy_path = Path("path_to_testable_policy"),
+            policy_path = Path("/home/olin/Robotics/Projects/VLA_Star/outputs/stack_the_blocks/pretrained_model"),
             monitor_types = [], # just to test, monitors are ex-
             recorded = False
         ),
@@ -280,5 +280,6 @@ def instantiate_chatting_bot():
     return factory.get_vla_star()
 
 if __name__ == "__main__":
-    v = instantiate_so101_ava()
+    v = instantiate_so101_tester()
+    #v = instantiate_so101_ava()
     v.start()
