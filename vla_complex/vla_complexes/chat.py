@@ -2,10 +2,14 @@ import threading
 from typing import Optional
 from ..vla_complex import VLA_Complex
 from vla_complex_state import State
-
+from ..utilities.chat_utilities import chat_utilities
 from general_dataset import SubDataset
-
-import
+from utilities.displays import timestamp
+import time
+import socket
+import queue
+import os
+import subprocess
 
 class Chat(VLA_Complex):
     recorded: bool = False   
@@ -41,19 +45,6 @@ class Chat(VLA_Complex):
         self.state.add_to_session("self", text)
         return "Message sent. Return immediately."
 
-    def kill_port(self, port):
-        """
-        Doesn't seem to help stray listener process
-        """
-        result = subprocess.run(
-            ["lsof", "-t", f"-i:{port}"],
-            capture_output=True,
-            text=True
-        )
-
-        for pid in result.stdout.split():
-            os.kill(int(pid), signal.SIGKILL)
-
     def run_server(self):
         print("Opening socket...")
         try:
@@ -64,14 +55,12 @@ class Chat(VLA_Complex):
             self.listening = True
         except Exception as e:
             print(f"Failed to start chat server: {e}. Killing and trying again...")
-            self.kill_port(self.chat_port)
             server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server.bind(("127.0.0.1", self.chat_port))
             server.listen()
             self.listening = True
         print("Chat server waiting...")
-        update_activity("Chat server waiting...", self.tool_name)
         while self.listening:
             client_sock, addr = server.accept()
             print("Client connected:", addr)
@@ -85,13 +74,13 @@ class Chat(VLA_Complex):
         stop_event = threading.Event()
 
         threading.Thread(
-            target=recv_loop,
+            target=chat_utilities.recv_loop,
             args=(sock, self.inbound_q, stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
-            target=send_loop,
+            target=chat_utilities.send_loop,
             args=(sock, self.send_q, stop_event),
             daemon=True
         ).start()
@@ -102,12 +91,10 @@ class Chat(VLA_Complex):
             daemon=True
         ).start()
 
-        update_activity("Listening...", self.tool_name)
         try:
             while not stop_event.is_set():
                 time.sleep(1)
         finally:
-            update_activity("Stopping listening...", self.tool_name)
             stop_event.set()
             sock.close()
 
