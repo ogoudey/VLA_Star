@@ -14,8 +14,8 @@ class SO101ManipulationConfigurable(VLA_Complex_Configurable):
             name
         )
     
-    def build(self):
-        from import_helper import find
+    def instantiate(self):
+        from utilities.import_helper import find
         vla_interface_module = find("vla_interface")
         runner = vla_interface_module.factory_function(self.vla_complex_config)
 

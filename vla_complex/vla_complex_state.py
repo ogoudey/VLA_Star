@@ -1,6 +1,6 @@
 from typing import List, Optional, Any
 from dataclasses import dataclass
-from displays import log, timestamp, update_activity
+from utilities.displays import log, timestamp, update_activity
 import json
 from pydantic import BaseModel
 

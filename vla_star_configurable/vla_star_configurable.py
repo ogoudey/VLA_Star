@@ -4,7 +4,7 @@ from levels.actuality_levels import Actuality
 from morphologies.morphology import Morphology
 
 from vla_complex_configurables.vla_complex_configurable import VLA_Complex_Configurable
-
+import inspect
 from configurable import Configurable
 from abc import abstractmethod
 
@@ -17,8 +17,10 @@ class VLA_Star_Configurable(Configurable):
 
     validated: bool
 
-    def configure(self):
-        pass
+    def instantiate_with_filtered_args(self, func, kwargs):
+        valid = inspect.signature(func).parameters
+        kwargs = {k: v for k, v in kwargs.items() if k in valid}
+        return func(kwargs)
 
     def __init__(self,
         config: VLA_Star_Config,
@@ -35,5 +37,5 @@ class VLA_Star_Configurable(Configurable):
     
     
     @abstractmethod
-    def build(self):
+    def instantiate(self, **kwargs):
         raise NotImplementedError()

@@ -2,7 +2,7 @@ import threading
 
 from ..vla_complex import VLA_Complex
 from vla_complex_state import State
-from displays import log, timestamp, update_activity
+from utilities.displays import log, timestamp, update_activity
 
 import time
 

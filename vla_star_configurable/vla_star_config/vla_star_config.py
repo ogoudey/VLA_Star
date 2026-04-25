@@ -3,14 +3,17 @@ from typing import Optional
 
 class VLA_Star_Config:
     agency_type: AgencyType
-    recorded: bool
-    motive_type: Optional[MotiveType]
+    instructions_type: InstructionType
+    construction_type: ConstructionType
+    motive_type: MotiveType
 
     def __init__(self,
         agency_type: AgencyType,
-        recorded: bool,
-        motive_type: Optional[MotiveType]       
+        instruction_type: InstructionType,
+        construction_type: ConstructionType,
+        motive_type: MotiveType     
     ):
         self.agency_type = agency_type
-        self.recorded = recorded
+        self.instructions_type = instruction_type
+        self.construction_type = construction_type
         self.motive_type = motive_type

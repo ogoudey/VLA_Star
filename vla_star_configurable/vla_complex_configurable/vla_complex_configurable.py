@@ -21,5 +21,5 @@ class VLA_Complex_Configurable(Configurable):
         self.name = name
 
     @abstractmethod
-    def build(self):
+    def instantiate(self):
         raise NotImplementedError()

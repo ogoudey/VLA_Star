@@ -1,10 +1,10 @@
 from typing import List, Callable
 import asyncio
 import sys
-from gda import OrderedContextLLMAgent, OrderedContextDemoed, PrototypeAgent
+from vla_star.context_engine import OrderedContextLLMEngine, OrderedContextDemoed, PrototypeAgent
 from vla_complex.vla_complex import VLA_Complex
 import vla_complex.vla_complex
-from runner import ThinkingMachine
+from vla_star.runner import ThinkingMachine
 
 class VLA_Star:
     """

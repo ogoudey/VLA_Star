@@ -4,12 +4,12 @@ import queue
 
 import asyncio
 import json
-from gda import OrderedContextLLMAgent
+from context_engine import OrderedContextLLMEngine
 from displays import log, timestamp, update_activity
 
 class ThinkingMachine:
     """ Convenience class in charge of dishing out LLM calls """
-    def __init__(self, prototype: OrderedContextLLMAgent):
+    def __init__(self, prototype: OrderedContextLLMEngine):
         self.reruns = queue.Queue()
         self.prototype = prototype
 

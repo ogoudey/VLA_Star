@@ -3,3 +3,6 @@ class Actuality:
 
 class Actual(Actuality):
     pass
+
+class Unity(Actuality):
+    pass
