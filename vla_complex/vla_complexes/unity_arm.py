@@ -1,10 +1,14 @@
 import threading
+import time
+import queue
+import json
+import socket
+import os
 
 from ..vla_complex import VLA_Complex
 from vla_complex_state import State
+from ..utilities import chat_utilities
 
-import queue
-import json
 
 class UnityArm(VLA_Complex):
     def __init__(self, tool_name):
@@ -86,17 +90,15 @@ class UnityArm(VLA_Complex):
                 time.sleep(1)
         self.listening = True
         print("Arm connected to Unity...")
-        update_activity("Connected to Unity...", self.tool_name)
-
 
         threading.Thread(
-            target=recv_loop,
+            target=chat_utilities.recv_loop,
             args=(sock, self.unity_messages, self.stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
-            target=send_loop,
+            target=chat_utilities.send_loop,
             args=(sock, self.out_messages, self.stop_event),
             daemon=True
         ).start()
@@ -107,12 +109,10 @@ class UnityArm(VLA_Complex):
             daemon=True
         ).start()
 
-        update_activity("Listening...", self.tool_name)
         try:
             while self.listening and not self.stop_event.is_set():
                 time.sleep(1)
         finally:
-            update_activity("Stopping listening...", self.tool_name)
             self.stop_event.set()
             sock.close()
 
@@ -183,8 +183,6 @@ class UnityArm(VLA_Complex):
             self.start_listener()
         if not self.cycling:
             self.start_cycling()
-        global runner
-        if runner is None:
-            runner = rerun_function
+        self.rerun_agent()
         self.act("GetAvailableObjects", "null")
         print("Sent GetAvailableObjects")

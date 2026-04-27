@@ -3,9 +3,13 @@ import socket
 import time
 import queue
 from typing import Optional
+import socket
+import os
+import json
+
 from ..vla_complex import VLA_Complex
 from vla_complex_state import State
-from ..utilities.chat_utilities import recv_line, recv_loop, send_loop
+from ..utilities import chat_utilities
 
 class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
@@ -56,13 +60,13 @@ class UnityDrive(VLA_Complex):
         stop_event = threading.Event()
 
         threading.Thread(
-            target=recv_loop,
+            target=chat_utilities.recv_loop,
             args=(sock, self.unity_messages, stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
-            target=send_loop,
+            target=chat_utilities.send_loop,
             args=(sock, self.out_messages, stop_event),
             daemon=True
         ).start()
@@ -143,8 +147,6 @@ class UnityDrive(VLA_Complex):
         print(f"In UnityNavigation start()...")
         if not self.listening:
             self.start_listener()
-        global runner
-        if runner is None:
-            runner = rerun_function
+        self.rerun_agent()
         self.act("GetFunctions", "null")
         self.act("GetDestinations", "null")

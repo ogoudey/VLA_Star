@@ -2,14 +2,13 @@ import threading
 from typing import Optional
 from ..vla_complex import VLA_Complex
 from vla_complex_state import State
-from ..utilities.chat_utilities import chat_utilities
+from ..utilities import chat_utilities
 from general_dataset import SubDataset
 from utilities.displays import timestamp
 import time
 import socket
 import queue
 import os
-import subprocess
 
 class Chat(VLA_Complex):
     recorded: bool = False   
