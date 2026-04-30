@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, TypeAlias, Union, Optional
 import json
 from displays import log, show_context, timestamp
-from context_utils import OrderedContext
+from ..vla_star.context_utils import OrderedContext
 from collections import defaultdict
 from dataclasses import dataclass, asdict, field
 from datetime import datetime, timezone
