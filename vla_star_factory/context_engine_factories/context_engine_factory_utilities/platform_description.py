@@ -11,8 +11,7 @@ def get_platform_description():
     info_parts.append(platform.machine())              # 'x86_64', etc.
 
     # Python info
-    info_parts.append(f"Python {platform.python_version()}")
-
+    
     # Optional: distro info
     try:
         import distro
@@ -27,10 +26,9 @@ def get_platform_description():
                         break
         except Exception:
             pass
-
-    # CPU info
-    cpu_info = platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER") or "Unknown CPU"
-    info_parts.append(cpu_info)
-
+    
+    
+    info_parts.append(f"User: {os.environ["USER"]}")
+    info_parts.append(f"Python {platform.python_version()}")
     # Return only the part to fill the braces
     return ', '.join(info_parts)
