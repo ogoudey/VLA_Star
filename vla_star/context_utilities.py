@@ -1,12 +1,12 @@
 from datetime import datetime
 from typing import List, Dict, Any, Optional
 import json
-from vla_complex import VLA_Complex
+from vla_complex.vla_complex import VLA_Complex
 TIMESTAMP_FORMAT = "[%Y-%m-%d %H:%M:%S]"
 from pydantic import BaseModel
-from vla_complex_state import State
-from vla_complex import VLA_Complex
-from summarizer_compressor import Summarizer, SummarizedSessions
+from vla_complex.vla_complex_state import State
+from vla_complex.vla_complex import VLA_Complex
+from vla_star.summarizer_compressor import Summarizer, SummarizedSessions
 
 """
 Utilities for context management

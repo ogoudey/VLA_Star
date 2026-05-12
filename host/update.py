@@ -2,7 +2,9 @@ import http.client
 import json
 import os
 import subprocess
- 
+import platform
+
+
 """
 Hits API for UPDATE host
 """
@@ -18,7 +20,11 @@ from .manifest_manager import get_vla_stars
 def get_agents():
     return get_vla_stars()
 
-from vla_star_factory.context_engine_factories.context_engine_factory_utilities import platform_description
+def describe_host():
+    info = f"""\
+{os.environ['USER']}@{platform.node()} on {platform.machine()}, {platform.system()}, {platform.release()}
+    """
+    return info
 
 def get_linux_wifi():
     try:
@@ -41,7 +47,7 @@ def update_host():
     agents = get_agents()
 
     # Get unique host data
-    host_desc = platform_description.get_platform_description()
+    host_desc = describe_host()
 
     # Get LAN data
     lan_desc = get_linux_wifi()
@@ -65,4 +71,5 @@ def update_host():
         raise ConnectionError(f"POST /vlanet/api/host failed: {response.status} {response.reason}\n{body.decode()}")
     
 if __name__ == "__main__":
+    print(f"Updating host: {describe_host()}")
     update_host()

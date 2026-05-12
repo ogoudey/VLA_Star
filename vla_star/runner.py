@@ -4,8 +4,8 @@ import queue
 
 import asyncio
 import json
-from context_engine import OrderedContextLLMEngine
-from displays import log, timestamp, update_activity
+from vla_star.context_engine import OrderedContextLLMEngine
+from utilities.displays import log, timestamp, update_activity
 
 class ThinkingMachine:
     """ Convenience class in charge of dishing out LLM calls """

@@ -27,7 +27,7 @@ def get_platform_description():
         except Exception:
             pass
     
-    
+    info_parts.append(f"System: {platform.node()}")
     info_parts.append(f"User: {os.environ["USER"]}")
     info_parts.append(f"Python {platform.python_version()}")
     # Return only the part to fill the braces

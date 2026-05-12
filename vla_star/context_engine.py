@@ -3,7 +3,6 @@ import sys
 from agents import Agent, Runner, FunctionTool
 
 import asyncio
-from signals import OK, CONTINUE, RERUN
 import time
 from threading import Thread
 from typing import List, Any, Optional
@@ -13,19 +12,19 @@ import random
 import inspect
 import os
 from utilities.displays import log, show_context, timestamp
-from vla_complex import VLA_Complex
+from vla_complex.vla_complex import VLA_Complex
 from multiprocessing import Process
-from entry.demoed_input import ChoiceData, VLA_ComplexStripped
+from entries.demoed_input import ChoiceData, VLA_ComplexStripped
 import vla_star.metrics as metrics
 import asyncio
 import vla_star.context_utilities as cu
 from vla_star.context_utilities import Context, OrderedContext
-from vla_complex_state import State
+from vla_complex.vla_complex_state import State
 from tool_choice_models.vla_complex_to_tool import Tool
 from typing import Callable
 """
                                                 -> DemoedLanguage
-Stimulus -> Event -> AssembleContext -> Ordered -> RunAgentLock
+Stimulus -> Event -> AssembleContext -> Ordered -> RunLLMLock
 internal      a           pull
    to       rerun        states
  VLA_C     request
@@ -51,7 +50,7 @@ class PrototypeEngine:
             self.vla_complexes.append(vlac)
             if hasattr(vlac, "execute"):
                 self.set_as_tool(vlac)  
-        print(f"Tools:\n\n\n{self.tools}")
+        print(f"VLA Complexes linked.")
     
     def set_as_tool(self, vlac):
         print(f"{vlac.tool_name} linked to {self.context_engine_name}")
@@ -69,9 +68,8 @@ class PrototypeEngine:
 
 from pathlib import Path
 from vla_star.summarizer_compressor import Summarizer
-from vla_star.agent_identifier import write_identifier
 
-class ContextMachine(PrototypeEngine):
+class ContextEngine(PrototypeEngine):
     context: Context
     summarizer: Summarizer
     whether_to_always_summarize: bool
@@ -98,8 +96,7 @@ class ContextMachine(PrototypeEngine):
             self.update_states_with_frozen_memory(x)
             print(f"Loaded core memory for {self.context_engine_name}.")
         else:
-            write_identifier(self.context_engine_name)
-            print(f"New agent created... {self.context_engine_name}")
+            print(f"New context created... {self.context_engine_name}")
 
     def write(self):
         states = State.form_map_from_vlac_name_to_vlac_state(self.vla_complexes)
@@ -169,7 +166,7 @@ class ContextMachine(PrototypeEngine):
 
 from vla_complex.general_dataset import Dataset, ToolChoiceMade
 
-class OrderedContextMachine(ContextMachine):
+class OrderedContextEngine(ContextEngine):
     system: Optional[str]
     ordered_context: OrderedContext
     t0_identity_run: float
@@ -211,7 +208,7 @@ import socket
 import queue
 from dataclasses import dataclass, asdict
 
-class OrderedContextEngineDemoed(OrderedContextMachine):
+class OrderedContextEngineDemoed(OrderedContextEngine):
     running_remote: bool = False
     pseudo_system: Optional[str] = None
     
@@ -440,7 +437,7 @@ from tool_choice_models.models_interface import Model
 
 from agents import Agent, Runner, function_tool
 
-class OrderedContextLLMEngine(OrderedContextMachine):
+class OrderedContextLLMEngine(OrderedContextEngine):
     instructions: str
     construction: str
     motive: str

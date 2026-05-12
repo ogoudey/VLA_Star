@@ -12,5 +12,5 @@ class UnityArmConfigurable(VLA_Complex_Configurable):
         )
     
     def instantiate(self):
-        from vla_complex.vla_complexes.unity_drive import UnityDrive
-        return UnityDrive("drive")
+        from vla_complex.vla_complexes.unity_arm import UnityArm
+        return UnityArm("arm")

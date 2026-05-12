@@ -1,5 +1,5 @@
-import vla_star_factory.context_engine_factories.utilities.platform_description as platform_description
-import vla_star_factory.context_engine_factories.utilities.extra_instruction as extra_instruction
+import vla_star_factory.context_engine_factories.context_engine_factory_utilities.platform_description as platform_description
+import vla_star_factory.context_engine_factories.context_engine_factory_utilities.extra_instruction as extra_instruction
 
 INSTRUCTIONS1 = """
 You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.

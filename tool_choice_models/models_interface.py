@@ -14,7 +14,6 @@ class Model:
 
     async def run(self, input):
         # Detect provider style
-        print(f"Tools right before client.responses.create: {self.tools}")
         if isinstance(self.model, str):
             # OpenAI native
             return await client.responses.create(

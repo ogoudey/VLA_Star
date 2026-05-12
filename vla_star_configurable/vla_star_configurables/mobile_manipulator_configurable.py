@@ -20,14 +20,14 @@ class MobileManipulatorConfigurable(VLA_Star_Configurable):
         actuality: Actuality,
         morphology: Morphology,
         vla_complex_configurables: List[VLA_Complex_Configurable],
-        name: str,
+        name_kind: str,
     ):
         super().__init__(
             config,
             actuality,
             morphology,
             vla_complex_configurables,
-            name
+            name_kind
         )
 
     def instantiate(self, **kwargs):
@@ -36,5 +36,7 @@ class MobileManipulatorConfigurable(VLA_Star_Configurable):
         vla_complexes = []
         for vla_complex_configurable in self.vla_complex_configurables:
             vla_complexes.append(self.instantiate_with_filtered_args(vla_complex_configurable.instantiate, kwargs))
-        context_engine.link_vla_complexes(vla_complexes)
-        return VLA_Star(context_engine, vla_complexes) 
+        
+        name = kwargs["name"] if "name" in kwargs else "unnnamed"
+
+        return VLA_Star(context_engine, vla_complexes, name)

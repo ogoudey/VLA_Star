@@ -4,9 +4,9 @@ import queue
 import json
 import socket
 import os
-
+from typing import Callable
 from ..vla_complex import VLA_Complex
-from vla_complex_state import State
+from vla_complex.vla_complex_state import State
 from ..utilities import chat_utilities
 
 
