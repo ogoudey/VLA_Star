@@ -30,7 +30,7 @@ class MobileManipulatorConfigurable(VLA_Star_Configurable):
             name_kind
         )
 
-    def instantiate(self, **kwargs):
+    def instantiate(self, **kwargs) -> VLA_Star:
         context_engine = self.instantiate_with_filtered_args(self.config.instantiate, kwargs)
 
         vla_complexes = []

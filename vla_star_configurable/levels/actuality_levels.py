@@ -6,3 +6,6 @@ class Actual(Actuality):
 
 class Unity(Actuality):
     pass
+
+class Stationary(Actuality):
+    pass

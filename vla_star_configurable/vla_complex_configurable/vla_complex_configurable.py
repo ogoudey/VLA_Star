@@ -1,4 +1,6 @@
 from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_config import VLA_Complex_Config
+from vla_star.vla_star import VLA_Star
+
 
 from ..configurable import Configurable
 
