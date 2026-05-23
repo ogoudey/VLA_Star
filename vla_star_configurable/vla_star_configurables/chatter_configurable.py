@@ -35,7 +35,7 @@ class ChatterConfigurable(VLA_Star_Configurable):
 
         vla_complexes = []
         for vla_complex_configurable in self.vla_complex_configurables:
-            vla_complexes.append(self.instantiate_with_filtered_args(vla_complex_configurable.instantiate, kwargs))
+            vla_complexes.append(vla_complex_configurable.instantiate(**kwargs))
         
         name = kwargs["name"] if "name" in kwargs else "unnnamed"
 

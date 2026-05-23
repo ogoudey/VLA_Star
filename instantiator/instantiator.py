@@ -25,6 +25,7 @@ class Instantiator:
             if not self.frozen_encoded_configurables.exists():
                 self.frozen_encoded_configurables.mkdir(parents=True, exist_ok=True)
             with open(self.frozen_encoded_configurables / f"{self.configurable.name_kind}.pkl", 'wb') as f:  # Overwrites any existing file.
+                print(f"Writing code for {self.configurable.name_kind}...")
                 pickle.dump(self.configurable, f, pickle.HIGHEST_PROTOCOL)
         except ImportError:
             print(f"Failed to pickle {self.configurable.name_kind}... skipping.")
@@ -33,13 +34,16 @@ class Instantiator:
         try:
             import pickle
             with open(self.frozen_encoded_configurables / f"{name_kind}.pkl", 'rb') as f:
+                print(f"Using existing code for {name_kind}.")
                 self.configurable = pickle.load(f)
-            print(f"Using existing code for {name_kind}.")
             return True
         except ImportError:
             print("Pickle not installed. Skipping Pickle stuff")
             return False
         except FileNotFoundError:
+            return False
+        except Exception as e:
+            print(f"Could not load code for {name_kind}. Rewriting...")
             return False
 
     def try_pickle_vla_star(self, vla_star):

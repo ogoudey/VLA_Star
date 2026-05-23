@@ -30,7 +30,7 @@ class ThinkingMachine:
         self.reruns.put(source)
     
     async def start(self):
-        print("Thinking Machine starting...")
+        #print("Thinking Machine starting...")
         loop = asyncio.get_running_loop()
         self.active = True
         while self.active:

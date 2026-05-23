@@ -9,6 +9,7 @@ import asyncio
 import socket
 from utilities.displays import log, timestamp, update_activity
 import queue
+from .vla_complex_state import State
 
 runner: Callable = None
 agent_name: str = None
@@ -28,6 +29,8 @@ class VLA_Complex:
 
         self.name_in_session = tool_name
         self.name_in_impression = tool_name
+
+        self.state = self.state = State()
 
     async def execute(self, instruction: str):
         """___________________________"""

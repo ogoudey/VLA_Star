@@ -3,10 +3,9 @@ import asyncio
 import sys
 from vla_star.context_engine import OrderedContextLLMEngine, OrderedContextEngineDemoed
 from vla_complex.vla_complex import VLA_Complex
-import vla_complex.vla_complex
+import vla_complex.vla_complex as vla_complex_module
 from vla_star.runner import ThinkingMachine
 
-from vla_star.agent_identifier import write_identifier
 
 
 class VLA_Star:
@@ -22,9 +21,7 @@ class VLA_Star:
         self.vla_complexes = vla_complexes
         self.context_engine.link_vla_complexes(vla_complexes)
         self.name = name
-
-        write_identifier(self.name)
-        vla_complex.agent_name = self.name # idk why i need this
+        vla_complex_module.agent_name = self.name # idk why i need this
         
     def safe_start(self):
         try:
@@ -37,24 +34,25 @@ class VLA_Star:
         for vlac in self.vla_complexes:
             if hasattr(vlac, "start"):
                 vlacs_to_start.append(vlac)
-                print(f"Will start {vlac.tool_name}")
+                #print(f"Will start {vlac.tool_name}")
         
         asyncio.run(self.joint_start(vlacs_to_start))
-        print(f"After for loop of all starting with a VLA Complex.")
+        #print(f"After for loop of all starting with a VLA Complex.")
 
     async def joint_start(self, vlacs: List[VLA_Complex]):
+        vla_complex_module.runner = self.get_runner()
+        print(f"Set vla_complex.runner: {vla_complex_module.runner.__name__}")
+
         for vlac in vlacs:
-            print(f"Starting {vlac.tool_name}...")
-            rerun_function = self.get_runner()
-            await vlac.start(rerun_function)
+            await vlac.start()
         while True:
             await asyncio.sleep(60)
             
     async def start_vlac(self, vlac: VLA_Complex):
         # start the "scheduler"
         
-        rerun_function = self.get_runner()
-        await vlac.start(rerun_function)
+        vla_complex_module.runner = self.get_runner()
+        await vlac.start()
 
         # keep main loop alive
         while True:
@@ -62,14 +60,14 @@ class VLA_Star:
     
     def get_runner(self) -> Callable:
         if type(self.context_engine) == OrderedContextLLMEngine:
-            print("Starting GDA")
+            #print("Starting GDA")
             tm = ThinkingMachine(self.context_engine)
             rerun_function = tm.rerun
-            print("Creating task...")
+            #print("Creating task...")
             asyncio.create_task(tm.start())
-            print("Task created.")
+            #print("Task created.")
         else:
-            print("Not starting GDA")
+            #print("Not starting GDA")
             rerun_function = self.context_engine.run_identity
-            print(f"Runner = {rerun_function}")
+            #print(f"Runner = {rerun_function}")
         return rerun_function

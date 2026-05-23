@@ -11,12 +11,14 @@ import queue
 import os
 
 class Chat(VLA_Complex):
-    recorded: bool = False   
+    recorded: bool
     dataset: Optional[SubDataset] = None
-    def __init__(self, tool_name="chat", chat_port=5001):
+
+    def __init__(self, tool_name="chat", chat_port=5001, recorded=False):
         super().__init__(self.reply, tool_name, True)
         print(f"Creating {tool_name} port on {chat_port}")
         self.chat_port = chat_port
+        self.recorded = recorded
         ### State ###
         self.state = State(session=[], impression={})
 
@@ -45,7 +47,7 @@ class Chat(VLA_Complex):
         return "Message sent. Return immediately."
 
     def run_server(self):
-        print("Opening socket...")
+        #print("Opening socket...")
         try:
             server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -59,7 +61,7 @@ class Chat(VLA_Complex):
             server.bind(("127.0.0.1", self.chat_port))
             server.listen()
             self.listening = True
-        print("Chat server waiting...")
+        print(f"Chat server waiting on port {self.chat_port}...")
         while self.listening:
             client_sock, addr = server.accept()
             print("Client connected:", addr)
@@ -126,12 +128,10 @@ class Chat(VLA_Complex):
         self.state.impression = {"Current user message":f"{user_input}"}
         self.rerun_agent()
 
-    async def start(self, rerun_function: Callable):
-        print(f"In Chat start(). Setting rerun_function to {rerun_function}")
+    async def start(self):
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
-        global runner
-        if not os.environ.get("INTRODUCTION_DATA", "None") == "None":
+        if False: # NotImplemented
             global agent_name
             introduction.introduction_pipeline(rerun=runner, introduction_type=os.environ.get("INTRODUCTION_DATA", "None"), name=agent_name)
         else:

@@ -14,7 +14,7 @@ import os
 from utilities.displays import log, show_context, timestamp
 from vla_complex.vla_complex import VLA_Complex
 from multiprocessing import Process
-from entries.demoed_input import ChoiceData, VLA_ComplexStripped
+from extraneous.tool_choice.demoed_input import ChoiceData, VLA_ComplexStripped
 import vla_star.metrics as metrics
 import asyncio
 import vla_star.context_utilities as cu
@@ -534,8 +534,5 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             return "This task is trash"
 
     def instance_system_prompt(self):
-        system_prompt = self.instructions
-        if self.goal:
-            system_prompt += self.goal
-        self.system = system_prompt
-        return system_prompt
+        self.system = f"""{self.instructions}{self.construction}{self.motive}{self.extra}"""
+        return self.system

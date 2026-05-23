@@ -1,7 +1,7 @@
 import os
 import json
 from typing import Optional
-
+import datetime
 def get_manifest():
     file_path = os.path.expanduser("~/.vla_stars.jsonl")
 
@@ -36,6 +36,8 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
         else:
             next_vla_stars_manifest.append(vla_star_data)
     
+    new_status = f"{new_status}@{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"
+    print(f"Updating manifest with status {new_status}.")
     if not existent_data_for_vla_star:
         message = "..." if not message else message
         next_vla_stars_manifest.append({

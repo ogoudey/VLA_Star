@@ -10,11 +10,12 @@ from vla_complex.vlm import VLM
 from vla_star.vla_star import VLA_Star
 from vla_complex.vla_complex import VLA_Complex
 
-from vla_star.context_engine import OrderedContextLLMEngine, OrderedContextEngineDemoed
+from vla_star.context_engine import OrderedContextLLMEngine, OrderedContextEngineDemoed, OrderedContextEngine
 import vla_complex.vla_complex as vla_complex
 
-from .context_engine_factory_utilities.instructions import *
-from .context_engine_factory_utilities.goals import *
+from .library.instructions import *
+from .library.constructions import *
+from .library.motives import *
 
 from vla_star_configurable.vla_star_config.vla_star_types import *
 from vla_star_configurable.vla_star_config.vla_star_config import VLA_Star_Config
@@ -27,7 +28,7 @@ def instantiate_mobile_manipulator_context_engine(
     motive: MotiveType | str,
     recorded: bool,
     extra: Optional[str] = None
-) -> OrderedContextLLMEngine:
+) -> OrderedContextEngine:
     context_engine = None
     match agency_type:
         case AgencyType.AUTO:
@@ -67,7 +68,7 @@ def instantiate_mobile_manipulator_context_engine(
             match extra:
                 case _:
                     _extra = extra                
-            context_engine = OrderedContextLLMEngine(f"context_engine_for_{name}", instructions, construction, _motive, _extra)
+            context_engine = OrderedContextLLMEngine(f"context_engine_for_{name}", _instructions, _construction, _motive, _extra)
         case AgencyType.DEMOED:
             context_engine = OrderedContextEngineDemoed(f"context_engine_for_{name}")
         case _:

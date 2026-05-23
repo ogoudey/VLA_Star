@@ -35,7 +35,7 @@ def get_local_area_description():
     g = geocoder.ip('me')
     return f"{g.city}, {g.country} (Lat: {g.lat}, Lng: {g.lng})" if g.ok else "dislocated"
 
-def update_host():
+def update_host_on_vlanet():
     # Get agents
     agents = get_agents()
 

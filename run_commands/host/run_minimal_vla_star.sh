@@ -74,12 +74,16 @@ fi
 # ============ Instantiate ================ #
 # Runs Fred (or any agent). This script is fit to these arguments.
 
-NAME="${1:-Fred}"
 
-python3 -m "instantiate_scripts.instantiate_minimal_vla_star_given_a_name" "$NAME"
+NAME="${1:-Fred}"
+CHAT_PORT="${2:-5001}"
+
+gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+
+python3 -m "instantiate_scripts.instantiate_minimal_vla_star_given_a_name" "$NAME" "$CHAT_PORT"
 deactivate || true
 
-echo "Finished runing $NAME"
+echo "Finished running $NAME"
 
 
 # ============ (Re-up Host's Advertisement over LAN) ================ #

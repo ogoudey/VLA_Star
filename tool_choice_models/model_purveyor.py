@@ -51,9 +51,10 @@ class ModelPurveyor:
                 for i, item in enumerate(result.output):
                     print(f"Result output {i}. {item}")
                     if item.type == "function_call": # Grabs the first one - if two is made - doesn't matter
-                        if not item.arguments or item.arguments == '{}':
-                            print("⚠️ Empty arguments, skipping:", item)
-                            continue
+                        #if not item.arguments or item.arguments == '{}':
+                        #    print("⚠️ Empty arguments, skipping:", item)
+                        #    continue
+
                         await tool_dispatcher[item.name](**json.loads(item.arguments))
                         return item.name, json.loads(item.arguments), 
             case "claude-sonnet-4-20250514":

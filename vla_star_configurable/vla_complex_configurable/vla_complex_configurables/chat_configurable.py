@@ -1,5 +1,6 @@
 from ..vla_complex_configurable import VLA_Complex_Configurable
 from ..vla_complex_config.vla_complex_configs.chat_config import ChatConfig
+from vla_complex.vla_complex import VLA_Complex
 
 class ChatConfigurable(VLA_Complex_Configurable):
     def __init__(self,
@@ -11,6 +12,5 @@ class ChatConfigurable(VLA_Complex_Configurable):
             name
         )
     
-    def instantiate(self):
-        from vla_complex.vla_complexes.chat import Chat
-        return Chat("chat")
+    def instantiate(self, **kwargs) -> VLA_Complex:
+        return self.instantiate_with_filtered_args(self.vla_complex_config.instantiate, kwargs)

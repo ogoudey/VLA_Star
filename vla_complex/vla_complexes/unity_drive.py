@@ -143,7 +143,7 @@ class UnityDrive(VLA_Complex):
         structure = {"method": unity_callable, "arg":arg}
         self.out_messages.put(json.dumps(structure))
 
-    async def start(self, rerun_function: Callable):
+    async def start(self):
         print(f"In UnityNavigation start()...")
         if not self.listening:
             self.start_listener()
