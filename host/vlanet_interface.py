@@ -56,8 +56,9 @@ def update_host_on_vlanet():
     }
 
     conn = http.client.HTTPConnection("olimn.com")
-
-    conn.request("POST", f"/vlanet/api/host", body=json.dumps(content), headers={"X-API-Key": OLIMN_API_KEY, "Content-Type": "application/json"})
+    json_dump = json.dumps(content)
+    #print(json_dump)
+    conn.request("POST", f"/vlanet/api/host", body=json_dump, headers={"X-API-Key": OLIMN_API_KEY, "Content-Type": "application/json"})
     response = conn.getresponse()
     body = response.read()
     if response.status >= 400:

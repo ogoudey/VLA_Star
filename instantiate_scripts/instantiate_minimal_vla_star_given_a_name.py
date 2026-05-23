@@ -16,7 +16,7 @@ if __name__ == "__main__":
         chat_port=int(sys.argv[2])
     )
 
-    update_manifest(sys.argv[1], new_status="active", message="To activate Fred, use an activator level 1. If fred is active, open up a chat port with a textual chat port.")
+    update_manifest(sys.argv[1], new_status="active", message=f"To activate {sys.argv[1]}, use an activator level 1. If {sys.argv[1]} is active, open up a textual chat terminal on {sys.argv[2]}.")
 
     update_host_on_vlanet()
 
