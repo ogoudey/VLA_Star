@@ -37,7 +37,10 @@ class Instantiator:
             print(f"Using existing code for {name_kind}.")
             return True
         except ImportError:
-            return False #silent
+            print("Pickle not installed. Skipping Pickle stuff")
+            return False
+        except FileNotFoundError:
+            return False
 
     def try_pickle_vla_star(self, vla_star):
         try:
@@ -48,5 +51,5 @@ class Instantiator:
                 pickle.dump(self.configurable, f, pickle.HIGHEST_PROTOCOL)
         except ImportError:
             print(f"Failed to pickle the {self.configurable.name_kind} named {vla_star.name}... skipping.")
-
+        
 

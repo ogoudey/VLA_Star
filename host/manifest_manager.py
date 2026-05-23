@@ -12,7 +12,7 @@ def get_manifest():
     with open(file_path, "r") as f:
         for line in f:
             if line.strip():
-                vla_stars_manifest.append(json.loads(f))
+                vla_stars_manifest.append(json.loads(line))
 
     return vla_stars_manifest
 
@@ -38,7 +38,7 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
     
     if not existent_data_for_vla_star:
         message = "..." if not message else message
-        current_vla_stars_manifest.append({
+        next_vla_stars_manifest.append({
             "name": name,
             "status": new_status,
             "message": message 
@@ -46,9 +46,10 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
     else:
         message = existent_data_for_vla_star["message"] if not message else message
         
-        current_vla_stars_manifest.append({
+        next_vla_stars_manifest.append({
             "name": name,
             "status": new_status,
             "message": message 
         })
+    save_manifest(next_vla_stars_manifest)
     

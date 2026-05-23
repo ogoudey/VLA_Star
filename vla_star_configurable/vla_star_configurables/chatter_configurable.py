@@ -1,6 +1,6 @@
 from typing import List
 from ..vla_star_configurable import VLA_Star_Configurable
-from ..vla_star_config.vla_star_configs.mobile_manipulator_config import ChatterConfig
+from ..vla_star_config.vla_star_configs.chatter_config import ChatterConfig
 from ..levels.actuality_levels import Actuality
 
 from ..morphology.morphologies.ava_gen1 import AvaGen1

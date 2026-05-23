@@ -15,13 +15,10 @@ if __name__ == "__main__":
         extra="\nAbove all, refer to yourself INCESSANTLY as a guinea pig. Bring it up ALL THE TIME."
     )
 
-    update_manifest("Fred", new_status="active", message="To activate Fred, use an activator level 1")
+    update_manifest(sys.argv[1], new_status="active", message="To activate Fred, use an activator level 1. If fred is active, open up a chat port with a textual chat port.")
 
     update_host()
 
     vla_star.safe_start()
 
-    update_manifest("Fred", new_status="inactive")
-
-
-    
+    update_manifest(sys.argv[1], new_status="inactive")

@@ -13,8 +13,8 @@ from vla_complex.vla_complex import VLA_Complex
 from vla_star.context_engine import OrderedContextEngine, OrderedContextLLMEngine
 import vla_complex.vla_complex as vla_complex
 
-from .context_engine_factories.utilities.instructions import *
-from .context_engine_factories.utilities.goals import *
+from context_engine_factories.context_engine_factories_utilities.instructions import *
+from context_engine_factories.context_engine_factories_utilities.goals import *
 
 from vla_star_configurable.vla_star_config.vla_star_types import *
 from vla_star_configurable.vla_star_config.vla_star_config import VLA_Star_Config

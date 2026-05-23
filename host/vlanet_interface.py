@@ -4,13 +4,6 @@ import os
 import subprocess
 import platform
 
-
-"""
-Hits API for UPDATE host
-"""
-
-
-
 OLIMN_API_KEY = os.environ.get("OLIMN_API_KEY", None)
 if not OLIMN_API_KEY:
     raise ValueError("Please set OLIMN_API_KEY")

@@ -1,3 +1,10 @@
+#
+#
+#           DEPRECATED
+#
+#
+
+
 import os
 from pathlib import Path
 import json
@@ -16,6 +23,8 @@ def _write_list(data):
 
 
 def write_identifier(agent_name):
+    print("Not writing identifier to manifest. This manifest is deprecated.")
+    return
     agents = _read_list()
 
     if agent_name not in agents:

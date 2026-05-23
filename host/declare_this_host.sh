@@ -4,6 +4,8 @@
 #  Re-up the host's advertisements
 # ==================================
 
+# This should happen once on the awake cycle of the host. But redundant to run it otherwise
+
 echo "Installing apt packages"
 sudo apt install avahi-utils
 
@@ -29,5 +31,5 @@ else
     VLA_Star_dir="$HOME/VLA_Star"
 fi
 
-aplay $VLA_Star_dir/experiments/boot.wav
+# aplay $VLA_Star_dir/experiments/boot.wav
 sleep 1

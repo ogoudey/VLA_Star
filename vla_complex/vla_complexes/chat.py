@@ -1,9 +1,9 @@
 import threading
-from typing import Optional
+from typing import Optional, Callable
 from ..vla_complex import VLA_Complex
-from vla_complex_state import State
+from ..vla_complex_state import State
 from ..utilities import chat_utilities
-from general_dataset import SubDataset
+from ..general_dataset import SubDataset
 from utilities.displays import timestamp
 import time
 import socket
@@ -131,9 +131,6 @@ class Chat(VLA_Complex):
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         global runner
-        if runner is None:
-            runner = rerun_function
-        
         if not os.environ.get("INTRODUCTION_DATA", "None") == "None":
             global agent_name
             introduction.introduction_pipeline(rerun=runner, introduction_type=os.environ.get("INTRODUCTION_DATA", "None"), name=agent_name)

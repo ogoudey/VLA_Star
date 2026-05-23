@@ -45,7 +45,7 @@ echo "VLA* path env variable: $VLA_STAR_PATH"
 if [ -n "$VLA_STAR_PATH" ]; then
     VLA_Star_dir="$VLA_STAR_PATH"
 else
-    echo "Choosing default VLA_Star path"
+    echo "Choosing default VLA_Star path: $HOME/VLA_Star"
     VLA_Star_dir="$HOME/VLA_Star"
 fi
 
