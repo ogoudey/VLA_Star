@@ -78,6 +78,7 @@ fi
 NAME="${1:-Fred}"
 CHAT_PORT="${2:-5001}"
 
+export DISPLAY=${DISPLAY:-:0}
 gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
 
 python3 -m "instantiate_scripts.instantiate_minimal_vla_star_given_a_name" "$NAME" "$CHAT_PORT"
