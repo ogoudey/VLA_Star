@@ -74,14 +74,19 @@ fi
 # ============ Instantiate ================ #
 # Runs Fred (or any agent). This script is fit to these arguments.
 
-NAME="${1:-Fred}"
+NAME="${1:-Mike}"
 CHAT_PORT="${2:-5001}"
 
-if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
-    dbus-launch gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
-else
-    gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+if [ -n "$DISPLAY" ]; then
+    if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
+        # SSH from Computer A - use dbus-launch
+        dbus-launch gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+    else
+        # Local desktop session
+        gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+    fi
 fi
+# No DISPLAY = Android/headless, do nothing
 
 python3 -m "instantiate_scripts.instantiate_minimal_vla_star_given_a_name" "$NAME" "$CHAT_PORT"
 deactivate || true
