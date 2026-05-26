@@ -11,30 +11,39 @@ from utilities.displays import log, timestamp, update_activity
 import queue
 from .vla_complex_state import State
 
+from abc import abstractmethod
+
 runner: Callable = None
 agent_name: str = None
 
 class VLA_Complex:
     """
-    Base class for all modules, VLA_Complexes
+    Base class for all VLA_Complexes
     """
-
     tool_name: str
-    def __init__(self, vla: Any, tool_name: str, on_start=False):
-        self.vla = vla        
-        
+    description: str
+    return_value: str
+    on_start: bool
+    monitors: List
+    recorded: bool
+
+    def __init__(self, tool_name: str, description: str, return_value: str, on_start: bool, monitors: List, recorded: bool):        
         self.tool_name = tool_name
+        self.description = description
+        self.return_value = return_value
         self.on_start = on_start
+        self.monitors = monitors
+        self.recorded = recorded
+        
         self.use_frequency = 0.0
 
-        self.name_in_session = tool_name
-        self.name_in_impression = tool_name
+        self.execute.__doc__ = description
 
-        self.state = self.state = State()
+        self.state = State()
 
-    async def execute(self, instruction: str):
-        """___________________________"""
-        self.use_frequency += 1
+    @abstractmethod
+    async def execute(self, *args, **kwargs):
+        raise NotImplementedError()
 
     def rerun_agent(self):
         global runner

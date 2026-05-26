@@ -1,4 +1,4 @@
-from ..vla_star_config import VLA_Star_Config
+from ..context_engine_config import ContextEngineConfig
 from ..vla_star_types import *
 from vla_star_factory.context_engine_factories.library.instructions import *
 from vla_star_factory.context_engine_factories.library.constructions import *
@@ -6,7 +6,7 @@ from vla_star_factory.context_engine_factories.library.motives import *
 from .vla_star_utilities import generate_unique_name
 from typing import Optional
 
-class ChatterConfig(VLA_Star_Config):
+class ChatterConfig(ContextEngineConfig):
     def __init__(self,
         agency_type: AgencyType,
         instructions_type: InstructionType,

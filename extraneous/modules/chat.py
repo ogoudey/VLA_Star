@@ -2,7 +2,7 @@ import socket
 import threading
 import queue
 import time
-from vla_complex.utilities.chat_utilities import recv_line, recv_loop, send_loop
+from vla_star_factory.vla_complex_factories.utilities.socket_utilities import recv_line, recv_loop, send_loop
 import os
 
 from setproctitle import setproctitle

@@ -1,4 +1,4 @@
-from ..vla_complex_configurable import VLA_Complex_Configurable
+from ..vla_complex_template import VLA_Complex_Configurable
 from ..vla_complex_config.vla_complex_configs.unity_drive_config import UnityDriveConfig
 
 class UnityDriveConfigurable(VLA_Complex_Configurable):

@@ -22,10 +22,10 @@ class ChatterInstantiator(Instantiator):
                 if self.try_load_configurable(name_kind):
                     return
                 from vla_star_configurable.levels.actuality_levels import Stationary
-                from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.chat_configurable import ChatConfigurable
-                from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_configs.chat_config import ChatConfig
-                from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.suspend_configurable import SuspendConfigurable
-                from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_configs.suspend_config import SuspendConfig
+                from vla_star_configurable.vla_complex_template.vla_complex_templates.chat_template import ChatConfigurable
+                from vla_star_configurable.vla_complex_template.vla_complex_config.vla_complex_configs.comms_config import ChatConfig
+                from vla_star_configurable.vla_complex_template.vla_complex_templates.suspend_template import SuspendConfigurable
+                from vla_star_configurable.vla_complex_template.vla_complex_config.vla_complex_configs.suspend_config import SuspendConfig
 
                 self.configurable = ChatterConfigurable(
                     ChatterConfig(

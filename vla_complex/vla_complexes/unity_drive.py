@@ -9,7 +9,7 @@ import json
 
 from ..vla_complex import VLA_Complex
 from vla_complex.vla_complex_state import State
-from ..utilities import chat_utilities
+from ...vla_star_factory.vla_complex_factories.utilities import socket_utilities
 
 class UnityDrive(VLA_Complex):
     def __init__(self, tool_name: str):
@@ -60,13 +60,13 @@ class UnityDrive(VLA_Complex):
         stop_event = threading.Event()
 
         threading.Thread(
-            target=chat_utilities.recv_loop,
+            target=socket_utilities.recv_loop,
             args=(sock, self.unity_messages, stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
-            target=chat_utilities.send_loop,
+            target=socket_utilities.send_loop,
             args=(sock, self.out_messages, stop_event),
             daemon=True
         ).start()
