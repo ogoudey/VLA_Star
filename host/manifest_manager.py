@@ -37,7 +37,7 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
             next_vla_stars_manifest.append(vla_star_data)
     
     new_status = f"{new_status}@{datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}"
-    print(f"Updating manifest with status {new_status}.")
+    print(f"[Manifest Manager] Updating manifest with status {new_status}.")
     if not existent_data_for_vla_star:
         message = "..." if not message else message
         next_vla_stars_manifest.append({

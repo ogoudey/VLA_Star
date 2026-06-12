@@ -13,10 +13,10 @@ import os
 class Chat(VLA_Complex):
     recorded: bool
     dataset: Optional[SubDataset] = None
-
-    def __init__(self, tool_name="chat", chat_port=5001, recorded=False):
-        super().__init__(self.reply, tool_name, True)
-        print(f"Creating {tool_name} port on {chat_port}")
+    
+    def __init__(self, chat_port=5001, recorded=False, extension=None):
+        super().__init__("chat", True)
+        print(f"[Chat] Creating chat port on {chat_port}.")
         self.chat_port = chat_port
         self.recorded = recorded
         ### State ###
@@ -28,11 +28,31 @@ class Chat(VLA_Complex):
         self.send_q = queue.Queue()
         self.inbound_q = queue.Queue()
 
+        self.extension = extension
+
+        if self.dataset is None:
+            self.dataset = SubDataset("Chat", "user")
+
     def _repr__(self):
         return f"Chat repr"
 
     def __str__(self):
         return f"{self.tool_name}"
+
+    def __getstate__(self):
+        # For pickle
+        state = self.__dict__.copy()
+        del state['send_q']
+        del state['inbound_q']
+        self.listening = False
+        return state
+
+    def __setstate__(self, state):
+        # For pickle
+        self.__dict__.update(state)
+        self.send_q = queue.Queue()
+        self.inbound_q = queue.Queue()
+        self.listening = False
 
     async def execute(self, text: str):
         """
@@ -42,12 +62,11 @@ class Chat(VLA_Complex):
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         await super().execute(text)
-        self.vla(text)
+        self.reply(text)
         self.state.add_to_session("self", text)
         return "Message sent. Return immediately."
 
     def run_server(self):
-        #print("Opening socket...")
         try:
             server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -61,10 +80,10 @@ class Chat(VLA_Complex):
             server.bind(("127.0.0.1", self.chat_port))
             server.listen()
             self.listening = True
-        print(f"Chat server waiting on port {self.chat_port}...")
+        #print(f"Chat server waiting on port {self.chat_port}...")
         while self.listening:
             client_sock, addr = server.accept()
-            print("Client connected:", addr)
+            print(f"[Chat] Client connected: {addr}")
             threading.Thread(
                 target=self.handle_client,
                 args=(client_sock,),
@@ -120,7 +139,7 @@ class Chat(VLA_Complex):
             self.state.impression = {} # isnt working as intended
 
     def respond(self, user_input):
-        print(f"Message {user_input} received...")
+        #print(f"Message {user_input} received...")
         if self.recorded:
             if self.dataset is None:
                 self.dataset = SubDataset("dialogue", "user")
@@ -129,6 +148,7 @@ class Chat(VLA_Complex):
         self.rerun_agent()
 
     async def start(self):
+        print(f"[Chat] started listening on {self.chat_port}...")
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         if False: # NotImplemented
@@ -139,7 +159,5 @@ class Chat(VLA_Complex):
 
     def reply(self, message: str):
         if self.recorded:
-            if self.dataset is None:
-                self.dataset = SubDataset("dialogue", "user")
             self.dataset.add_data({"robot": [{"content": message, "timestamp": timestamp()}]})
         self.send_q.put(message)

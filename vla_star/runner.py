@@ -23,7 +23,6 @@ class ThinkingMachine:
     def rerun(self, source):
         if source == "STOP":
             self.active = False
-            print("STOPPING")
         
 
         # Common Case
@@ -42,7 +41,7 @@ class ThinkingMachine:
             except queue.Empty:
                 await asyncio.sleep(0.1)  # throttle
                 continue
-            print(f"{source} runs agent!")
+            #print(f"{source} runs agent!")
             # Fire-and-forget agent
             if type(source) == dict: # here it's a structured message - why? well only exceptions are not general context, the request()
                 try:
@@ -51,4 +50,4 @@ class ThinkingMachine:
                     raise Exception(f"Internal message '{source}' not supported.")
                 continue    
             asyncio.create_task(self.prototype.request())
-        print(f"Thinking Machine ending.")
+        #print(f"Thinking Machine ending.")

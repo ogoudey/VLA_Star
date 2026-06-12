@@ -18,10 +18,9 @@ class VLA_Complex:
     """
     Base class for all modules, VLA_Complexes
     """
-
     tool_name: str
-    def __init__(self, vla: Any, tool_name: str, on_start=False):
-        self.vla = vla        
+    def __init__(self, tool_name: str, on_start=False):
+       
         
         self.tool_name = tool_name
         self.on_start = on_start

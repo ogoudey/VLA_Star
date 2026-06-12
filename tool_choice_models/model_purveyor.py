@@ -39,23 +39,26 @@ class ModelPurveyor:
 
     @staticmethod
     async def run(identity, context, tool_dispatcher):
-        print("Running LLM...")
+        #print("Running LLM...")
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 result = await identity.run(context)
             case "claude-sonnet-4-20250514":
                 result = await identity.run(context)
-        print("Executing tools...")
+        #print("Executing tools...")
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 for i, item in enumerate(result.output):
-                    print(f"Result output {i}. {item}")
+                    #print(f"Result output {i}. {item}")
                     if item.type == "function_call": # Grabs the first one - if two is made - doesn't matter
                         #if not item.arguments or item.arguments == '{}':
                         #    print("⚠️ Empty arguments, skipping:", item)
                         #    continue
-
-                        await tool_dispatcher[item.name](**json.loads(item.arguments))
+                        try:
+                            #print(tool_dispatcher)
+                            await tool_dispatcher[item.name](**json.loads(item.arguments))
+                        except Exception as e:
+                            print(f"[ModelPurveyor] {e}! :()")
                         return item.name, json.loads(item.arguments), 
             case "claude-sonnet-4-20250514":
                 for tool_call in result.choices[0].message.tool_calls:

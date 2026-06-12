@@ -1,47 +1,57 @@
 from typing import List, Callable, Optional
 import asyncio
 import sys
-from vla_star.context_engine import OrderedContextLLMEngine, OrderedContextEngineDemoed
+from vla_star.context_engine import OrderedContextEngine,OrderedContextLLMEngine
 from vla_complex.vla_complex import VLA_Complex
 import vla_complex.vla_complex as vla_complex_module
 from vla_star.runner import ThinkingMachine
 
-
-
+from vla_star.extension import Extension
+from tool_choice_models.tool import Tool
 class VLA_Star:
     """
     Central class representing the agent
     """
-    context_engine: OrderedContextLLMEngine | OrderedContextEngineDemoed
-    vla_complexes: List[VLA_Complex]
     name: str
 
-    def __init__(self, context_engine: OrderedContextLLMEngine | OrderedContextEngineDemoed, vla_complexes: List[VLA_Complex], name: str):
-        self.context_engine = context_engine
-        self.vla_complexes = vla_complexes
-        self.context_engine.link_vla_complexes(vla_complexes)
+    context_engine: OrderedContextEngine
+    vla_complexes: List[VLA_Complex]
+    
+
+    def __init__(self,
+        name: str,
+        context_engine: OrderedContextEngine,
+        tools: List[Tool],
+        extension: Extension
+    ):
         self.name = name
+        self.context_engine = context_engine
+        self.tools = tools
+        self.extension = extension
+        self.context_engine.attach_tools(self.tools)
         vla_complex_module.agent_name = self.name # idk why i need this
+
+        
         
     def safe_start(self):
+        
         try:
             self.start()
         except KeyboardInterrupt as k:
-            print("Exiting interaction.")
+            #print("Exiting interaction.")
+            pass
 
     def start(self, prompt: str | None = None):
         vlacs_to_start = []
-        for vlac in self.vla_complexes:
-            if hasattr(vlac, "start"):
-                vlacs_to_start.append(vlac)
-                #print(f"Will start {vlac.tool_name}")
+        for tool in self.tools:
+            if hasattr(tool.vla_complex, "start") and tool.vla_complex.on_start:
+                vlacs_to_start.append(tool.vla_complex)
         
         asyncio.run(self.joint_start(vlacs_to_start))
-        #print(f"After for loop of all starting with a VLA Complex.")
 
     async def joint_start(self, vlacs: List[VLA_Complex]):
         vla_complex_module.runner = self.get_runner()
-        print(f"Set vla_complex.runner: {vla_complex_module.runner.__name__}")
+        #print(f"Set vla_complex.runner: {vla_complex_module.runner.__name__}")
 
         for vlac in vlacs:
             await vlac.start()

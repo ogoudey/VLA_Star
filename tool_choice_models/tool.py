@@ -4,9 +4,12 @@ import os
 
 IDENTITY_MODEL_STRING = os.environ.get("MOMENT_MODEL_STRING", "o4-mini")
 class Tool:
+    def __init__(self, vla_complex):
+        self.name = vla_complex.__class__.__name__.lower()
+        self.vla_complex = vla_complex
+        self.tool_dict = self.from_execute(vla_complex)
 
-    @staticmethod
-    def from_execute(vlac_execute, name: str):
+    def from_execute(self, vla_complex):
         """
         Takes a
                 _________VLA_Complex_________
@@ -17,6 +20,7 @@ class Tool:
         A list of tools is usable to Model.run
         
         """
+        vlac_execute = vla_complex.execute
         sig = inspect.signature(vlac_execute)
         docstring = vlac_execute.__doc__ or ""
         
@@ -48,7 +52,7 @@ class Tool:
             case "o4-mini":
                 return_ = {
                     "type": "function",
-                    "name": name,
+                    "name": self.name,
                     "description": vlac_execute.__doc__.strip() or "",
                     "parameters": {
                         "type": "object",
@@ -59,7 +63,7 @@ class Tool:
             case _:
                 return_ = {
                     "type": "function",
-                    "name": name,
+                    "name": self.name,
                     "description": vlac_execute.__doc__.strip() or "",
                     "parameters": {
                         "type": "object",

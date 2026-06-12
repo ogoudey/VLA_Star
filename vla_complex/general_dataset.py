@@ -20,14 +20,17 @@ class ToolChoiceMade:
     function: dict = field(default_factory=dict)
 
 class Dataset:
+    datasets_dir: Path = Path("data/tool_choice")
     filepath: Path
     current_frame: Optional[defaultdict[str, JsonValue]] = None   
     
     def __init__(self, name):
-        datasets_dir = Path("data/multi")
-        if not datasets_dir.exists():
-            datasets_dir.mkdir(parents=True, exist_ok=True)
-        self.filepath = datasets_dir / f"{name}@{timestamp()}.json"
+        
+        if not self.datasets_dir.exists():
+            self.datasets_dir.mkdir(parents=True, exist_ok=True)
+        
+        self.filepath = self.datasets_dir / f"{name}@{timestamp()}.json"
+        print(f"[Tool Choice Dataset] Saving tool choice data to {self.filepath.resolve()}")
 
     def end_frame(self):
         with open(self.filepath, "a") as f:
@@ -41,7 +44,6 @@ class Dataset:
         self.current_frame["metadata"] = metadata
 
     def add_to_frame(self, subframe: Any):
-        print(f"Adding frame {subframe}")
         if self.current_frame is None:
             self.current_frame = defaultdict(json_dict)
             self.current_frame["messages"] = []
@@ -75,23 +77,23 @@ class Dataset:
                 case ToolChoiceMade():
                     self.current_frame["tool_choice_made"] = asdict(subframe)
                 case None:
-                    print("Not adding frame")
                     pass
                 case _:
-                    print("Not adding frame")
                     pass
                     #raise TypeError(f"add_to_frame: unsupported type {type(subframe)}")
         except Exception as e:
             print(f"Not adding subframe: {e}")
+
 class SubDataset:
     filepath: Path
     current_frame: Optional[defaultdict[str, JsonValue]] = None   
     
     def __init__(self, type, name):
-        datasets_dir = Path(f"data/{type}")
+        datasets_dir = Path(f"data/{type.lower()}")
         if not datasets_dir.exists():
             datasets_dir.mkdir(parents=True, exist_ok=True)
         self.filepath = datasets_dir / f"{name}@{timestamp()}.json"
+        print(f"[{type} Dataset] Saving {type.lower()} data to {self.filepath}")
 
     def add_data(self, data: dict):
         with open(self.filepath, "a") as f:
