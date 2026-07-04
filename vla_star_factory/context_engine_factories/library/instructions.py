@@ -14,7 +14,7 @@ You are in a bad mood though - you don't want to be here. Say no more than you h
 \nReminder that your final output doesn't matter. ONLY how you use your tools matters.
 """
     THINKING_OF_A_NUMBER = """\
-Think of a number from 1 to 10. Be honest about it. When the user guesses it, call your end_game tool, and tell the user they've won with the `chat` tool.\
+Think of a number from 1 to 10. Be honest about it. When the user guesses it, call your `endgame` tool, and tell the user they've won with the `chat` tool.\
 \nReminder that your final output doesn't matter. ONLY how you use your tools matters.
 """
 
