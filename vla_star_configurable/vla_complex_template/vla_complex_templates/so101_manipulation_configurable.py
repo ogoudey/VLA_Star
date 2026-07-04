@@ -1,4 +1,4 @@
-from ..vla_complex_configurable import VLA_Complex_Configurable
+from ..vla_complex_template import VLA_Complex_Configurable
 
 from ..vla_complex_config.vla_complex_configs.so101_manipulation_demo_config import SO101ManipulationDemoConfig
 

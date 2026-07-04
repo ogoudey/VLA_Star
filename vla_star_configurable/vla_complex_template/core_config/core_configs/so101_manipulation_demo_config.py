@@ -1,4 +1,4 @@
-from ..vla_complex_config import VLA_Complex_Config
+from ..core_config import VLA_Complex_Config
 from ..vla_complex_types import *
 from typing import Optional
 

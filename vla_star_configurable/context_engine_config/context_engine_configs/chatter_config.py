@@ -1,4 +1,4 @@
-from ..vla_star_config import VLA_Star_Config
+from ..context_engine_config import ContextEngineConfig
 from ..vla_star_types import *
 from vla_star_factory.context_engine_factories.library.instructions import *
 from vla_star_factory.context_engine_factories.library.constructions import *
@@ -6,7 +6,7 @@ from vla_star_factory.context_engine_factories.library.motives import *
 from .vla_star_utilities import generate_unique_name
 from typing import Optional
 
-class ChatterConfig(VLA_Star_Config):
+class ChatterConfig(ContextEngineConfig):
     def __init__(self,
         agency_type: AgencyType,
         instructions_type: InstructionType,
@@ -30,7 +30,7 @@ class ChatterConfig(VLA_Star_Config):
         recorded: bool = False,
         force_uniqueness: bool=False
     ):
-        from vla_star_factory.context_engine_factories.mobile_manipulator_context_engine_factory import instantiate_mobile_manipulator_context_engine
+        from vla_star_factory.context_engine_factories.minimal_context_engine_factory import instantiate_minimal_context_engine
         _name: str = name if name or force_uniqueness else generate_unique_name()
         
         _agency_type = agency_type if agency_type else self.agency_type # should look these up
@@ -38,7 +38,7 @@ class ChatterConfig(VLA_Star_Config):
         _construction = construction if construction else self.construction_type
         _motive = motive if motive else self.motive_type
         
-        return instantiate_mobile_manipulator_context_engine(
+        return instantiate_minimal_context_engine(
             name=_name,
             agency_type=_agency_type,
             instructions=_instructions,

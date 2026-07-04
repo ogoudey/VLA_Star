@@ -59,9 +59,9 @@ class MobileManipulatorInstantiator(Instantiator):
                 if self.configurable:
                     return
                 from vla_star_configurable.levels.actuality_levels import Unity
-                from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.unity_arm_configurable import UnityArmConfigurable
+                from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.arm_configurable import UnityArmConfigurable
                 from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.unity_drive_configurable import UnityDriveConfigurable
-                from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_configs.unity_arm_config import UnityArmConfig
+                from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_configs.arm_config import UnityArmConfig
                 from vla_star_configurable.vla_complex_configurable.vla_complex_config.vla_complex_configs.unity_drive_config import UnityDriveConfig
                 
                 self.configurable = MobileManipulatorConfigurable(

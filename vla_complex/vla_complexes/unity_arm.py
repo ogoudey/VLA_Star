@@ -7,7 +7,7 @@ import os
 from typing import Callable
 from ..vla_complex import VLA_Complex
 from vla_complex.vla_complex_state import State
-from ..utilities import chat_utilities
+from ...vla_star_factory.vla_complex_factories.utilities import socket_utilities
 
 
 class UnityArm(VLA_Complex):
@@ -92,13 +92,13 @@ class UnityArm(VLA_Complex):
         print("Arm connected to Unity...")
 
         threading.Thread(
-            target=chat_utilities.recv_loop,
+            target=socket_utilities.recv_loop,
             args=(sock, self.unity_messages, self.stop_event),
             daemon=True
         ).start()
 
         threading.Thread(
-            target=chat_utilities.send_loop,
+            target=socket_utilities.send_loop,
             args=(sock, self.out_messages, self.stop_event),
             daemon=True
         ).start()

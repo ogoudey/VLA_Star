@@ -1,13 +1,10 @@
 import threading
-from typing import Optional, Callable
+from typing import Optional
 from ..vla_complex import VLA_Complex
 from ..vla_complex_state import State
-from ..utilities import chat_utilities
 from ..general_dataset import SubDataset
 from utilities.displays import timestamp
 import time
-import socket
-import queue
 import os
 
 class Chat(VLA_Complex):
@@ -147,9 +144,14 @@ class Chat(VLA_Complex):
         self.rerun_agent()
 
     async def start(self):
+<<<<<<< HEAD
+        if not self.core.listening:
+            threading.Thread(target=self.core.run_server, daemon=True).start()
+=======
         print(f"[Chat] started listening on {self.chat_port}...")
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
+>>>>>>> fd009e7f52284762929549267fa6505f5343703c
         if False: # NotImplemented
             global agent_name
             introduction.introduction_pipeline(rerun=runner, introduction_type=os.environ.get("INTRODUCTION_DATA", "None"), name=agent_name)
@@ -159,4 +161,4 @@ class Chat(VLA_Complex):
     def reply(self, message: str):
         if self.recorded:
             self.dataset.add_data({"robot": [{"content": message, "timestamp": timestamp()}]})
-        self.send_q.put(message)
+        self.core.send_q.put(message)

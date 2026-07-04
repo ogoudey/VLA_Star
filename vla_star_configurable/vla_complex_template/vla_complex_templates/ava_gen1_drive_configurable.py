@@ -1,7 +1,7 @@
-from ..vla_complex_configurable import VLA_Complex_Configurable
+from ..vla_complex_template import VLA_Complex_Template
 from ..vla_complex_config.vla_complex_configs.ava_gen1_drive_config import AvaGen1DriveConfig
 
-class AvaGen1DriveConfigurable(VLA_Complex_Configurable):
+class AvaGen1DriveTemplate(VLA_Complex_Configurable):
     def __init__(self,
         vla_complex_config: AvaGen1DriveConfig,
         name: str

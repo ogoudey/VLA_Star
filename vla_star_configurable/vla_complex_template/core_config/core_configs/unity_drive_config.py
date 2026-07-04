@@ -1,7 +1,7 @@
-from ..vla_complex_config import VLA_Complex_Config
+from ..core_config import VLA_Complex_Config
 from ..vla_complex_types import *
 
-class UnityArmConfig(VLA_Complex_Config):
+class UnityDriveConfig(VLA_Complex_Config):
     def __init__(self):
         super().__init__(
             agency_type=AgencyType.AUTO,
