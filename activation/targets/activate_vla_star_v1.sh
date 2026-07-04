@@ -88,7 +88,7 @@ if [ -n "$DISPLAY" ]; then
 fi
 # No DISPLAY = Android/headless, do nothing
 
-python3 -m "instantiate_scripts.instantiate_minimal_vla_star_given_a_name" "$NAME" "$CHAT_PORT"
+python3 -m "instantiate_scripts.instantiate_class_one" "$NAME" "$CHAT_PORT"
 deactivate || true
 
 echo "Finished running $NAME"
@@ -96,4 +96,4 @@ echo "Finished running $NAME"
 
 # ============ (Re-up Host's Advertisement over LAN) ================ #
 
-./host/declare_this_host.sh
+./activation/host/broadcast_manifest.sh

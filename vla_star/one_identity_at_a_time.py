@@ -14,24 +14,24 @@ class SingleIdentityRunningLock:
         self._max_waiters = max_waiters
 
     async def __aenter__(self):
-        print("Outside lock")
+        #print("Outside lock")
         async with self._lock:
-            print("Inside lock")
+            #print("Inside lock")
 
             if self._active:
                 if self._waiting >= self._max_waiters:
                     raise RuntimeError("New rerun rejected: too many waiting.")
 
                 self._waiting += 1
-                print("Waiting for identity to finish.")
+                #print("Waiting for identity to finish.")
                 try:
                     while self._active:
                         await self._cond.wait()
                 finally:
                     self._waiting -= 1
             else:
-                print("No current identity - ready to run.")
-
+                #print("No current identity - ready to run.")
+                pass
             self._active = True
 
         return self

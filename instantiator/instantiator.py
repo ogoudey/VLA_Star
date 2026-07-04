@@ -1,24 +1,40 @@
 from pathlib import Path
-
+import pickle
 from vla_star_configurable.vla_star_configurable import VLA_Star_Configurable
 from vla_star_configurable.vla_star_config.vla_star_types import *
 from vla_star.vla_star import VLA_Star
-
+from typing import Optional
+from host.host import Host
 class Instantiator:
-    configurable: VLA_Star_Configurable
-    frozen_encoded_configurables: Path = Path("frozen") / "configurables"
+    vla_star: VLA_Star
     frozen_vla_stars: Path = Path("frozen") / "vla_stars"
 
-    def instantiate(self, **kwargs) -> VLA_Star:
-        print("Instantiating...")
-        vla_star = self.configurable.instantiate(**kwargs)
+    def __init__(self, vla_star: VLA_Star):
+        self.vla_star = vla_star
+
+    def instantiate(self):
+        host = Host()
+        host.host_vla_star(self.vla_star)
+
+    @staticmethod
+    def try_load_by_name(name: str) -> Optional["Instantiator"]:
         try:
-            self.try_pickle_vla_star(vla_star)
+            import pickle
+            filepath = Instantiator.frozen_vla_stars / f"{name}.pkl"
+            with open(filepath, 'rb') as f:
+                vla_star = pickle.load(f)
+            print(f"[Instantiator] found VLA* at {filepath}.")
+            return Instantiator(vla_star)
+        except ImportError:
+            print("Pickle not installed. Skipping Pickle stuff")
+            return None
+        except FileNotFoundError:
+            print(f"[Instantiator] Could not find VLA* by \"{name}\"")
+            return None
         except Exception as e:
-            print(f"Failed: {e}")
-        return vla_star
+            return None
 
-
+    """
     def try_pickle_configurable(self):
         try:
             import pickle
@@ -29,31 +45,35 @@ class Instantiator:
                 pickle.dump(self.configurable, f, pickle.HIGHEST_PROTOCOL)
         except ImportError:
             print(f"Failed to pickle {self.configurable.name_kind}... skipping.")
+    """
+    
 
-    def try_load_configurable(self, name_kind):
+    def try_pickle_vla_star(self):
         try:
-            import pickle
-            with open(self.frozen_encoded_configurables / f"{name_kind}.pkl", 'rb') as f:
-                print(f"Using existing code for {name_kind}.")
-                self.configurable = pickle.load(f)
-            return True
-        except ImportError:
-            print("Pickle not installed. Skipping Pickle stuff")
-            return False
-        except FileNotFoundError:
-            return False
-        except Exception as e:
-            print(f"Could not load code for {name_kind}. Rewriting...")
-            return False
-
-    def try_pickle_vla_star(self, vla_star):
-        try:
-            import pickle
             if not self.frozen_vla_stars.exists():
                 self.frozen_vla_stars.mkdir(parents=True, exist_ok=True)
-            with open(self.frozen_vla_stars / f"{vla_star.name}.pkl", 'wb') as f:  # Overwrites any existing file.
-                pickle.dump(self.configurable, f, pickle.HIGHEST_PROTOCOL)
+            filepath = self.frozen_vla_stars / f"{self.vla_star.name}.pkl"
+            with open(filepath, 'wb') as f:  # Overwrites any existing file.
+                pickle.dump(self.vla_star, f, pickle.HIGHEST_PROTOCOL)
+                print(f"[Instantiator] saved VLA* to {filepath}.")
         except ImportError:
-            print(f"Failed to pickle the {self.configurable.name_kind} named {vla_star.name}... skipping.")
-        
+            print(f"Failed to pickle the {self.vla_star.name}... skipping.")
+        except TypeError:
+            self.find_unpicklable(self.vla_star)
+
+    def find_unpicklable(self, obj, path="root"):
+        try:
+            pickle.dumps(obj)
+        except Exception:
+            if hasattr(obj, '__dict__'):
+                for k, v in obj.__dict__.items():
+                    self.find_unpicklable(v, f"{path}.{k}")
+            elif isinstance(obj, (list, tuple)):
+                for i, v in enumerate(obj):
+                    self.find_unpicklable(v, f"{path}[{i}]")
+            elif isinstance(obj, dict):
+                for k, v in obj.items():
+                    self.find_unpicklable(v, f"{path}[{k}]")
+            else:
+                print(f"UNPICKLABLE: {path} -> {type(obj)}")
 

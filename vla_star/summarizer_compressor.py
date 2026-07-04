@@ -48,8 +48,9 @@ class Summarizer:
         )
 
     async def run_identity(self, prompt):
+        print(f"Summarizing... \n")
         result = await ModelPurveyor.remember(self.identity, prompt)
-        print(f"End summarizing.")
+        print(f"end.")
         return result.final_output
     
     def instance_system_prompt(self):

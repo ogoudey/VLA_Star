@@ -20,7 +20,7 @@ import asyncio
 import vla_star.context_utilities as cu
 from vla_star.context_utilities import Context, OrderedContext
 from vla_complex.vla_complex_state import State
-from tool_choice_models.vla_complex_to_tool import Tool
+from tool_choice_models.tool import Tool
 from typing import Callable
 """
                                                 -> DemoedLanguage
@@ -34,7 +34,7 @@ class PrototypeEngine:
     context_engine_name: str
     agent_identities: int
     vla_complexes: List[VLA_Complex]
-    tools: List[dict]
+    model_tools: List[dict]
     tool_dispatcher: dict[str, Callable]
     goal: Optional[str]
 
@@ -42,23 +42,18 @@ class PrototypeEngine:
         self.context_engine_name = context_engine_name
         self.agent_identities = 0
         self.vla_complexes = []
-        self.tools = []
+        self.model_tools = []
         self.tool_dispatcher = {}
 
-    def link_vla_complexes(self, vlacs):
-        for vlac in vlacs:
-            self.vla_complexes.append(vlac)
-            if hasattr(vlac, "execute"):
-                self.set_as_tool(vlac)  
-        print(f"VLA Complexes linked.")
-    
-    def set_as_tool(self, vlac):
-        print(f"{vlac.tool_name} linked to {self.context_engine_name}")
-        self.tools.append(Tool.from_execute(
-            vlac.execute,
-            name=vlac.tool_name
-        ))
-        self.tool_dispatcher[vlac.tool_name] = vlac.execute
+    def attach_tools(self, tools):
+        for tool in tools:
+            #print(f"{tool.name} linked to {self.context_engine_name}")
+            self.model_tools.append(tool.tool_dict)
+            #print(f"{tool.name} => {tool.vla_complex.execute.__name__}")
+            self.tool_dispatcher[tool.name] = tool.vla_complex.execute
+            # Also add to vla_complexes - used for context
+            self.vla_complexes.append(tool.vla_complex)
+
 
     def vla_complex_by_name(self, tool_name):
         for vlac in self.vla_complexes:
@@ -74,17 +69,21 @@ class ContextEngine(PrototypeEngine):
     summarizer: Summarizer
     whether_to_always_summarize: bool
     frozen_memory_dir: Path
-    
+    recording: bool
 
     def __init__(self, context_engine_name, whether_to_always_summarize: bool = False):
         super().__init__(context_engine_name)
         self.whether_to_always_summarize = whether_to_always_summarize
         self.summarizer = Summarizer()
         self.frozen_memory_dir = Path("frozen") / self.context_engine_name
+
+        if self.recording:
+            if self.dataset is None:
+                self.dataset = Dataset(self.context_engine_name)
         
         
-    def link_vla_complexes(self, vlacs):
-        super().link_vla_complexes(vlacs)
+    def attach_tools(self, tools):
+        super().attach_tools(tools)
         self.load_memory_dir_if_exists()
         
     def load_memory_dir_if_exists(self):
@@ -94,9 +93,9 @@ class ContextEngine(PrototypeEngine):
                 f = file.read()
                 x = json.loads(f)
             self.update_states_with_frozen_memory(x)
-            print(f"Loaded core memory for {self.context_engine_name}.")
+            print(f"[Context Engine] Loaded core memory at {core_memory_filename}.")
         else:
-            print(f"New context created... {self.context_engine_name}")
+            print(f"[Context Engine] New core context created at {core_memory_filename}")
 
     def write(self):
         states = State.form_map_from_vlac_name_to_vlac_state(self.vla_complexes)
@@ -107,7 +106,6 @@ class ContextEngine(PrototypeEngine):
         frozen_memory_filename = self.frozen_memory_dir / "core.json"
         with open(frozen_memory_filename, "w") as f:
             f.write(states_json)
-        print(f"Saved core memory as {frozen_memory_filename}")
     
     def whether_to_summarize(self) -> bool:
         if self.whether_to_always_summarize:
@@ -117,8 +115,6 @@ class ContextEngine(PrototypeEngine):
                 val = True
             else:
                 val = False
-        verbose = "Summarizing..." if val else "Not summarizing."
-        print(verbose)
         return val
     
     def total_complex_event_cnt(self):
@@ -136,22 +132,21 @@ class ContextEngine(PrototypeEngine):
         self.summarizer.update_vla_complexes(self.vla_complexes, summarized_states)
 
     def update_states_with_frozen_memory(self, states_json):
-        print(states_json)
-        print("\n")
         for vla_complex in self.vla_complexes:
             if not vla_complex.tool_name in states_json:
                 print(f"{vla_complex} not in memory. New VLA Complex?")
                 continue
             else:
-                print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
+                #print(f"{vla_complex} <== {states_json[vla_complex.tool_name]}")
+                pass
             if vla_complex.state.session is not None:
-                print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]['session']}")
+                #print(f"\t{vla_complex} session: {vla_complex.state.session} <== {states_json[vla_complex.tool_name]['session']}")
                 vla_complex.state.session = states_json[vla_complex.tool_name]["session"]
                 # Special case:
                 if vla_complex.tool_name == "drive":
                     vla_complex.state.add_to_session("Meta-status", "Reinitialized position!")
             if vla_complex.state.impression is not None:
-                print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]['impression']}")
+                #print(f"\t{vla_complex} impression: {vla_complex.state.impression} <== {states_json[vla_complex.tool_name]['impression']}")
                 vla_complex.state.impression = states_json[vla_complex.tool_name]["impression"]
                 if vla_complex.tool_name == "drive":
                     vla_complex.state.impression.update({
@@ -176,6 +171,7 @@ class OrderedContextEngine(ContextEngine):
 
     def __init__(self, context_engine_name):
         super().__init__(context_engine_name)
+        
 
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
@@ -183,13 +179,11 @@ class OrderedContextEngine(ContextEngine):
     def write(self):
         super().write()
         if self.recording:
-            if self.dataset is None:
-                self.dataset = Dataset(self.context_engine_name)
             self.dataset.add_to_frame(self.system)
             self.dataset.add_to_frame(self.ordered_context)
-            self.dataset.add_to_frame(self.tools)
+            self.dataset.add_to_frame(self.model_tools)
             self.dataset.timestamp_frame()
-            print("Done writing!")
+            #print("Done writing!")
 
     def write_output(self, result: Any, metadata: dict):
         """
@@ -447,13 +441,14 @@ class OrderedContextLLMEngine(OrderedContextEngine):
     identity: Model
     identity_lock: SingleIdentityRunningLock
 
-    def __init__(self, context_engine_name: str, instruction: str, construction: str, motive: str, extra: str):
+    def __init__(self, context_engine_name: str, instructions: str, construction: str, motive: str, extra: str, recorded: bool):
+        self.recording = recorded
         super().__init__(context_engine_name)
-        self.instructions = instruction
+        self.instructions = instructions
         self.construction = construction
         self.motive = motive
         self.extra = extra
-
+        
         self.model_name="o4-mini"
         self.identity_lock = SingleIdentityRunningLock()
 
@@ -466,7 +461,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             self.ordered_context["INTERNAL_MESSAGE"] = exceptional_message
 
     async def request(self, exceptional_message: Optional[str] = None):
-        print(f"Agent requested...")
+        #print(f"Agent requested...")
         
         try:
             async with self.identity_lock:
@@ -476,8 +471,8 @@ class OrderedContextLLMEngine(OrderedContextEngine):
                 self.assemble_context(exceptional_message)
                 await self.run_identity()
         except RuntimeError:
-            print("Identity rejected...")
-    
+            #print("Identity rejected...")
+            pass
     async def run_identity(self):
         self.create_identity()
         await self.run_the_identity()
@@ -486,9 +481,9 @@ class OrderedContextLLMEngine(OrderedContextEngine):
         self.identity = ModelPurveyor.identity(
             self.context_engine_name + str(self.agent_identities),
             self.instance_system_prompt(),
-            self.tools
+            self.model_tools
         )
-        print(f"Identity created with tools: {self.identity.tools}")
+        #print(f"Identity created with tools: {self.identity.tools}")
 
 
 
@@ -501,7 +496,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             ############
             ### context = self.ordered_context.impressions["chat_with_player"].get("Current user message", "No user message")
             ### END MONSENIOR NO CONTEXT
-            print(f"___Prompt__\n{context}")
+            #print(f"___Prompt__\n{context}")
             self.write()
             self.t0_identity_run = time.time()
 

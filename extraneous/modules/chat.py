@@ -69,9 +69,10 @@ def connect(chat_port):
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             sock.connect(("127.0.0.1", chat_port))
+            print(f"Connected.")
             return sock
         except ConnectionRefusedError:
-            print("Waiting...", end="\r")
+            print(f"Waiting on {chat_port}...", end="\r")
             time.sleep(1)
 
 def run_client(chat_port=5001):

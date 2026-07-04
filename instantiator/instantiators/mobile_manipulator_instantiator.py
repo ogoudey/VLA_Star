@@ -18,7 +18,8 @@ class MobileManipulatorInstantiator(Instantiator):
             # SPECIES
             case "actual":
                 name_kind = "mobilemanipulatorwithso101onanavagen1"
-                if self.try_load_configurable(name_kind):
+                super().__init__()
+                if self.configurable:
                     return
                 from vla_star_configurable.levels.actuality_levels import Actual
                 from vla_star_configurable.morphology.morphologies.ava_gen1 import AvaGen1
@@ -54,7 +55,8 @@ class MobileManipulatorInstantiator(Instantiator):
                 )
             case "unity":
                 name_kind = "mobilemanipulatorinunity"
-                if self.try_load_configurable(name_kind):
+                super().__init__()
+                if self.configurable:
                     return
                 from vla_star_configurable.levels.actuality_levels import Unity
                 from vla_star_configurable.vla_complex_configurable.vla_complex_configurables.arm_configurable import UnityArmConfigurable

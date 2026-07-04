@@ -53,4 +53,4 @@ esac
 #ssh "$NAME@$VLA_STAR_HOST" 'bash -l -c "echo $OPENAI_API_KEY"; ./VLA_Star/experiments/run_embodied.sh;'
 ssh -Y -t "$NAME@$VLA_STAR_HOST" \
 "export DISPLAY=\$DISPLAY; export OPENAI_API_KEY=$OPENAI_API_KEY; export OLIMN_API_KEY=$OLIMN_API_KEY;\
-select VLA_STAR in \$(\"\$VLA_STAR_PATH\"/host/activator_targets/manifest_consultant.sh); do [ -n \"\$VLA_STAR\" ] && break; done; \"\$VLA_STAR_PATH\"/run_commands/host/run_minimal_vla_star.sh \$VLA_STAR"
+select VLA_STAR in \$(\"\$VLA_STAR_PATH\"/activation/targets/manifest_consultant.sh); do [ -n \"\$VLA_STAR\" ] && break; done; \"\$VLA_STAR_PATH\"/activation/targets/activate_vla_star_v1.sh \$VLA_STAR"

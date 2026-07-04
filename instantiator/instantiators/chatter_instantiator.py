@@ -19,7 +19,8 @@ class ChatterInstantiator(Instantiator):
             # SPECIES
             case "norm":
                 name_kind = "chatteragentfortestingmostly"
-                if self.try_load_configurable(name_kind):
+                super().__init__()
+                if self.configurable:
                     return
                 from vla_star_configurable.levels.actuality_levels import Stationary
                 from vla_star_configurable.vla_complex_template.vla_complex_templates.chat_template import ChatConfigurable
