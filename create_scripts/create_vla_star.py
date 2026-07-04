@@ -10,6 +10,8 @@ from host.vlanet_interface import update_host_on_vlanet
 import sys
 
 from vla_complex.vla_complexes.chat import Chat
+from vla_complex.vla_complexes.suspend import Suspend
+from vla_complex.vla_complexes.game_vla_complexes import StartGame
 from tool_choice_models.tool import Tool
 if __name__ == "__main__":
     name = sys.argv[1]
@@ -28,10 +30,10 @@ if __name__ == "__main__":
     vla_star = VLA_Star(
         name,
         OrderedContextLLMEngine(
-            context_engine_name=f"context_engine_model_for_{name}",
-            instructions=InstructionType.MINIMAL.value,
-            construction=ConstructionType.YOURE_STATIONARY.value,
-            motive=MotiveType.MINIMAL.value,
+            context_engine_name=f"context_engine_for_{name}",
+            construction=ConstructionType.GAME_BOUNCER.value,
+            instructions=InstructionType.GAME_BOUNCER.value,
+            motive=MotiveType.GAME_BOUNCER.value,
             extra="",
             recorded=True
         ),
@@ -42,6 +44,12 @@ if __name__ == "__main__":
                     recorded=False,
                     extension=Extension()
                 )
+            ),
+            Tool(
+                Suspend()
+            ),
+            Tool(
+                StartGame()
             )
         ],
         Extension()

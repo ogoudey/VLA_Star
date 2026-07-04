@@ -61,7 +61,6 @@ class Chat(VLA_Complex):
         """
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
-        await super().execute(text)
         self.reply(text)
         self.state.add_to_session("self", text)
         return "Message sent. Return immediately."

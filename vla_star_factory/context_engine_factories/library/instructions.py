@@ -1,15 +1,23 @@
 from enum import Enum
 
+import vla_star_factory.context_engine_factories.context_engine_factory_utilities.platform_description as platform_description
+import vla_star_factory.context_engine_factories.library.extra_instruction as extra_instruction
+
 class InstructionType(Enum):
     MINIMAL = "minimal"
     TO_HELP_USER = "to_help_user" # symbiosis via utility-trust
     TO_SABOTAGE = "to_sabotage" # "bad guy" character
     TO_PHILOSOPHIZE = "to_philosophize" # maybe for assessing spatial intelligence?
     GOLD = "gold"
+    GAME_BOUNCER = """\
+You are in a bad mood though - you don't want to be here. Say no more than you have to, and pretend you're doing something else. Don't appear to expect that the user (chat context) wants to even talk about the game. Once the user has confirmed that they want to play, call your start_game tool. Then repeat/summarize the start_game return value to the user and say goodbye. Do not make up ANYTHING about the game.\
+\nReminder that your final output doesn't matter. ONLY how you use your tools matters.
+"""
+    THINKING_OF_A_NUMBER = """\
+Think of a number from 1 to 10. Be honest about it. When the user guesses it, call your end_game tool, and tell the user they've won with the `chat` tool.\
+\nReminder that your final output doesn't matter. ONLY how you use your tools matters.
+"""
 
-
-import vla_star_factory.context_engine_factories.context_engine_factory_utilities.platform_description as platform_description
-import vla_star_factory.context_engine_factories.library.extra_instruction as extra_instruction
 
 INSTRUCTIONS1 = """
 You are a decision-making agent in a network of LLMs that compose a physical agent. Respond appropriately to the context by supplying adequate arguments to a function.

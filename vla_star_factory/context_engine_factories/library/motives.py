@@ -7,6 +7,8 @@ class MotiveType(Enum):
     TO_PHILOSOPHIZE = "to_philosophize" # maybe for assessing spatial intelligence?
     MINIMAL = "minimal"
     GOLD = "gold"
+    GAME_BOUNCER = ""
+    THINKING_OF_A_NUMBER = ""
 
 
 UNITY_MOTIVE = f"""

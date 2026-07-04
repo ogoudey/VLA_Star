@@ -432,8 +432,8 @@ from tool_choice_models.models_interface import Model
 from agents import Agent, Runner, function_tool
 
 class OrderedContextLLMEngine(OrderedContextEngine):
-    instructions: str
     construction: str
+    instructions: str
     motive: str
     extra: str
     goal: Optional[str]
@@ -441,11 +441,11 @@ class OrderedContextLLMEngine(OrderedContextEngine):
     identity: Model
     identity_lock: SingleIdentityRunningLock
 
-    def __init__(self, context_engine_name: str, instructions: str, construction: str, motive: str, extra: str, recorded: bool):
+    def __init__(self, context_engine_name: str, construction: str, instructions: str, motive: str, extra: str, recorded: bool):
         self.recording = recorded
         super().__init__(context_engine_name)
-        self.instructions = instructions
         self.construction = construction
+        self.instructions = instructions
         self.motive = motive
         self.extra = extra
         
@@ -505,12 +505,11 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             print(f"Error setting up identity run: {e}")
             return "This task is trash"
         try:
-            tool_name, parameters = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
+            tool_name, parameters, tool_return, minirerun = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
             ## These last two lines will have to be changed with added models.
             
             self.write_output(
                 ToolChoiceMade(
-                    
                     function={
                         "name": tool_name,
                         "description": self.vla_complex_by_name(tool_name).execute.__doc__,
@@ -523,11 +522,20 @@ class OrderedContextLLMEngine(OrderedContextEngine):
                     "latency": time.time() - self.t0_identity_run
                 }
             )
+
+            # kind of lazy
+            if minirerun:
+                print(f"[ContextEngine] mini-rerun initiated!")
+                self.assemble_context(None)
+                self.ordered_context.impressions.update(tool_return)
+                mininewcontext = str(self.ordered_context)
+                tool_name, parameters, tool_return, minirerun = await ModelPurveyor.run(self.identity, mininewcontext, self.tool_dispatcher)
+
             # self.metrics.add_model_usage(result.context_wrapper.usage, self.model_name)
         except Exception as e:
             print(f"Wish I could cancel: {e}")
             return "This task is trash"
 
     def instance_system_prompt(self):
-        self.system = f"""{self.instructions}{self.construction}{self.motive}{self.extra}"""
+        self.system = f"""{self.construction}{self.instructions}{self.motive}{self.extra}"""
         return self.system

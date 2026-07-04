@@ -4,11 +4,10 @@ import os
 import subprocess
 import platform
 
-OLIMN_API_KEY = os.environ.get("OLIMN_API_KEY", None)
-if not OLIMN_API_KEY:
-    raise ValueError("Please set OLIMN_API_KEY")
+
 
 from .manifest_manager import get_manifest
+from network.common import send_dict_to_olimn
 
 def get_agents():
     return get_manifest()
@@ -55,11 +54,5 @@ def update_host_on_vlanet():
         "la": la 
     }
 
-    conn = http.client.HTTPConnection("olimn.com")
-    json_dump = json.dumps(content)
-    #print(json_dump)
-    conn.request("POST", f"/vlanet/api/host", body=json_dump, headers={"X-API-Key": OLIMN_API_KEY, "Content-Type": "application/json"})
-    response = conn.getresponse()
-    body = response.read()
-    if response.status >= 400:
-        raise ConnectionError(f"POST /vlanet/api/host failed: {response.status} {response.reason}\n{body.decode()}")
+    send_dict_to_olimn("host", content)
+    

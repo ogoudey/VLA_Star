@@ -40,6 +40,8 @@ class ModelPurveyor:
     @staticmethod
     async def run(identity, context, tool_dispatcher):
         #print("Running LLM...")
+        tool_return = ""
+        minirerun = False
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 result = await identity.run(context)
@@ -49,22 +51,21 @@ class ModelPurveyor:
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 for i, item in enumerate(result.output):
-                    #print(f"Result output {i}. {item}")
+                    print(f"Result output {i}. {item}")
                     if item.type == "function_call": # Grabs the first one - if two is made - doesn't matter
-                        #if not item.arguments or item.arguments == '{}':
-                        #    print("⚠️ Empty arguments, skipping:", item)
-                        #    continue
                         try:
-                            #print(tool_dispatcher)
-                            await tool_dispatcher[item.name](**json.loads(item.arguments))
+                            tool_return = await tool_dispatcher[item.name](**json.loads(item.arguments))
+                            if item.name == "startgame" or item.name == "endgame": # this should be an attribute of the VLAComplex class
+                                minirerun = True
                         except Exception as e:
                             print(f"[ModelPurveyor] {e}! :()")
-                        return item.name, json.loads(item.arguments), 
+                        return item.name, json.loads(item.arguments), tool_return, minirerun
             case "claude-sonnet-4-20250514":
                 for tool_call in result.choices[0].message.tool_calls:
                     await tool_dispatcher[tool_call.function.name](**json.loads(tool_call.function.arguments))
             case _:
-                return "default_name", {}
+                return "default_name", {}, tool_return, minirerun
+                    
     @staticmethod
     def summarizer(name: str, instructions: str):
         match SUMMARIZER_MODEL_STRING:
