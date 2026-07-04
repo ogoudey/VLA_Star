@@ -6,7 +6,10 @@ from ..general_dataset import SubDataset
 from utilities.displays import timestamp
 import time
 import os
-
+import queue
+import socket
+import signal
+from vla_complex.utilities import chat_utilities
 class Chat(VLA_Complex):
     recorded: bool
     dataset: Optional[SubDataset] = None
@@ -56,6 +59,7 @@ class Chat(VLA_Complex):
         Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.
         :param text: the message content. Fill this arg with all the content you want to send. (required)
         """
+        print(f"[Chat] Sending arg {text}.")
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
         self.reply(text)
@@ -88,7 +92,7 @@ class Chat(VLA_Complex):
 
     def handle_client(self, sock):
         stop_event = threading.Event()
-
+        addr = sock.getpeername()
         threading.Thread(
             target=chat_utilities.recv_loop,
             args=(sock, self.inbound_q, stop_event),
@@ -113,6 +117,12 @@ class Chat(VLA_Complex):
         finally:
             stop_event.set()
             sock.close()
+            self.on_client_disconnected(addr)
+    
+    def on_client_disconnected(self, addr):
+        self.listening = False
+        print(f"[Chat] Client disconnected: {addr}. Stopping process {os.getpid()} with signal {signal.SIGINT}")
+        os.kill(os.getpid(), signal.SIGINT)
 
     def respond_loop(self, stop_event):
         while not stop_event.is_set():
@@ -144,14 +154,9 @@ class Chat(VLA_Complex):
         self.rerun_agent()
 
     async def start(self):
-<<<<<<< HEAD
-        if not self.core.listening:
-            threading.Thread(target=self.core.run_server, daemon=True).start()
-=======
-        print(f"[Chat] started listening on {self.chat_port}...")
         if not self.listening:
             threading.Thread(target=self.run_server, daemon=True).start()
->>>>>>> fd009e7f52284762929549267fa6505f5343703c
+            print(f"[Chat] started listening on {self.chat_port}...")
         if False: # NotImplemented
             global agent_name
             introduction.introduction_pipeline(rerun=runner, introduction_type=os.environ.get("INTRODUCTION_DATA", "None"), name=agent_name)
@@ -161,4 +166,4 @@ class Chat(VLA_Complex):
     def reply(self, message: str):
         if self.recorded:
             self.dataset.add_data({"robot": [{"content": message, "timestamp": timestamp()}]})
-        self.core.send_q.put(message)
+        self.send_q.put(message)

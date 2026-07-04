@@ -2,7 +2,7 @@ import socket
 import threading
 import queue
 import time
-from vla_star_factory.vla_complex_factories.utilities.socket_utilities import recv_line, recv_loop, send_loop
+from vla_complex.utilities import chat_utilities
 import os
 
 from setproctitle import setproctitle
@@ -82,13 +82,13 @@ def run_client(chat_port=5001):
     send_q = queue.Queue()
 
     threading.Thread(
-        target=recv_loop,
+        target=chat_utilities.recv_loop,
         args=(sock, inbound_q, stop_event),
         daemon=True
     ).start()
 
     threading.Thread(
-        target=send_loop,
+        target=chat_utilities.send_loop,
         args=(sock, send_q, stop_event),
         daemon=True
     ).start()

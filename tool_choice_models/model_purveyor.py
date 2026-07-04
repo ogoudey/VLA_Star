@@ -41,6 +41,7 @@ class ModelPurveyor:
     async def run(identity, context, tool_dispatcher):
         #print("Running LLM...")
         tool_return = ""
+        tool_called = False
         minirerun = False
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
@@ -51,7 +52,11 @@ class ModelPurveyor:
         match IDENTITY_MODEL_STRING:
             case "o4-mini":
                 for i, item in enumerate(result.output):
-                    print(f"Result output {i}. {item}")
+                    print(f"[ModelPurveyor] Result output {i}. {item}")
+                    if item.type == "message":
+                        if not tool_called:
+                            print(f"[ModelPurveyor] Sent a final message and a tool has not been called. Trying again...")
+                            return await ModelPurveyor.run(identity, context, tool_dispatcher)                        
                     if item.type == "function_call": # Grabs the first one - if two is made - doesn't matter
                         try:
                             tool_return = await tool_dispatcher[item.name](**json.loads(item.arguments))
@@ -59,6 +64,7 @@ class ModelPurveyor:
                                 minirerun = True
                         except Exception as e:
                             print(f"[ModelPurveyor] {e}! :()")
+                            
                         return item.name, json.loads(item.arguments), tool_return, minirerun
             case "claude-sonnet-4-20250514":
                 for tool_call in result.choices[0].message.tool_calls:

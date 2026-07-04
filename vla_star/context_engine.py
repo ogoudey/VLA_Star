@@ -461,7 +461,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             self.ordered_context["INTERNAL_MESSAGE"] = exceptional_message
 
     async def request(self, exceptional_message: Optional[str] = None):
-        #print(f"Agent requested...")
+        print(f"[ContextEngine] Agent Identity requested.")
         
         try:
             async with self.identity_lock:
@@ -505,6 +505,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             print(f"Error setting up identity run: {e}")
             return "This task is trash"
         try:
+            print(f"[ContextEngine] Identity run initiated.")
             tool_name, parameters, tool_return, minirerun = await ModelPurveyor.run(self.identity, context, self.tool_dispatcher)
             ## These last two lines will have to be changed with added models.
             
@@ -525,7 +526,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
 
             # kind of lazy
             if minirerun:
-                print(f"[ContextEngine] mini-rerun initiated!")
+                print(f"[ContextEngine] Mini-rerun initiated.")
                 self.assemble_context(None)
                 self.ordered_context.impressions.update(tool_return)
                 mininewcontext = str(self.ordered_context)

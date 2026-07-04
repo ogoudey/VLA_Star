@@ -1,7 +1,5 @@
 from pathlib import Path
 import pickle
-from vla_star_configurable.vla_star_configurable import VLA_Star_Configurable
-from vla_star_configurable.vla_star_config.vla_star_types import *
 from vla_star.vla_star import VLA_Star
 from typing import Optional
 from host.host import Host
@@ -13,7 +11,9 @@ class Instantiator:
         self.vla_star = vla_star
 
     def instantiate(self):
+        print(f"[Instantiator] Identifying Host.\r")
         host = Host()
+        print(f"Asking Host to host VLA*.")
         host.host_vla_star(self.vla_star)
 
     @staticmethod

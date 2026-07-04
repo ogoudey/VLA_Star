@@ -21,16 +21,12 @@ class VLA_Complex:
     Base class for all VLA_Complexes
     """
     tool_name: str
-    description: str
-    return_value: str
     on_start: bool
     monitors: List
     recorded: bool
 
-    def __init__(self, tool_name: str, description: str, return_value: str, on_start: bool, monitors: List, recorded: bool):        
+    def __init__(self, tool_name: str, on_start=False):      
         self.tool_name = tool_name
-        self.description = description
-        self.return_value = return_value
         self.on_start = on_start
         
         self.use_frequency = 0.0

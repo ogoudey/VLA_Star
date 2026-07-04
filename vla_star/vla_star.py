@@ -5,7 +5,7 @@ from vla_star.context_engine import OrderedContextEngine,OrderedContextLLMEngine
 from vla_complex.vla_complex import VLA_Complex
 import vla_complex.vla_complex as vla_complex_module
 from vla_star.runner import ThinkingMachine
-
+import os
 from vla_star.extension import Extension
 from tool_choice_models.tool import Tool
 class VLA_Star:
@@ -34,11 +34,11 @@ class VLA_Star:
         
         
     def safe_start(self):
-        
+        print(f"[VLA_Star] Safe start on process {os.getpid()}.")
         try:
             self.start()
         except KeyboardInterrupt as k:
-            #print("Exiting interaction.")
+            print("[VLA_Star] Safe start receives KeyboardInterrupt.")
             pass
 
     def start(self, prompt: str | None = None):
