@@ -30,6 +30,7 @@ class Context:
         self.sessions = {}
         self.impressions = {}
         for vlac in vla_complexes:
+            
             if vlac.state.session:
                 self.sessions[vlac.tool_name] = vlac.state.session
             if vlac.state.impression:

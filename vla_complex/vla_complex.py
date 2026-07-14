@@ -24,7 +24,7 @@ class VLA_Complex:
     on_start: bool
     monitors: List
     recorded: bool
-
+    is_available: bool
     def __init__(self, tool_name: str, on_start=False):      
         self.tool_name = tool_name
         self.on_start = on_start
@@ -32,6 +32,7 @@ class VLA_Complex:
         self.use_frequency = 0.0
 
         self.state = State()
+        self.is_available = True
 
     @abstractmethod
     async def execute(self, *args, **kwargs):

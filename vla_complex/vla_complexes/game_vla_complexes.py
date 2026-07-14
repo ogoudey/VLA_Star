@@ -33,15 +33,13 @@ class StartGame(VLA_Complex):
             "event": "start_game",
             "player_name": "user" 
         })
-        json_body["new_instruction"] = ""
         introductory_narrative = json_body["introductory_narrative"]
         print(f"[StartGame] Got introductory message from Game Server {json_body} => {introductory_narrative}")
         self.state.impression = {
-            "Game status": f"The game has started for the user. ",
-            "Game introduction (for the user)": f"{introductory_narrative}",
-            "New Instruction": "Introduce the game to the user through the `chat` tool -- once, and clearly. You are not a major character in this game. You may leave with `suspend` any time after informing the user... Do not call start_game again."
+            "Game status": f"The game has started for the user. But you must tell them through the `chat` tool what's going on in the game:\n\t(for the user): {introductory_narrative}",
         }
-
+        self.is_available = False
+        print(f"[StartGame] This VLA_Complex is no longer available")
         return json_body
 
 class EndGame(VLA_Complex):
@@ -76,5 +74,5 @@ class EndGame(VLA_Complex):
             "New Instruction": "You should let the user know that they've won through the `chat` tool. Once they are informed you can leave with `suspend` any time, or let the user leave..."
         }
 
-        return "You should let the user know that they've won through the `chat` tool. Once they are informed you can leave with `suspend` any time, or let the user leave..."
+        return {"Result":"You should let the user know that they've won through the `chat` tool. Once they are informed you can leave with `suspend` any time, or let the user leave..."}
         

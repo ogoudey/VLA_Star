@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # This line varies
     from vla_star.context_engine import OrderedContextLLMEngine
 
-    from vla_star.extension import Extension
+    from vla_star.extension import Extension, Text
     vla_star = VLA_Star(
         name,
         OrderedContextLLMEngine(
@@ -42,7 +42,7 @@ if __name__ == "__main__":
                 Chat(
                     chat_port=5001,
                     recorded=False,
-                    extension=Extension()
+                    extension=Text()
                 )
             ),
             Tool(

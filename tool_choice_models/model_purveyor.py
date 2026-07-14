@@ -35,42 +35,34 @@ class ModelPurveyor:
                     tools=function_tools, # The tool-ified VLA Complexes
                     model=LitellmModel(model="anthropic/claude-sonnet-4-20250514")
                 )
+            case "deepseek-chat":
+                return Model(
+                    name=name,
+                    instructions=instructions,
+                    tools=function_tools,
+                    model=LitellmModel(model="deepseek/deepseek-chat")
+                )
         
 
     @staticmethod
     async def run(identity, context, tool_dispatcher):
-        #print("Running LLM...")
         tool_return = ""
         tool_called = False
         minirerun = False
-        match IDENTITY_MODEL_STRING:
-            case "o4-mini":
-                result = await identity.run(context)
-            case "claude-sonnet-4-20250514":
-                result = await identity.run(context)
-        #print("Executing tools...")
-        match IDENTITY_MODEL_STRING:
-            case "o4-mini":
-                for i, item in enumerate(result.output):
-                    print(f"[ModelPurveyor] Result output {i}. {item}")
-                    if item.type == "message":
-                        if not tool_called:
-                            print(f"[ModelPurveyor] Sent a final message and a tool has not been called. Trying again...")
-                            return await ModelPurveyor.run(identity, context, tool_dispatcher)                        
-                    if item.type == "function_call": # Grabs the first one - if two is made - doesn't matter
-                        try:
-                            tool_return = await tool_dispatcher[item.name](**json.loads(item.arguments))
-                            if item.name == "startgame" or item.name == "endgame": # this should be an attribute of the VLAComplex class
-                                minirerun = True
-                        except Exception as e:
-                            print(f"[ModelPurveyor] {e}! :()")
-                            
-                        return item.name, json.loads(item.arguments), tool_return, minirerun
-            case "claude-sonnet-4-20250514":
-                for tool_call in result.choices[0].message.tool_calls:
-                    await tool_dispatcher[tool_call.function.name](**json.loads(tool_call.function.arguments))
-            case _:
-                return "default_name", {}, tool_return, minirerun
+        result = await identity.run(context)
+        for i, item in enumerate(result.output):
+            if item.type == "message":
+                if not tool_called:
+                    return await ModelPurveyor.run(identity, context, tool_dispatcher)
+            if item.type == "function_call":
+                try:
+                    tool_return = await tool_dispatcher[item.name](**json.loads(item.arguments))
+                    if item.name in ("startgame", "endgame"):
+                        minirerun = True
+                except Exception as e:
+                    print(f"[ModelPurveyor] {e}! :()")
+                return item.name, json.loads(item.arguments), tool_return, minirerun
+        return "default_name", {}, tool_return, minirerun
                     
     @staticmethod
     def summarizer(name: str, instructions: str):

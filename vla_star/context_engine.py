@@ -34,6 +34,7 @@ class PrototypeEngine:
     context_engine_name: str
     agent_identities: int
     vla_complexes: List[VLA_Complex]
+    tools: List[FunctionTool]
     model_tools: List[dict]
     tool_dispatcher: dict[str, Callable]
     goal: Optional[str]
@@ -42,17 +43,28 @@ class PrototypeEngine:
         self.context_engine_name = context_engine_name
         self.agent_identities = 0
         self.vla_complexes = []
+        self.tools = []
         self.model_tools = []
         self.tool_dispatcher = {}
 
     def attach_tools(self, tools):
         for tool in tools:
+            self.tools.append(tool)
             #print(f"{tool.name} linked to {self.context_engine_name}")
             self.model_tools.append(tool.tool_dict)
             #print(f"{tool.name} => {tool.vla_complex.execute.__name__}")
             self.tool_dispatcher[tool.name] = tool.vla_complex.execute
             # Also add to vla_complexes - used for context
             self.vla_complexes.append(tool.vla_complex)
+
+    def instance_tools(self):
+        self.model_tools = []
+        for tool in self.tools:
+            if tool.vla_complex.is_available:
+                print(f"[Context] {tool.name} IS available.")
+                self.model_tools.append(tool.tool_dict)
+            else:
+                print(f"[Context] {tool.name} is NOT available.")
 
 
     def vla_complex_by_name(self, tool_name):
@@ -478,12 +490,20 @@ class OrderedContextLLMEngine(OrderedContextEngine):
         await self.run_the_identity()
 
     def create_identity(self):
+        self.instance_tools() # addressing whether available or not
         self.identity = ModelPurveyor.identity(
             self.context_engine_name + str(self.agent_identities),
             self.instance_system_prompt(),
             self.model_tools
         )
         #print(f"Identity created with tools: {self.identity.tools}")
+
+    def instance_available_tools(self):
+        model_tools = []
+        for tool in self.model_tools:
+            print(f"[Context] {tool.name} is available: {vlac.is_available}.")
+            if not vlac.is_available:
+                continue
 
 
 
@@ -528,6 +548,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
             if minirerun:
                 print(f"[ContextEngine] Mini-rerun initiated.")
                 self.assemble_context(None)
+                self.create_identity()
                 self.ordered_context.impressions.update(tool_return)
                 mininewcontext = str(self.ordered_context)
                 tool_name, parameters, tool_return, minirerun = await ModelPurveyor.run(self.identity, mininewcontext, self.tool_dispatcher)
