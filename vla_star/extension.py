@@ -1,4 +1,5 @@
 class Extension:
+    on: bool
     def __init__(self):
         pass
 
