@@ -1,22 +1,27 @@
 from typing import List, Callable, Optional
 import asyncio
 import sys
-from vla_star.context_engine import OrderedContextEngine,OrderedContextLLMEngine
-from vla_complex.vla_complex import VLA_Complex
-import vla_complex.vla_complex as vla_complex_module
-from vla_star.runner import ThinkingMachine
+import weakref
+from vla_star.context_engine.context_engine import OrderedContextEngine,OrderedContextLLMEngine
+from vla_star.vla_complex.vla_complex import VLA_Complex
+import vla_star.vla_complex.vla_complex as vla_complex_module
+from vla_star.context_engine.runner import ThinkingMachine
 import os
-from vla_star.extension import Extension
-from tool_choice_models.tool import Tool
+from vla_star.utilities.extension import Extension
+from vla_star.tool_choice_models.tool import Tool
+from vla_star.vla_complex.vla_complexes.chat import Chat
+class OneVLA_StarPerProcess(Exception):
+    pass
+
 class VLA_Star:
     """
     Central class representing the agent
     """
     name: str
-
     context_engine: OrderedContextEngine
     vla_complexes: List[VLA_Complex]
-    
+
+    _activated = weakref.WeakSet()
 
     def __init__(self,
         name: str,
@@ -31,7 +36,18 @@ class VLA_Star:
         self.context_engine.attach_tools(self.tools)
         vla_complex_module.agent_name = self.name # idk why i need this
 
-        
+        if len(VLA_Star._activated) > 0:
+            raise OneVLA_StarPerProcess("There is already a VLA_Star instantiated in this python process. :(")
+        type(self)._activated.add(self)
+
+    @classmethod
+    def get_all_instances(cls):
+        # Returns a standard list of the remaining live instances
+        return list(cls._activated)
+    
+    @classmethod
+    def get_activated_vla_star(cls) -> "VLA_Star":
+        return VLA_Star.get_all_instances()[0]
         
     def safe_start(self):
         print(f"[VLA_Star] Safe start on process {os.getpid()}.")
@@ -81,3 +97,9 @@ class VLA_Star:
             rerun_function = self.context_engine.run_identity
             #print(f"Runner = {rerun_function}")
         return rerun_function
+
+    def get_chat_vla_complex(self):
+        for vla_complex in self.vla_complexes:
+            if type(vla_complex) is Chat:
+                return vla_complex
+        raise ValueError(f"[VLA*] Missing chat complex! {self.vla_complexes}")

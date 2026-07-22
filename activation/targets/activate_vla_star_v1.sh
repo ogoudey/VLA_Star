@@ -88,7 +88,7 @@ if [ -n "$DISPLAY" ]; then
 fi
 # No DISPLAY = Android/headless, do nothing
 
-python3 -m "instantiate_scripts.instantiate_class_one" "$NAME" "$CHAT_PORT"
+python3 -m "start_scripts.start_class_one" "$NAME" "$CHAT_PORT"
 deactivate || true
 
 echo "Finished running $NAME"

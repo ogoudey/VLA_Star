@@ -25,7 +25,7 @@ def save_manifest(vla_stars_manifest):
             # Convert dict to string and append a newline
             f.write(json.dumps(obj) + "\n")
 
-def update_manifest(name: str, new_status: str, message: Optional[str] = None):
+def update_manifest(name: str, new_status: str, host: str, user: str, message: Optional[str] = None):
     current_vla_stars_manifest = get_manifest()
     next_vla_stars_manifest = []
 
@@ -43,7 +43,9 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
         next_vla_stars_manifest.append({
             "name": name,
             "status": new_status,
-            "message": message 
+            "message": message,
+            "host": host,
+            "user": user 
         })
     else:
         message = existent_data_for_vla_star["message"] if not message else message
@@ -51,7 +53,9 @@ def update_manifest(name: str, new_status: str, message: Optional[str] = None):
         next_vla_stars_manifest.append({
             "name": name,
             "status": new_status,
-            "message": message 
+            "message": message,
+            "host": host,
+            "user": user  
         })
     save_manifest(next_vla_stars_manifest)
     
