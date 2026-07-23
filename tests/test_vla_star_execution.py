@@ -1,3 +1,5 @@
+# PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 python -m pytest tests
+
 import sys
 from pathlib import Path
 parent_dir = Path(__file__).resolve().parent

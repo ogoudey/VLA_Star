@@ -134,7 +134,7 @@ class Conversation:
             return False
         text = msg.get("text", "")
         self.inbound.put(text)
-        print(f"[Conversation] [{self.position}] received: {text} len q:{self.inbound.qsize()}")
+        print(f"[Conversation] [{self.position}] \"{text}\"")
         return True
 
     def start_receiving_in_background(self):
@@ -251,7 +251,6 @@ class Router:
             self._release_port(port)
             conv_sock.close()
             return
-        
         
         print("[Router] New convseration started. (I'm server)")
         self.conversation = Conversation("server", transport=peer_sock)
@@ -379,9 +378,12 @@ class OutInterface:
         ssh = SSHClient()
         return cls(r, ssh)
 
-    def open_new_convo(self, name: str, host: str, user: str):
-        creds = SecretManager.get_ssh_password_by_name(name)
-        print(f"[OutInterface] [open_new_convo] Found SSH password: {creds}")
+    def open_new_convo(self, name: str, host: str, user: str, password: Optional[str]=None):
+        if password:
+            password = {"password": password}
+        else:
+            creds = SecretManager.get_ssh_password_by_name(name)
+            print(f"[OutInterface] [open_new_convo] Found SSH password: {creds}")
         if self._conversation:
             print(f"[open_new_convo] Closing current conversation with {self._conversation.interlocutor}")
             self._conversation.close()

@@ -2,7 +2,6 @@ import socket
 import threading
 import queue
 import time
-from vla_star.vla_complex.utilities import chat_utilities
 import os
 
 from setproctitle import setproctitle
@@ -16,10 +15,10 @@ MEDIUM = os.environ.get("MEDIUM", "TYPING")
 
 match MEDIUM:
     case "AUDIO":
-        from extraneous.modules.audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
+        from modules.audio_chat import text_to_speech, play_speech, record_speech, speech_to_text
     case "REALTIME":
-        from extraneous.modules.realtime_audio_chat import start_realtime_transcription
-        from extraneous.modules.audio_chat import text_to_speech, play_speech
+        from modules.realtime_audio_chat import start_realtime_transcription
+        from modules.audio_chat import text_to_speech, play_speech
 
 
 def text_text(text):
@@ -119,13 +118,13 @@ def run_client(chat_port=5001):
         print("Disconnected. You may close this chat terminal.")
         stop_event.set()
         sock.close()
-
+from vla_star.vla_complex.utilities.chat_core import Router, Conversation, SSHClient, EntryInterface, OutInterface, SecretManager
+import getpass
+import sys
 if __name__ == "__main__":
-    try:
-        import sys
-        if len(sys.argv) > 1:
-            run_client(int(sys.argv[1]))
-        else:
-            run_client()
-    except OSError:
-        print("Failed to run client. Make sure a Chat is beginning to listen/listening.")
+    router = Router()
+    ssh_client = SSHClient()
+    interface = OutInterface(router, ssh_client)
+    interface.open_new_convo(sys.argv[1], "127.0.0.1", getpass.getuser())
+    while True:
+        interface.add_to_conversation(input("[...] "))
