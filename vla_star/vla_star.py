@@ -98,8 +98,8 @@ class VLA_Star:
             #print(f"Runner = {rerun_function}")
         return rerun_function
 
-    def get_chat_vla_complex(self):
-        for vla_complex in self.vla_complexes:
-            if type(vla_complex) is Chat:
-                return vla_complex
-        raise ValueError(f"[VLA*] Missing chat complex! {self.vla_complexes}")
+    def get_chat_vla_complex(self) -> VLA_Complex:
+        for tool in self.tools:
+            if type(tool.vla_complex) is Chat:
+                return tool.vla_complex
+        raise ValueError(f"[VLA*] Missing chat complex! {self.tools}")

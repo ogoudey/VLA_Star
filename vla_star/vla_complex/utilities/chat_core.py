@@ -167,7 +167,8 @@ class Conversation:
 # ---------------------------------------------------------------------------
 
 class Router:
-    RENDEZVOUS_PORT = 5001
+    RENDEZVOUS_PORT = 5005
+    BOB_RENDEZVOUS_PORT = 5001
     available_ports: List[int] = [5002, 5003, 5004]
 
     on_router_conversation: Callable

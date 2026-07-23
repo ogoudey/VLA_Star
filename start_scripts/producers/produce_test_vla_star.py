@@ -10,6 +10,7 @@ from host.vlanet_interface import update_host_on_vlanet
 import sys
 
 from vla_star.vla_complex.vla_complexes.chat import Chat
+from vla_star.vla_complex.vla_complexes.open_chat import OpenChat
 from vla_star.vla_complex.vla_complexes.suspend import Suspend
 from vla_star.vla_complex.vla_complexes.game_vla_complexes import StartGame
 from vla_star.tool_choice_models.tool import Tool
@@ -43,6 +44,9 @@ if __name__ == "__main__":
                 Chat(
                     recorded=False,
                 )
+            ),
+            Tool(
+                OpenChat()
             ),
             Tool(
                 Suspend()

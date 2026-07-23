@@ -62,7 +62,7 @@ class Chat(VLA_Complex):
 
     async def execute(self, text: str):
         """
-        Say something directly to user. Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.
+        Say something your interlocutor (the user or another agent). Use this for informal realistic conversation. Be as realistic as you can, no monologues/paragraphs.
         :param text: the message content. Fill this arg with all the content you want to send. (required)
         """
         print(f"[Chat] Sending \"{text}\"")

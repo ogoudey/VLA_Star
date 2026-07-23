@@ -58,7 +58,7 @@ class ModelPurveyor:
             if item.type == "function_call":
                 try:
                     tool_return = await tool_dispatcher[item.name](**json.loads(item.arguments))
-                    if item.name in ("startgame", "endgame"):
+                    if item.name in ("startgame", "endgame", "openchat"):
                         minirerun = True
                 except Exception as e:
                     print(f"[ModelPurveyor] {e}! :()")

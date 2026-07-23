@@ -10,11 +10,19 @@ import queue
 import socket
 import signal
 from vla_star.utilities.extension import Text, VLANet, Internet
-
+from vla_star.vla_star import VLA_Star
 class OpenChat(VLA_Complex):
     def __init__(self, extension: Text = Text()):
-        super().__init__("open_chat", True)
+        super().__init__("openchat", True)
         print(f"[OpenChat]")
+
+        ### Threads ###
+        self.listening = False
+
+        self.send_q = queue.Queue()
+        self.inbound_q = queue.Queue()
+
+        self.extension = extension
 
         self.local_agents = self.get_local_agents()
         names = [entry["name"] for entry in self.local_agents]
@@ -26,17 +34,6 @@ class OpenChat(VLA_Complex):
         ### State ###
         self.state = State(session=[], impression=names)
 
-        ### Threads ###
-        self.listening = False
-
-        self.send_q = queue.Queue()
-        self.inbound_q = queue.Queue()
-
-        self.extension = extension
-
-        if self.dataset is None:
-            self.dataset = SubDataset("Chat", "user")
-
     def get_local_agents(self):
         if type(self.extension) is Internet:
             # Be an activator
@@ -47,8 +44,13 @@ class OpenChat(VLA_Complex):
         return [{"name": "Bob", "host": "127.0.0.1", "user": "olin"}]
 
     async def execute(self, name: str):
+        """
+        Open up a new conversation with another agent. This will end your current conversation.
+        :param text: the name of the agent you want to converse with. (required)
+        """
         chat = VLA_Star.get_activated_vla_star().get_chat_vla_complex()
         chat.interface.open_new_convo(name, self.agent_connection_info[name]["host"], self.agent_connection_info[name]["user"])
         chat.start_respond_thread()
         chat.state.impression["Chatting with"] = chat.interface.conversation.interlocutor
         chat.is_available = True
+        return "Now send a message."
