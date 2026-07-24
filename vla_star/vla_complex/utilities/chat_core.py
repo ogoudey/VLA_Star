@@ -39,6 +39,11 @@ import time
 from typing import List, Optional, Callable
 import sys
 import paramiko
+import subprocess
+import json
+import re
+from pathlib import Path
+import getpass
 
 # ---------------------------------------------------------------------------
 # Wire format helpers -- work identically over socket.socket or paramiko.Channel
@@ -68,25 +73,166 @@ def recv_frame(transport, timeout: Optional[float] = None):
     return json.loads(payload.decode("utf-8"))
 
 # ---------------------------------------------------------------------------
+class LocalNetworkManager:
+    SERVICE = "_bed._tcp"
+    LOCAL_MANIFEST = Path.home() / ".vla_stars.jsonl"
+
+    @staticmethod
+    def _discover_bed_hosts():
+        """
+        Browse avahi for _bed._tcp instances and return
+        [{"user": ..., "hostname": ..., "address": ...}, ...]
+        """
+        result = subprocess.run(
+            ["avahi-browse", "-rtp", LocalNetworkManager.SERVICE],
+            capture_output=True, text=True, timeout=15,
+        )
+
+        entries = []
+        for line in result.stdout.splitlines():
+            if not line.startswith("="):  # "=" = resolved record
+                continue
+            fields = line.split(";")
+            if len(fields) < 10:
+                continue
+
+            hostname = fields[6]
+            address = fields[7]
+            txt = fields[9]
+
+            m = re.search(r'"?username=([^";]*)"?', txt)
+            if not m:
+                continue
+
+            entries.append({
+                "user": m.group(1),
+                "hostname": hostname,
+                "address": address,
+            })
+
+        # de-dupe (multi-interface hosts can show up twice)
+        seen = set()
+        unique = []
+        for e in entries:
+            key = (e["user"], e["hostname"])
+            if key not in seen:
+                seen.add(key)
+                unique.append(e)
+        return unique
+
+    @staticmethod
+    def _ssh_connect(user: str, hostname: str, address: str | None = None) -> paramiko.SSHClient:
+        password = SecretManager.get_ssh_password_for_host(hostname)
+
+        client = paramiko.SSHClient()
+        client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        client.connect(
+            hostname=address or hostname,
+            username=user,
+            password=password,
+            timeout=5,
+        )
+        return client
+
+    @staticmethod
+    def _get_manifests_for(user: str, hostname: str, address: str | None = None) -> list[str]:
+        """SSH in and list what manifest_consultant.sh offers."""
+        try:
+            client = LocalNetworkManager._ssh_connect(user, hostname, address)
+        except (paramiko.SSHException, OSError):
+            return []
+
+        try:
+            stdin, stdout, stderr = client.exec_command(
+                'bash -l -c "\\"$VLA_STAR_PATH\\"/activation/targets/manifest_consultant.sh"',
+                timeout=15,
+            )
+            output = stdout.read().decode()
+        finally:
+            client.close()
+
+        return [line.strip() for line in output.splitlines() if line.strip()]
+
+    @staticmethod
+    def _get_local_manifests_from_file() -> list[str]:
+        """Read this machine's own manifest list from ~/.vla_stars.jsonl."""
+        if not LocalNetworkManager.LOCAL_MANIFEST.exists():
+            return []
+
+        manifests = []
+        with open(LocalNetworkManager.LOCAL_MANIFEST) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                try:
+                    entry = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                # support either {"name": "..."} objects or bare strings per line
+                name = entry.get("name") if isinstance(entry, dict) else entry
+                if name:
+                    manifests.append(name)
+        return manifests
+    
+    @staticmethod
+    def get_local_manifests():
+        merged = {}
+
+        local_hostname = socket.gethostname()
+        local_user = getpass.getuser()
+        local_manifests = LocalNetworkManager._get_local_manifests_from_file()
+        if local_manifests:
+            merged.setdefault(local_hostname, {})[local_user] = local_manifests
+
+        for entry in LocalNetworkManager._discover_bed_hosts():
+            hostname, user, address = entry["hostname"], entry["user"], entry["address"]
+            manifests = LocalNetworkManager._get_manifests_for(user, hostname, address)
+            merged.setdefault(hostname, {})[user] = manifests
+
+        return merged
+
+    @staticmethod
+    def get_local_agents():
+        merged_manifest = LocalNetworkManager.get_local_manifests()
+        agents = [
+            item
+            for host in merged_manifest.values()
+            for user_list in host.values()
+            for item in user_list
+        ]
+        return agents
+
+    @staticmethod
+    def get_host_and_user_of_name(name: str):
+        local_manifests = LocalNetworkManager.get_local_manifests()
+        for hostname, users in local_manifests.items():
+            for user, manifests in users.items():
+                if name in manifests:
+                    return hostname, user
+        print(f"[SecretManager] Could not find {name} in any manifests.")
+
+        return None, None
 
 class SecretManager:
     _PATH = "private/secrets/ssh_passwords.json"
 
     @staticmethod
-    def get_ssh_password_by_name(name: str) -> dict:
+    def get_ssh_password_for_host_and_user(host: str, user: str) -> dict:
         """
         Expects private/secrets/ssh_passwords.json shaped like:
         {
           "alice-desktop": {"host": "10.0.0.12", "user": "alice", "password": "..."}
         }
         """
+
         with open(SecretManager._PATH, "r") as f:
             data = json.load(f)
         try:
-            return data[name]
+            return data[host][user]
         except KeyError as e:
-            print(f"Could not find {name}: {e}")
-            return {"host": "127.0.0.1", "user": "olin", "password": "defaultpassword"}
+            print(f"[SecretManager] Could not find {host}@{user} in .secrets")
+            return {}
 
 
 # ---------------------------------------------------------------------------

@@ -15,14 +15,14 @@ class Starter:
         
 
     @staticmethod
-    def try_load_by_name(name: str) -> Optional["Starter"]:
+    def try_load_by_name(name: str) -> Optional[VLA_Star]:
         try:
             import pickle
             filepath = Starter.frozen_vla_stars / f"{name}.pkl"
             with open(filepath, 'rb') as f:
                 vla_star = pickle.load(f)
             print(f"[Starter] found VLA* at {filepath}.")
-            return Starter(vla_star)
+            return vla_star
         except ImportError:
             print("Pickle not installed. Skipping Pickle stuff")
             return None

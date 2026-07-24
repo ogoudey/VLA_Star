@@ -75,20 +75,19 @@ fi
 # Runs Fred (or any agent). This script is fit to these arguments.
 
 NAME="${1:-Mike}"
-CHAT_PORT="${2:-5001}"
 
 if [ -n "$DISPLAY" ]; then
     if [ -z "$DBUS_SESSION_BUS_ADDRESS" ]; then
         # SSH from Computer A - use dbus-launch
-        dbus-launch gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+        dbus-launch gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m modules.chat; exec bash" &
     else
         # Local desktop session
-        gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m extraneous.modules.chat $CHAT_PORT; exec bash" &
+        gnome-terminal -- bash -c "source $VENV_PATH/bin/activate; export OPENAI_API_KEY=$OPENAI_API_KEY; python3 -m modules.chat; exec bash" &
     fi
 fi
 # No DISPLAY = Android/headless, do nothing
 
-python3 -m "start_scripts.start_class_one" "$NAME" "$CHAT_PORT"
+python3 -m "start_scripts.start_class_one" "$NAME"
 deactivate || true
 
 echo "Finished running $NAME"
