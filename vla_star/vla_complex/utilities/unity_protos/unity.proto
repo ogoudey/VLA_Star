@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package unity.v1;   // <-- version lives in the package name
+
+service AnimateService {
+  // Basic capability: fire off a named action
+  rpc Act (ActRequest) returns (ActResponse);
+
+  // Lets either side verify they're speaking the same version
+  // before doing anything else — cheap insurance against
+  // "Unity built against v1, Python is running v2" mismatches.
+  rpc GetVersion (VersionRequest) returns (VersionResponse);
+}
+
+message ActRequest {
+  string action_name = 1;
+  // Leave room to grow: optional structured params later, e.g.
+  // map<string, string> params = 2;
+}
+
+message ActResponse {
+  bool success = 1;
+  string message = 2;   // error detail or echo info
+}
+
+message VersionRequest {}
+
+message VersionResponse {
+  string proto_version = 1;   // e.g. "1.0.0"
+  string server_version = 2;  // e.g. core version
+}
