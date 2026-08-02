@@ -32,7 +32,3 @@ class Unity(Rendering, Internet): # localhost IP
         self.host, self.port = address[0], address[1]
         self.project_dir = project_dir
         self.game_object_name = game_object_name
-
-        self.connect()
-
-    def connect(self):

@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from vla_star.vla_complex.utilities.unity_protos import unity_pb2 as vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2
+from vla_star.vla_complex.utilities.generated import unity_pb2 as unity__pb2
 
 GRPC_GENERATED_VERSION = '1.83.0'
 GRPC_VERSION = grpc.__version__
@@ -36,13 +36,13 @@ class AnimateServiceStub:
         """
         self.Act = channel.unary_unary(
                 '/unity.v1.AnimateService/Act',
-                request_serializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActRequest.SerializeToString,
-                response_deserializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActResponse.FromString,
+                request_serializer=unity__pb2.ActRequest.SerializeToString,
+                response_deserializer=unity__pb2.ActResponse.FromString,
                 _registered_method=True)
         self.GetVersion = channel.unary_unary(
                 '/unity.v1.AnimateService/GetVersion',
-                request_serializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionRequest.SerializeToString,
-                response_deserializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionResponse.FromString,
+                request_serializer=unity__pb2.VersionRequest.SerializeToString,
+                response_deserializer=unity__pb2.VersionResponse.FromString,
                 _registered_method=True)
 
 
@@ -70,13 +70,13 @@ def add_AnimateServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Act': grpc.unary_unary_rpc_method_handler(
                     servicer.Act,
-                    request_deserializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActRequest.FromString,
-                    response_serializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActResponse.SerializeToString,
+                    request_deserializer=unity__pb2.ActRequest.FromString,
+                    response_serializer=unity__pb2.ActResponse.SerializeToString,
             ),
             'GetVersion': grpc.unary_unary_rpc_method_handler(
                     servicer.GetVersion,
-                    request_deserializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionRequest.FromString,
-                    response_serializer=vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionResponse.SerializeToString,
+                    request_deserializer=unity__pb2.VersionRequest.FromString,
+                    response_serializer=unity__pb2.VersionResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -104,8 +104,8 @@ class AnimateService:
             request,
             target,
             '/unity.v1.AnimateService/Act',
-            vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActRequest.SerializeToString,
-            vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.ActResponse.FromString,
+            unity__pb2.ActRequest.SerializeToString,
+            unity__pb2.ActResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -131,8 +131,8 @@ class AnimateService:
             request,
             target,
             '/unity.v1.AnimateService/GetVersion',
-            vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionRequest.SerializeToString,
-            vla__star_dot_vla__complex_dot_utilities_dot_unity__protos_dot_unity__pb2.VersionResponse.FromString,
+            unity__pb2.VersionRequest.SerializeToString,
+            unity__pb2.VersionResponse.FromString,
             options,
             channel_credentials,
             insecure,

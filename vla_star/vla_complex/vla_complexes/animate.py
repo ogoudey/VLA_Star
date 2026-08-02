@@ -24,11 +24,14 @@ class Animate(VLA_Complex):
 
         self.interface = None
         if self.dataset is None and recorded:
-            self.dataset = SubDataset("Chat", "user")
+            self.dataset = SubDataset("Animate", "user")
 
         if type(self.extension) is Unity:
+            print(f"[Animate] Importing Unity animate extension")
             from vla_star.vla_complex.utilities.unity_core import UnityInterface
-            self.interface = UnityInterface()
+            print(f"[Animate] Create UnityInterface")
+            self.interface = UnityInterface(self.extension.host, self.extension.port)
+            self.extension.on = True
         else:
             raise Exception(f"Extension is not Unity, so not supported.")
 

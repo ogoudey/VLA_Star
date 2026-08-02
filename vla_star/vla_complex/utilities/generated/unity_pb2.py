@@ -28,7 +28,7 @@ DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n7vla_star/vla_comp
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
-_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'vla_star.vla_complex.utilities.unity_protos.unity_pb2', _globals)
+_builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'vla_star.vla_complex.utilities.generated.unity_pb2', _globals)
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_ACTREQUEST']._serialized_start=69

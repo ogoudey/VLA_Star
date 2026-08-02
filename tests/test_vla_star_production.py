@@ -13,6 +13,7 @@ from host.vlanet_interface import update_host_on_vlanet
 
 
 from vla_star.vla_complex.vla_complexes.chat import Chat
+from vla_star.vla_complex.vla_complexes.animate import Animate
 from vla_star.vla_complex.vla_complexes.suspend import Suspend
 from vla_star.vla_complex.vla_complexes.game_vla_complexes import EndGame
 from vla_star.tool_choice_models.tool import Tool
@@ -104,7 +105,7 @@ def test_produce_vla_star():
     del vla_star
 
 
-def test_produce_vla_star():
+def test_produce_vla_star_in_unity():
     vla_star = VLA_Star(
         "test",
         OrderedContextLLMEngine(

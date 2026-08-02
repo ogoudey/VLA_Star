@@ -27,7 +27,7 @@ def user():
 class Host:
     @staticmethod
     def list_vla_star(vla_star: VLA_Star):
-        manifest_manager.update_manifest(vla_star.name, new_status="active",  host=host_address(), user=user(), message=f"To activate {vla_star.name}, use an activator class 1. If {vla_star.name} is active, open up a textual chat terminal on PORT.")
+        manifest_manager.update_manifest(vla_star.name, new_status="active",  message=f"To activate {vla_star.name}, use an activator class 1. If {vla_star.name} is active, open up a textual chat terminal on PORT.")
 
     @staticmethod
     def sync_manifest():
@@ -35,4 +35,4 @@ class Host:
 
     @staticmethod
     def update_vla_star_on_list(vla_star: VLA_Star):
-        manifest_manager.update_manifest(vla_star.name, new_status="inactive", host=host_address(), user=user())
+        manifest_manager.update_manifest(vla_star.name, new_status="inactive")

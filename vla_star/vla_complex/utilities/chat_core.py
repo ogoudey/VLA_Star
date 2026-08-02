@@ -524,19 +524,16 @@ class OutInterface:
         ssh = SSHClient()
         return cls(r, ssh)
 
-    def open_new_convo(self, name: str, host: str, user: str, password: Optional[str]=None):
-        if password:
-            password = {"password": password}
-        else:
-            creds = SecretManager.get_ssh_password_by_name(name)
-            print(f"[OutInterface] [open_new_convo] Found SSH password: {creds}")
+    def open_new_convo(self, name: str, host: str, user: str):
+        pw = SecretManager.get_ssh_password_for_host_and_user("pasokon", "olin")
+        print(f"[OutInterface] [open_new_convo] Found SSH password: {pw}")
         if self._conversation:
             print(f"[open_new_convo] Closing current conversation with {self._conversation.interlocutor}")
             self._conversation.close()
         self.router.cancel_any_local_convo()
         self.ssh_client.cancel_and_disconnect_any_remote_convo()
         print("[OutInterface] [open_new_convo] Any existing conversations exited.")
-        self.ssh_client.connect(host=host, user=user, password=creds["password"])
+        self.ssh_client.connect(host=host, user=user, password=pw)
         print("[OutInterface] [open_new_convo] SSH client connected.")
         entry = EntryInterface(self.ssh_client)
         print("[OutInterface] [open_new_convo] EntryInterface created.")

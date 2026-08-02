@@ -1,4 +1,3 @@
-from vla_star.vla_complex.vlm import VLM
 import time
 from typing import List, Any, Callable
 
