@@ -22,3 +22,17 @@ class Text(LanguageExtension, Internet):
 class VLANet(Internet): # essentially WWW
     def __init__(self):
         pass
+
+class Rendering(Extension): # essentially WWW
+    def __init__(self):
+        pass
+
+class Unity(Rendering, Internet): # localhost IP
+    def __init__(self, address: tuple[str, int], project_dir: str, game_object_name):
+        self.host, self.port = address[0], address[1]
+        self.project_dir = project_dir
+        self.game_object_name = game_object_name
+
+        self.connect()
+
+    def connect(self):

@@ -36,6 +36,7 @@ class OpenChat(VLA_Complex):
             pass
         if type(self.extension) is VLANet:
             # look up information on nearby agents from VLANet
+            # This should be an MCP Client
             pass
         return []
         

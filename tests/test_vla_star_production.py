@@ -23,7 +23,7 @@ from vla_star.vla_star import VLA_Star
 # This line varies
 from vla_star.context_engine.context_engine import OrderedContextLLMEngine
 
-from vla_star.utilities.extension import Extension, Text
+from vla_star.utilities.extension import Extension, Text, Unity
 """
 vla_star = VLA_Star(
     name,
@@ -101,7 +101,32 @@ def test_produce_vla_star():
         Extension()
     )
     assert len(VLA_Star._activated) == 1
+    del vla_star
 
 
-
-
+def test_produce_vla_star():
+    vla_star = VLA_Star(
+        "test",
+        OrderedContextLLMEngine(
+            context_engine_name=f"test_context_engine",
+            construction=ConstructionType.THINKING_OF_A_NUMBER.value,
+            instructions=InstructionType.THINKING_OF_A_NUMBER.value,
+            motive=MotiveType.THINKING_OF_A_NUMBER.value,
+            extra="",
+            recorded=True
+        ),
+        [
+            Tool(
+                Animate(
+                    recorded=False,
+                    extension=Unity(address=("127.0.0.1", 5010), project_dir="~/Unity/My\\Project", game_object_name="person1")
+                )
+            ),
+            Tool(
+                Suspend()
+            )
+        ],
+        Extension()
+    )
+    assert len(VLA_Star._activated) == 1
+    del vla_star
