@@ -1,152 +1,70 @@
 import threading
-import socket
 import time
-import queue
-from typing import Callable
-import socket
-import os
-import json
-
+from typing import Optional, List, Dict
 from ..vla_complex import VLA_Complex
-from vla_star.vla_complex.vla_complex_state import State
-from ...vla_star_factory.vla_complex_factories.utilities import socket_utilities
+from ..vla_complex_state import State
+from ..general_dataset import SubDataset
+from vla_star.utilities.displays import timestamp
+from vla_star.utilities.extension import Text, VLANet, Internet
 
-class UnityDrive(VLA_Complex):
-    def __init__(self, tool_name: str):
-        super().__init__(self.act, tool_name)
-        self.listening = False
-        self.unity_messages = queue.Queue()
-        self.out_messages = queue.Queue()
+from vla_star.utilities.extension import Extension, Unity
+
+class Drive(VLA_Complex):
+    recorded: bool
+    dataset: Optional[SubDataset] = None
+    
+    def __init__(self, recorded=False, extension: Extension = Extension()):
+        super().__init__("drive", False)
+        print(f"[Drive] Initializing.")
+
+        self.recorded = recorded
+
         ### State ###
-        self.state = State(session=[], impression={
-            "currently travelling": False,
-            "current position": "Initial position",
-            "possible destinations": []
-        })
+        self.state = State(session=[], impression={})
 
-        self.unity_functions = None
+        self.extension = extension
+
+        self.interface = None
+        if self.dataset is None and recorded:
+            self.dataset = SubDataset("Drive", "user")
+
+        if type(self.extension) is Unity:
+            print(f"[Drive] Importing Unity animate extension")
+            from vla_star.vla_complex.utilities.unity_core import UnityInterface
+            print(f"[Drive] Create UnityInterface")
+            self.interface = UnityInterface(self.extension.host, self.extension.port)
+            self.extension.on = True
+            threading.Thread(target=self.background_poll_entities, daemon=True).start()
+        else:
+            raise Exception(f"Extension is not Unity, so not supported.")
+
+    def background_poll_entities(self):
+        while self.extension.on:
+            try:
+                entities_response: List[Dict] = self.interface.get_entities()
+                self.state.impression["locations"] = entities_response
+            except Exception as e:
+                print(f"[Drive] get_entities failed: {e}")
+            time.sleep(1)
+        
+
+    def _repr__(self):
+        return f"Chat repr"
 
     def __str__(self):
-        return self.tool_name
+        return f"{self.tool_name}"
 
-    async def execute(self, destination: str):
+    async def execute(self, x: float, y: float, z: float):
         """
-        Provide the destination you'd like to drive to in the Unity environment. The destination must match one of the possible destinations.
-        :param destination: one of the possible destinations, by exact name
+        Drive your body to the target position.
+
+        :param x: Target X coordinate.
+        :param y: Target Y coordinate.
+        :param z: Target Z coordinate.
         """
-        await super().execute(destination)
-        if not self.listening:
-            self.start_listener()
-        self.vla("SetGoalTo", destination)
-        return "Successfully set drive goal. Return immediately."
-
-    def start_listener(self):
-        threading.Thread(target=self.run_client, daemon=True).start()
-
-    def run_client(self):
-        print("Listener running")
-        print("Connecting to Unity...")
-        while True:
-            try:
-                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                sock.connect(("127.0.0.1", 5006))
-                break
-            except ConnectionRefusedError:
-                print("Arm waiting...", end="\r")
-                time.sleep(1)
-        self.listening = True
-        print("Connected to Unity...")
-        
-        stop_event = threading.Event()
-
-        threading.Thread(
-            target=socket_utilities.recv_loop,
-            args=(sock, self.unity_messages, stop_event),
-            daemon=True
-        ).start()
-
-        threading.Thread(
-            target=socket_utilities.send_loop,
-            args=(sock, self.out_messages, stop_event),
-            daemon=True
-        ).start()
-
-        threading.Thread(
-            target=self.react_loop,
-            args=(stop_event,),
-            daemon=True
-        ).start()
-
-        try:
-            while self.listening and not stop_event.is_set():
-                time.sleep(1)
-        finally:
-            self.act("Closing", "null")
-            time.sleep(0.1) # So threads can do a loop
-            stop_event.set()
-            sock.close()
-            print("UnityDrive Socket closed.")
-
-    def react_loop(self, stop_event):
-        while not stop_event.is_set():
-            msg = self.unity_messages.get()
-            self.react(f"{msg}")   
-
-    def react(self, unity_message):
-        alternate_context = os.environ.get("CONTEXT_TYPE", "HIGHREFLEXIVITY")
-        unity_message = unity_message.lstrip("\ufeff")  # remove BOM if present
-        try:
-            structure = json.loads(unity_message)
-        except Exception as e:
-            #print(f"Failed to load {unity_message}... {e}")
-            return
-        try:
-            type, content = structure["type"], structure["content"]
-        except Exception as e:
-            return
-
-        match type:
-            case "meta":
-                if content == "quit":
-                    print("Quit message received!!")
-                    self.listening = False
-                    self.agent_sleep()      ############# QUIT CONDITION
-                return
-            case "destinations":
-                print(f"UPDATED DESTINATIONS {content}")
-                self.state.impression["possible destinations"] = content
-                #self.update_docstring(self.capability_desc + json.dumps({"Function": "SetGoalTo", "Possible args": self.state.impression["possible destinations"]}))
-            case "functions":
-                self.unity_functions = content
-                return
-            case "status":
-                unity_status = content[0]
-                if "reached" in unity_status:
-                    self.state.add_to_session("Status", unity_status)
-                    self.state.impression["current position"] = unity_status.strip("reached ")
-                    self.state.impression["currently travelling"] = False
-                    if alternate_context == "LOWREFLEXIVITY": # Kinda hard-coded
-                        print("LOWREFLEXIVITY: reflection!")
-                        self.rerun_agent()
-                    else:
-                        print("HIGHREFLEXIVITY")
-                elif "goal set" in unity_status:
-                    self.state.add_to_session("Status", unity_status)
-                    self.state.impression["currently travelling"] = True
-                else:
-                    self.rerun_agent()
-
-    def pull_state(self):
-        return self.state
-
-    def act(self, unity_callable:str, arg: str):
-        structure = {"method": unity_callable, "arg":arg}
-        self.out_messages.put(json.dumps(structure))
-
-    async def start(self):
-        print(f"In UnityNavigation start()...")
-        if not self.listening:
-            self.start_listener()
-        self.rerun_agent()
-        self.act("GetFunctions", "null")
-        self.act("GetDestinations", "null")
+        destination = (x, y, z)
+        print(f"[Drive] Driving to [{destination}]")
+        if type(self.extension) is Unity:
+            self.interface.navigate_to(entity_id=self.tool_name, destination=destination)
+        else:
+            raise Exception(f"Extension is not Unity, so not supported.")

@@ -54,7 +54,7 @@ class Chat(VLA_Complex):
         t = threading.Thread(target=self.respond_loop, daemon=True)
         t.start()
 
-    def _repr__(self):
+    def __repr__(self):
         return f"Chat repr"
 
     def __str__(self):

@@ -9,3 +9,4 @@ class MotiveType(Enum):
     GOLD = "gold"
     GAME_BOUNCER = ""
     THINKING_OF_A_NUMBER = ""
+    BORN_TO_NAVIGATE = ""

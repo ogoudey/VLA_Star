@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from vla_star.vla_complex.utilities.generated import unity_pb2 as unity__pb2
+from . import unity_pb2 as unity__pb2
 
 GRPC_GENERATED_VERSION = '1.83.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in vla_star/vla_complex/utilities/unity_protos/unity_pb2_grpc.py depends on'
+        + ' but the generated code in unity_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -44,23 +44,63 @@ class AnimateServiceStub:
                 request_serializer=unity__pb2.VersionRequest.SerializeToString,
                 response_deserializer=unity__pb2.VersionResponse.FromString,
                 _registered_method=True)
+        self.GetEntities = channel.unary_unary(
+                '/unity.v1.AnimateService/GetEntities',
+                request_serializer=unity__pb2.GetEntitiesRequest.SerializeToString,
+                response_deserializer=unity__pb2.GetEntitiesResponse.FromString,
+                _registered_method=True)
+        self.NavigateTo = channel.unary_unary(
+                '/unity.v1.AnimateService/NavigateTo',
+                request_serializer=unity__pb2.NavigateToRequest.SerializeToString,
+                response_deserializer=unity__pb2.NavigateToResponse.FromString,
+                _registered_method=True)
+        self.ActionChunk = channel.unary_unary(
+                '/unity.v1.AnimateService/ActionChunk',
+                request_serializer=unity__pb2.ActionChunkRequest.SerializeToString,
+                response_deserializer=unity__pb2.ActionChunkResponse.FromString,
+                _registered_method=True)
+        self.GetObservation = channel.unary_unary(
+                '/unity.v1.AnimateService/GetObservation',
+                request_serializer=unity__pb2.GetObservationRequest.SerializeToString,
+                response_deserializer=unity__pb2.GetObservationResponse.FromString,
+                _registered_method=True)
 
 
 class AnimateServiceServicer:
     """Missing associated documentation comment in .proto file."""
 
     def Act(self, request, context):
-        """Basic capability: fire off a named action
-        """
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def GetVersion(self, request, context):
-        """Lets either side verify they're speaking the same version
-        before doing anything else — cheap insurance against
-        "Unity built against v1, Python is running v2" mismatches.
-        """
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetEntities(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NavigateTo(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def ActionChunk(self, request, context):
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def GetObservation(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -77,6 +117,26 @@ def add_AnimateServiceServicer_to_server(servicer, server):
                     servicer.GetVersion,
                     request_deserializer=unity__pb2.VersionRequest.FromString,
                     response_serializer=unity__pb2.VersionResponse.SerializeToString,
+            ),
+            'GetEntities': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetEntities,
+                    request_deserializer=unity__pb2.GetEntitiesRequest.FromString,
+                    response_serializer=unity__pb2.GetEntitiesResponse.SerializeToString,
+            ),
+            'NavigateTo': grpc.unary_unary_rpc_method_handler(
+                    servicer.NavigateTo,
+                    request_deserializer=unity__pb2.NavigateToRequest.FromString,
+                    response_serializer=unity__pb2.NavigateToResponse.SerializeToString,
+            ),
+            'ActionChunk': grpc.unary_unary_rpc_method_handler(
+                    servicer.ActionChunk,
+                    request_deserializer=unity__pb2.ActionChunkRequest.FromString,
+                    response_serializer=unity__pb2.ActionChunkResponse.SerializeToString,
+            ),
+            'GetObservation': grpc.unary_unary_rpc_method_handler(
+                    servicer.GetObservation,
+                    request_deserializer=unity__pb2.GetObservationRequest.FromString,
+                    response_serializer=unity__pb2.GetObservationResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -133,6 +193,114 @@ class AnimateService:
             '/unity.v1.AnimateService/GetVersion',
             unity__pb2.VersionRequest.SerializeToString,
             unity__pb2.VersionResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetEntities(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/unity.v1.AnimateService/GetEntities',
+            unity__pb2.GetEntitiesRequest.SerializeToString,
+            unity__pb2.GetEntitiesResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NavigateTo(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/unity.v1.AnimateService/NavigateTo',
+            unity__pb2.NavigateToRequest.SerializeToString,
+            unity__pb2.NavigateToResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ActionChunk(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/unity.v1.AnimateService/ActionChunk',
+            unity__pb2.ActionChunkRequest.SerializeToString,
+            unity__pb2.ActionChunkResponse.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def GetObservation(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/unity.v1.AnimateService/GetObservation',
+            unity__pb2.GetObservationRequest.SerializeToString,
+            unity__pb2.GetObservationResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -14,3 +14,4 @@ What's the game? It's called "Test Game 1", but it doesn't matter. You could jus
     THINKING_OF_A_NUMBER = """\
 You are playing a game with the user.\
 """
+    IN_A_UNITY_WORLD = """You are embodying a capsule game object in Unity Game Engine."""

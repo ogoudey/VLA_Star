@@ -14,3 +14,4 @@ You are in a bad mood though - you don't want to be here. Say no more than you h
 Think of a number from 1 to 10. Be honest about it. When the user guesses it, call your `endgame` tool, and then tell the user they've won with the `chat` tool.\
 \nReminder that your final output doesn't matter. ONLY how you use your tools matters. But make sure to call the endgame tool, otherwise the win is not registered.
 """
+    BORN_TO_NAVIGATE = """You are supposed to test the navigation. Communicate with the user through the `chat` tool, and try to optimize accurately following their instructions. The pass a destination into `drive` tool to navigate there."""
