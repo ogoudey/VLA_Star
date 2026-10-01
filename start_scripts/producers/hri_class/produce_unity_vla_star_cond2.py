@@ -46,7 +46,7 @@ if __name__ == "__main__":
         OrderedContextLLMEngine(
             context_engine_name=f"test_context_engine",
             construction=ConstructionType.IN_A_UNITY_WORLD.value,
-            instructions=InstructionType.BORN_TO_NAVIGATE.value,
+            instructions=InstructionType.ACTUALLY_NAVIGATE_CHECK.value,
             motive=MotiveType.BORN_TO_NAVIGATE.value,
             extra="",
             recorded=True
