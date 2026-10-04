@@ -1,5 +1,7 @@
 from starter.starter import Starter
 
+from vla_star.context_engine.interaction_modeler import InteractionModeler
+from vla_star.context_engine.capability_modeler import CapabilityModeler
 from vla_star.library.instructions import *
 from vla_star.library.constructions import *
 from vla_star.library.motives import *
@@ -44,12 +46,16 @@ if __name__ == "__main__":
     vla_star = VLA_Star(
         name,
         OrderedContextLLMEngine(
-            context_engine_name=f"test_context_engine",
+            context_engine_name=f"{name}_context_engine",
             construction=ConstructionType.IN_A_UNITY_WORLD.value,
             instructions=InstructionType.ACTUALLY_NAVIGATE_FOCUS.value,
             motive=MotiveType.BORN_TO_NAVIGATE.value,
             extra="",
-            recorded=True
+            recorded=True,
+            standalone_impressions=[
+                InteractionModeler(),
+                CapabilityModeler()
+            ]
         ),
         [
             Tool(

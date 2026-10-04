@@ -34,6 +34,7 @@ class VLA_Star:
         self.tools = tools
         self.extension = extension
         self.context_engine.attach_tools(self.tools)
+        self.context_engine.attach_sources_to_standalone_impressions()
         vla_complex_module.agent_name = self.name # idk why i need this
 
         if len(VLA_Star._activated) > 0:

@@ -1,5 +1,5 @@
 import threading
-from typing import Optional
+from typing import Callable, Optional
 from ..vla_complex import VLA_Complex
 from ..vla_complex_state import State
 from ..general_dataset import SubDataset
@@ -16,7 +16,7 @@ from vla_star.vla_complex.utilities.chat_core import OutInterface
 class Chat(VLA_Complex):
     recorded: bool
     dataset: Optional[SubDataset] = None
-    
+    on_message_received: Optional[Callable] = None
     def __init__(self, recorded=False, extension: Text = Text()):
         super().__init__("chat", False)
         print(f"[Chat] Creating chat port.")
@@ -69,6 +69,7 @@ class Chat(VLA_Complex):
         try:
             self.interface.add_to_conversation(text)
             self.state.add_to_session(self.interface.conversation.interlocutor, text)
+            
             return "Message sent. Return immediately."
         except Exception as e:
             return "Not in a conversation. Use `open_chat` to do this."
@@ -81,7 +82,13 @@ class Chat(VLA_Complex):
             if msg == "bye":
                 print(f"[Chat] That's a signal to stop responding...")
                 break
+            if self.on_message_received is not None:
+                self.on_message_received()
+            else:
+                print(f"[Chat] No message received callback set. Just responding...")
             self.respond(f"{msg}")
+
+        
         self.is_available = False
         self.stop_conversation.clear()
         self.conversing = False

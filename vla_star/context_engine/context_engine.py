@@ -1,6 +1,6 @@
 import sys
-
-from agents import Agent, Runner, FunctionTool
+from dataclasses import dataclass
+from typing import Optional, List, Any
 
 import asyncio
 import time
@@ -22,6 +22,8 @@ from vla_star.context_engine.context_utilities import Context, OrderedContext
 from vla_star.vla_complex.vla_complex_state import State
 from vla_star.tool_choice_models.tool import Tool
 from typing import Callable
+from agents import Agent, Runner, FunctionTool
+
 """
                                                 -> DemoedLanguage
 Stimulus -> Event -> AssembleContext -> Ordered -> RunLLMLock
@@ -179,14 +181,22 @@ class OrderedContextEngine(ContextEngine):
     t0_identity_run: float
     recording: bool = False
     dataset: Optional[Dataset] = None
-    
+    standalone_impressions: List[Any]
 
-    def __init__(self, context_engine_name):
+    def __init__(self, context_engine_name, standalone_impressions: Optional[List[Any]] = None):
         super().__init__(context_engine_name)
-        
+        self.standalone_impressions = standalone_impressions if standalone_impressions is not None else []
 
     def order_context(self):
         self.ordered_context = OrderedContext(self.context)
+        
+
+    def get_standalone_impressions(self):
+        for impression in self.standalone_impressions:
+            if hasattr(impression, "get_state"):
+                self.ordered_context.impressions[str(impression)] = impression.get_state()
+            else:
+                print(f"Standalone impression does not have get_state: {impression}")
 
     def write(self):
         super().write()
@@ -208,6 +218,14 @@ class OrderedContextEngine(ContextEngine):
 
     def instance_system_prompt(self):
         raise NotImplementedError(f"Cannot record on {type(self)}")
+
+    def attach_sources_to_standalone_impressions(self):
+        for impression in self.standalone_impressions:
+            if hasattr(impression, "attach_sources"):
+                impression.attach_sources(self)
+            else:
+                print(f"[OrderedContextEngine] Standalone impression does not have attach_sources: {impression}")
+            
 
 import threading
 import socket
@@ -452,15 +470,16 @@ class OrderedContextLLMEngine(OrderedContextEngine):
     model_name: str
     identity: Model
     identity_lock: SingleIdentityRunningLock
+    standalone_impressions: List[Any]
 
-    def __init__(self, context_engine_name: str, construction: str, instructions: str, motive: str, extra: str, recorded: bool):
+    def __init__(self, context_engine_name: str, construction: str, instructions: str, motive: str, extra: str, recorded: bool, standalone_impressions: Optional[List[Any]] = None):
         self.recording = recorded
-        super().__init__(context_engine_name)
+        super().__init__(context_engine_name, standalone_impressions)
         self.construction = construction
         self.instructions = instructions
         self.motive = motive
         self.extra = extra
-        
+
         self.model_name="o4-mini"
         self.identity_lock = SingleIdentityRunningLock()
 
@@ -469,6 +488,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
     def assemble_context(self, exceptional_message: Optional[str]):
         self.context_init() # may be summarized or not
         self.order_context()
+        self.get_standalone_impressions()
         if exceptional_message is not None:
             self.ordered_context["INTERNAL_MESSAGE"] = exceptional_message
 
@@ -485,6 +505,7 @@ class OrderedContextLLMEngine(OrderedContextEngine):
         except RuntimeError:
             #print("Identity rejected...")
             pass
+
     async def run_identity(self):
         self.create_identity()
         await self.run_the_identity()
