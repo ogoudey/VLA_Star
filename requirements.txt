@@ -1,0 +1,30 @@
+# Core Frameworks & APIs
+openai
+openai-agents
+litellm
+mcp
+httpx
+
+# Web & Async
+starlette
+uvicorn
+sse-starlette
+python-dotenv
+python-multipart
+
+# Data & Utilities
+pydantic
+pydantic-settings
+numpy
+matplotlib
+requests
+click
+typer
+rich
+pyyaml
+
+# SSH / Networking
+paramiko
+
+# Testing & Dev
+pytest
